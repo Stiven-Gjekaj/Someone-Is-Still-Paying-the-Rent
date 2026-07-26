@@ -80,5 +80,174 @@
     "text": "pc_receipts",
     "examine": "You brought it in and put it down without thinking, the way you have every month for eight months.",
     "design_note": "Locked until act 3. Contains the rent receipts."
+  },
+
+  {
+    "id": "sorting_boxes",
+    "name": "The three boxes",
+    "room": "living_room",
+    "type": ["system"],
+    "act_min": 1,
+    "sortable": false,
+    "examine": "SHIP TO LENA. DONATE. LET GO. You wrote the labels yourself, in marker, standing up.",
+    "design_note": "Section 4.1. No scoring, no wrong answers. The Lena box is sealed in the ending."
+  },
+  {
+    "id": "vinyl_shelf",
+    "name": "Vinyl shelf",
+    "room": "living_room",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": false,
+    "examine": "Alphabetized, rigorously, by a man who alphabetized nothing else in his life. One record is out of place.",
+    "second_look": {
+      "requires_flag": "examined:bass_case",
+      "text": "The record out of place is not out of place. There is a paper sleeve behind it, filed where nobody tidying up would ever look."
+    },
+    "design_note": "Reveals demo_cdr. Gated on bass_case rather than demo_cdr: the bible's gating was circular. See docs/CONTENT_RULES.md. The player may re-shelve the record afterward, with no prompt for it."
+  },
+  {
+    "id": "record_player",
+    "name": "Record player",
+    "room": "living_room",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "examine": "Lid up. Still plugged in. The needle is sitting where he left it.",
+    "design_note": "Functional. If the player puts a record on, it plays quietly for the rest of the night and sets record_playing."
+  },
+  {
+    "id": "zlatan_plant",
+    "name": "Zlatan (monstera)",
+    "room": "living_room",
+    "type": ["memory"],
+    "act_min": 1,
+    "sortable": false,
+    "fragment": "F-03",
+    "section": "12",
+    "examine": "Freshly repotted. The soil is still dark.",
+    "second_look": {
+      "requires_flag": "referral_read",
+      "text": "Repotted within his last month. He was taking care of things. You fill a glass and water it."
+    }
+  },
+  {
+    "id": "photo_hike_framed",
+    "name": "Framed hike photo (year one)",
+    "room": "living_room",
+    "type": ["keystone", "memory"],
+    "act_min": 1,
+    "sortable": true,
+    "fragment": "F-01",
+    "text": "hike_caption_year_one",
+    "examine": "Year one. The only one he ever framed. Both of you soaked through and grinning about it."
+  },
+  {
+    "id": "photo_hike_box",
+    "name": "Shoebox of hike photos (years 2-7)",
+    "room": "living_room",
+    "type": ["keystone", "readable"],
+    "act_min": 2,
+    "sortable": true,
+    "text": "hike_captions_box",
+    "examine": "Six more, loose in a shoebox, in order. He wrote on the back of every one of them."
+  },
+  {
+    "id": "concert_tickets",
+    "name": "Two concert tickets",
+    "room": "living_room",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "Two of them, paper, for a show in April. He bought them in February.",
+    "second_look": {
+      "requires_flag": "thread_read",
+      "text": "Two tickets. You assumed Mira, but the date is after they ended. You will never get to ask who the second one was for."
+    }
+  },
+  {
+    "id": "library_books",
+    "name": "Library books",
+    "room": "living_room",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "examine": "Three of them, due back in April. One has a receipt shoved in two-thirds through, holding his place."
+  },
+  {
+    "id": "sketchbook_new",
+    "name": "New sketchbook",
+    "room": "living_room",
+    "type": ["ambient"],
+    "act_min": 2,
+    "sortable": true,
+    "section": "5",
+    "examine": "Barely used. Three pages, each dated in the corner, all of them inside his last month.",
+    "second_look": {
+      "requires_flag": "examined:job_application",
+      "text": "Starting again. Or trying to. Both are true."
+    }
+  },
+  {
+    "id": "game_controller",
+    "name": "Second controller",
+    "room": "living_room",
+    "type": ["memory"],
+    "act_min": 1,
+    "sortable": true,
+    "fragment": "F-04",
+    "examine": "The second one. Yours, functionally, for about nine years. The left stick still drifts."
+  },
+  {
+    "id": "desk",
+    "name": "The desk",
+    "room": "living_room",
+    "type": ["scripted"],
+    "act_min": 1,
+    "sortable": false,
+    "section": "5",
+    "examine": "His desk. Paper everywhere. Later.",
+    "design_note": "The act 1 and 2 examine text is a deferral. The scene at section 8.3 activates only after the thread is read. Hard Rule 3: the absence is the scene, and it must never be fixed."
+  },
+  {
+    "id": "job_application",
+    "name": "Cover letter draft",
+    "room": "living_room",
+    "type": ["keystone", "readable"],
+    "act_min": 2,
+    "sortable": true,
+    "text": "job_application",
+    "examine": "A printout near the top of the desk pile, marked up in red pen. He was arguing with himself and losing generously."
+  },
+  {
+    "id": "finances_folder",
+    "name": "Invoice folder",
+    "room": "living_room",
+    "type": ["readable"],
+    "act_min": 2,
+    "sortable": true,
+    "examine": "Polite reminders at the front, final notices at the back, in order. On the back of a gig flyer, a budget in his handwriting that almost balances.",
+    "design_note": "Lives on the wardrobe top shelf but is sorted at the desk. No totals are ever shown: the shape of it is enough. Hard Rule 4, money is a thread and never the reason."
+  },
+  {
+    "id": "demo_cdr",
+    "name": "Low Orbit demo CD-R",
+    "room": "living_room",
+    "type": ["readable"],
+    "act_min": 2,
+    "sortable": true,
+    "examine": "A paper sleeve, one line of Sharpie across it: we'll fix the mix later.",
+    "design_note": "Placed in the living room rather than the bedroom, where the bible indexed it, because it is revealed behind a record on the vinyl shelf. See docs/CONTENT_RULES.md. Playing it on the old stereo gives one song, unmixed, drums too loud, alive."
+  },
+  {
+    "id": "blanket_sofa",
+    "name": "Sofa blanket",
+    "room": "living_room",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "It still smells like the flat. The flat still smells like him."
   }
 ]

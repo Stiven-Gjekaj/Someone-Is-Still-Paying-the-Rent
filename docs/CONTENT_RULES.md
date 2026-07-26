@@ -96,6 +96,14 @@ Anything the player can look at needs its own id.
 
 Their descriptions come from the bible's own parentheticals where it gave any.
 
+### One object moved rooms
+
+`demo_cdr` is indexed under Bedroom in section 5, alongside the other Low Orbit objects, but the
+same entry says it is found behind a misfiled record on the `vinyl_shelf`, which is in the living
+room. Its `room` is `living_room`, because that is where the player is standing when it appears
+and where the world builder has to place it. The Low Orbit grouping in the bible is thematic, not
+spatial.
+
 ### Section cross-references corrected
 
 The bible was renumbered at some point and several references were left pointing one section

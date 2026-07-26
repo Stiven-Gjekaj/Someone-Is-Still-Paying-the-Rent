@@ -1,0 +1,40 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        # Also proves every type annotation is erasable, which is what lets the
+        # validator run under plain node with no loader.
+        run: npm run typecheck
+
+      - name: Validate content
+        # Schema, cross-references, the section 0 hard rules, and writing style.
+        run: npm run validate
+
+      - name: Build
+        run: npm run build
+
+      - name: Check commit message
+        # The commit-msg hook is opt-in locally, so the same checks run here in
+        # case someone pushed without installing it.
+        run: |
+          git log -1 --format=%B > "$RUNNER_TEMP/commit-msg.txt"
+          ./.githooks/commit-msg "$RUNNER_TEMP/commit-msg.txt"

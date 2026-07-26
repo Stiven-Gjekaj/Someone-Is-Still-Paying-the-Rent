@@ -1,0 +1,46 @@
+{
+  "rooms": [
+    {
+      "id": "entry_hall",
+      "name": "Entry hall",
+      "mood": "Dim. One warm bulb.",
+      "purpose": "Tutorial space. Lena's note. The clock, in the form of the landlord's note."
+    },
+    {
+      "id": "living_room",
+      "name": "Living room",
+      "mood": "Lamplight in pools. The sorting hub.",
+      "purpose": "Boxes, vinyl, the plant corner, the desk by the window."
+    },
+    {
+      "id": "kitchen",
+      "name": "Kitchen",
+      "mood": "Cold fluorescent until the player switches to the counter lamp.",
+      "purpose": "Domestic texture. The junk drawer, and the charger inside it."
+    },
+    {
+      "id": "bedroom",
+      "name": "Bedroom",
+      "mood": "The darkest room. Bedside lamp only.",
+      "purpose": "The phone. The under-bed box. The heaviest intimacy."
+    },
+    {
+      "id": "bathroom",
+      "name": "Bathroom",
+      "mood": "Small, honest light.",
+      "purpose": "Smell-memory, and the two mental-health paper objects."
+    },
+    {
+      "id": "balcony",
+      "name": "Balcony",
+      "mood": "String lights. They still work.",
+      "purpose": "Warm memories only. Two chairs and the caps jar. See Hard Rule 10."
+    }
+  ],
+  "lighting_progression": [
+    { "stage": "act_1", "description": "Warm and dim. Rain on the windows." },
+    { "stage": "act_2", "description": "Deeper night. The rain gets heavier." },
+    { "stage": "act_3", "description": "The stillest hour." },
+    { "stage": "dawn", "description": "Grey-gold morning. The rain has stopped." }
+  ]
+}

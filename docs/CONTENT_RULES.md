@@ -119,6 +119,22 @@ past their target. Corrected in the normalized copy:
 | §5, `desk` | §9.3 | §8.3 |
 | §6, footer | §10 | §9 |
 
+### What act_min means
+
+`act_min` is the earliest act in which the player can interact with the object at all, which is
+not always the act the bible's section 5 index lists. The index column says when an object
+becomes its full self. Two objects are interactive well before that, because section 5 gives them
+earlier text itself:
+
+| Object | Section 5 column | `act_min` | Why |
+|---|---|---|---|
+| `desk` | Act 3 | 1 | Section 5 supplies act 1 examine text for it: "His desk. Paper everywhere. Later." The scripted scene still waits for act 3. |
+| `junk_drawer` | Act 2 | 1 | Section 5 supplies the jammed-shut examine text for before act 2. The charger still waits for act 2. |
+
+`phone_dead` and `pc_bag` look like the same case and are not. The phone is listed "Act 1 (found)
+/ Act 3 (read)" and its `act_min` is 1. The bag is listed "Act 3 (locked before)" and its
+`act_min` is 3, because it genuinely cannot be touched earlier.
+
 ### Second-look gating widened
 
 Section 12 documents `second_look.requires_flag` as a single string naming a state flag, but most

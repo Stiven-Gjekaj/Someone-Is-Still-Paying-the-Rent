@@ -392,5 +392,127 @@
     "sortable": true,
     "section": "5",
     "examine": "One toothbrush. The single most ordinary object in the world, and you have to hold the sink for a second."
+  },
+
+  {
+    "id": "phone_dead",
+    "name": "His phone",
+    "room": "bedroom",
+    "type": ["keystone", "memory", "system"],
+    "act_min": 1,
+    "sortable": false,
+    "fragment": "F-09",
+    "text": "phone_thread",
+    "examine": "Face-down on the bedside table, where they put it back. Dead. The charger wasn't with it.",
+    "design_note": "The act 1 discovery that creates the game's engine. Read in act 3, after it has charged in real time. Section 4.5."
+  },
+  {
+    "id": "referral_letter",
+    "name": "The referral letter",
+    "room": "bedroom",
+    "type": ["keystone", "readable"],
+    "act_min": 2,
+    "sortable": true,
+    "text": "referral_letter",
+    "examine": "In the bedside drawer, on top. The envelope is soft and grey along the folds, the way paper gets when it is opened and put away and opened again.",
+    "design_note": "The worn envelope IS the writing. The interaction offers no judgment of any kind. Ambiguity 5: why he never called is never answered, and neither is what would have happened if he had."
+  },
+  {
+    "id": "notebook_4am",
+    "name": "The 4 a.m. notebook",
+    "room": "bedroom",
+    "type": ["keystone", "readable"],
+    "act_min": 2,
+    "sortable": true,
+    "text": "notebook_4am",
+    "examine": "A cheap notebook on the bedside table, three entries in and blank after that. He wrote the times but never the dates."
+  },
+  {
+    "id": "underbed_box",
+    "name": "The under-bed box",
+    "room": "bedroom",
+    "type": ["system"],
+    "act_min": 2,
+    "sortable": false,
+    "examine": "A shoebox pushed to the far side, against the wall, where you would have to be looking to find it.",
+    "design_note": "Opening it sets underbed_found and reveals the Mira thread: hoodie_mira, photobooth_strip, mira_draft, and dad_lighter."
+  },
+  {
+    "id": "hoodie_mira",
+    "name": "The hoodie",
+    "room": "bedroom",
+    "type": ["ambient"],
+    "act_min": 2,
+    "sortable": true,
+    "examine": "Not his size. Washed and folded before it went into the box, which is the part that gets you."
+  },
+  {
+    "id": "photobooth_strip",
+    "name": "Photo-booth strip",
+    "room": "bedroom",
+    "type": ["ambient"],
+    "act_min": 2,
+    "sortable": true,
+    "examine": "Four frames. They behave for the first two. By the third they are laughing, and after that neither of them looks at the camera again."
+  },
+  {
+    "id": "mira_draft",
+    "name": "Mira's unsent letter",
+    "room": "bedroom",
+    "type": ["keystone", "readable"],
+    "act_min": 2,
+    "sortable": true,
+    "text": "mira_draft",
+    "examine": "Folded and refolded until the creases went soft. Never sent. Never thrown out either.",
+    "design_note": "Reading it sets mira_read. Ambiguity 2: it is never dated, and whether he wrote it the week they ended or months later is not answerable."
+  },
+  {
+    "id": "dad_lighter",
+    "name": "His father's lighter",
+    "room": "bedroom",
+    "type": ["memory"],
+    "act_min": 2,
+    "sortable": true,
+    "fragment": "F-08",
+    "examine": "Brass, worn smooth on one side from eight years in a pocket. It still has fuel in it."
+  },
+  {
+    "id": "wardrobe",
+    "name": "Wardrobe",
+    "room": "bedroom",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": false,
+    "examine": "The Low Orbit tour shirt, for a tour that never happened. A winter coat with two ticket stubs and a receipt in the pocket. A folder on the top shelf that you will get to."
+  },
+  {
+    "id": "bass_case",
+    "name": "Bass case",
+    "room": "bedroom",
+    "type": ["memory"],
+    "act_min": 2,
+    "sortable": true,
+    "fragment": "F-10",
+    "examine": "Upright in the corner, latches still done up. Inside: the bass, and a mint tin of broken strings labeled in marker. Evidence."
+  },
+  {
+    "id": "alarm_clock",
+    "name": "Alarm clock",
+    "room": "bedroom",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "Blinking 00:00 since a power cut nobody reset. Time has been optional here for a while."
+  },
+  {
+    "id": "photo_dad",
+    "name": "Photo of his dad",
+    "room": "bedroom",
+    "type": ["ambient"],
+    "act_min": 2,
+    "sortable": true,
+    "section": "5",
+    "examine": "Tucked into the mirror frame, not displayed, not hidden. Kept at the exact distance he could stand."
   }
 ]

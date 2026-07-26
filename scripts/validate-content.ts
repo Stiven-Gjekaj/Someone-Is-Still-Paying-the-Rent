@@ -1,0 +1,542 @@
+/**
+ * Content validator.
+ *
+ * Run with `npm run validate`, which is `node scripts/validate-content.ts`. Node
+ * 24 strips the types, so there is no loader and no dependency. Every annotation
+ * in this repository has to stay erasable for that to keep working, which the
+ * `erasableSyntaxOnly` compiler flag enforces.
+ *
+ * This file reads the data with `fs` rather than importing it, because it needs
+ * the raw text as well as the parsed objects.
+ */
+
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { OBJECT_TYPES, ROOM_IDS, TEXT_BLOCK_KINDS } from '../src/content/types.ts'
+import { BOOLEAN_FLAGS, parseFlagReference } from '../src/content/flags.ts'
+
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
+
+interface Problem {
+  category: string
+  where: string
+  message: string
+}
+
+const problems: Problem[] = []
+
+function fail(category: string, where: string, message: string): void {
+  problems.push({ category, where, message })
+}
+
+function loadJson(relPath: string): unknown {
+  return JSON.parse(readFileSync(join(ROOT, relPath), 'utf8'))
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function nonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+const OBJECT_TYPE_SET: ReadonlySet<string> = new Set(OBJECT_TYPES)
+const ROOM_ID_SET: ReadonlySet<string> = new Set(ROOM_IDS)
+const BLOCK_KIND_SET: ReadonlySet<string> = new Set(TEXT_BLOCK_KINDS)
+const BOOLEAN_FLAG_SET: ReadonlySet<string> = new Set(BOOLEAN_FLAGS)
+
+const ID_PATTERN = /^[a-z][a-z0-9_]*$/
+
+/** Fields each block kind must carry. `timestamp` is the one that may be blank. */
+const BLOCK_FIELDS: Record<string, readonly string[]> = {
+  line: ['text'],
+  entry: ['time', 'text'],
+  annotation: ['where', 'text'],
+  message: ['sender', 'timestamp', 'text'],
+  caption: ['label', 'text'],
+  signature: ['text'],
+  stage: ['text'],
+}
+
+const BLOCK_FIELDS_MAY_BE_BLANK: ReadonlySet<string> = new Set(['timestamp'])
+
+const objects = loadJson('data/objects.json') as Record<string, unknown>[]
+const fragments = loadJson('data/fragments.json') as Record<string, unknown>[]
+const texts = loadJson('data/texts.json') as Record<string, unknown>[]
+const roomData = loadJson('data/rooms.json') as Record<string, unknown>
+const sceneData = loadJson('data/scenes.json') as Record<string, unknown>
+const resources = loadJson('data/resources.json') as Record<string, unknown>
+
+const objectIds = new Set(objects.map((o) => String(o['id'])))
+const fragmentIds = new Set(fragments.map((f) => String(f['id'])))
+const textIds = new Set(texts.map((t) => String(t['id'])))
+
+// ---------------------------------------------------------------------------
+// Blocks
+// ---------------------------------------------------------------------------
+
+function checkBlocks(category: string, where: string, blocks: unknown): void {
+  if (!Array.isArray(blocks) || blocks.length === 0) {
+    fail(category, where, 'blocks must be a non-empty array')
+    return
+  }
+
+  blocks.forEach((block, index) => {
+    const at = `${where} block ${index}`
+
+    if (!isRecord(block)) {
+      fail(category, at, 'block must be an object')
+      return
+    }
+
+    const kind = block['kind']
+    if (typeof kind !== 'string' || !BLOCK_KIND_SET.has(kind)) {
+      fail(category, at, `unknown block kind ${JSON.stringify(kind)}`)
+      return
+    }
+
+    const required = BLOCK_FIELDS[kind] ?? []
+    for (const field of required) {
+      const value = block[field]
+      if (typeof value !== 'string') {
+        fail(category, at, `kind "${kind}" needs a string "${field}"`)
+      } else if (value.trim().length === 0 && !BLOCK_FIELDS_MAY_BE_BLANK.has(field)) {
+        fail(category, at, `"${field}" is empty`)
+      }
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Rooms
+// ---------------------------------------------------------------------------
+
+const rooms = roomData['rooms']
+if (!Array.isArray(rooms)) {
+  fail('rooms', 'data/rooms.json', 'rooms must be an array')
+} else {
+  const seen = new Set<string>()
+
+  for (const room of rooms) {
+    if (!isRecord(room)) {
+      fail('rooms', 'data/rooms.json', 'room must be an object')
+      continue
+    }
+
+    const id = room['id']
+    if (typeof id !== 'string' || !ROOM_ID_SET.has(id)) {
+      fail('rooms', `room ${JSON.stringify(id)}`, 'unknown room id')
+      continue
+    }
+    if (seen.has(id)) fail('rooms', `room ${id}`, 'duplicate room')
+    seen.add(id)
+
+    for (const field of ['name', 'mood', 'purpose']) {
+      if (!nonEmptyString(room[field])) fail('rooms', `room ${id}`, `"${field}" is missing or empty`)
+    }
+  }
+
+  for (const id of ROOM_IDS) {
+    if (!seen.has(id)) fail('rooms', `room ${id}`, 'declared in types.ts but missing from rooms.json')
+  }
+}
+
+if (!Array.isArray(roomData['lighting_progression']) || roomData['lighting_progression'].length === 0) {
+  fail('rooms', 'data/rooms.json', 'lighting_progression must be a non-empty array')
+}
+
+// ---------------------------------------------------------------------------
+// Objects
+// ---------------------------------------------------------------------------
+
+const seenObjectIds = new Set<string>()
+
+for (const object of objects) {
+  const rawId = object['id']
+  const id = typeof rawId === 'string' ? rawId : '(no id)'
+  const where = `object ${id}`
+
+  if (typeof rawId !== 'string' || !ID_PATTERN.test(rawId)) {
+    fail('objects', where, 'id must be snake_case')
+  }
+  if (seenObjectIds.has(id)) fail('objects', where, 'duplicate id')
+  seenObjectIds.add(id)
+
+  if (!nonEmptyString(object['name'])) fail('objects', where, 'name is missing or empty')
+  if (!nonEmptyString(object['examine'])) fail('objects', where, 'examine is missing or empty')
+  if (typeof object['sortable'] !== 'boolean') fail('objects', where, 'sortable must be a boolean')
+
+  const room = object['room']
+  if (typeof room !== 'string' || !ROOM_ID_SET.has(room)) {
+    fail('objects', where, `unknown room ${JSON.stringify(room)}`)
+  }
+
+  const actMin = object['act_min']
+  if (typeof actMin !== 'number' || !Number.isInteger(actMin) || actMin < 1 || actMin > 3) {
+    fail('objects', where, 'act_min must be 1, 2 or 3')
+  }
+
+  const types = object['type']
+  if (!Array.isArray(types) || types.length === 0) {
+    fail('objects', where, 'type must be a non-empty array')
+  } else {
+    for (const t of types) {
+      if (typeof t !== 'string' || !OBJECT_TYPE_SET.has(t)) {
+        fail('objects', where, `unknown type ${JSON.stringify(t)}`)
+      }
+    }
+
+    if (types.includes('memory') && object['fragment'] === undefined) {
+      fail('objects', where, 'typed "memory" but carries no fragment')
+    }
+    if (types.includes('keystone') && object['text'] === undefined) {
+      fail('objects', where, 'typed "keystone" but carries no text')
+    }
+  }
+
+  const fragment = object['fragment']
+  if (fragment !== undefined) {
+    if (typeof fragment !== 'string' || !fragmentIds.has(fragment)) {
+      fail('objects', where, `fragment ${JSON.stringify(fragment)} does not exist`)
+    } else {
+      const target = fragments.find((f) => f['id'] === fragment)
+      if (target !== undefined && target['trigger'] !== id) {
+        fail('objects', where, `fragment ${fragment} is triggered by ${String(target['trigger'])}, not this object`)
+      }
+    }
+  }
+
+  const text = object['text']
+  if (text !== undefined) {
+    if (typeof text !== 'string' || !textIds.has(text)) {
+      fail('objects', where, `text ${JSON.stringify(text)} does not exist`)
+    } else {
+      const target = texts.find((t) => t['id'] === text)
+      if (target !== undefined && target['object'] !== id) {
+        fail('objects', where, `text ${text} points back at ${String(target['object'])}, not this object`)
+      }
+    }
+  }
+
+  const secondLook = object['second_look']
+  if (secondLook !== undefined) {
+    if (!isRecord(secondLook)) {
+      fail('second look', where, 'second_look must be an object')
+    } else {
+      if (!nonEmptyString(secondLook['text'])) {
+        fail('second look', where, 'second_look.text is missing or empty')
+      }
+
+      const raw = secondLook['requires_flag']
+      if (typeof raw !== 'string') {
+        fail('second look', where, 'second_look.requires_flag must be a string')
+      } else {
+        const ref = parseFlagReference(raw)
+        if (ref === null) {
+          fail('second look', where, `requires_flag ${JSON.stringify(raw)} names no known flag`)
+        } else if (ref.kind === 'derived' && !objectIds.has(ref.object)) {
+          fail('second look', where, `requires_flag refers to object ${ref.object}, which does not exist`)
+        }
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fragments
+// ---------------------------------------------------------------------------
+
+const seenFragmentIds = new Set<string>()
+
+for (const fragment of fragments) {
+  const rawId = fragment['id']
+  const id = typeof rawId === 'string' ? rawId : '(no id)'
+  const where = `fragment ${id}`
+
+  if (typeof rawId !== 'string' || !/^F-\d{2}$/.test(rawId)) {
+    fail('fragments', where, 'id must look like F-01')
+  }
+  if (seenFragmentIds.has(id)) fail('fragments', where, 'duplicate id')
+  seenFragmentIds.add(id)
+
+  if (!nonEmptyString(fragment['beat'])) fail('fragments', where, 'beat is missing or empty')
+
+  const trigger = fragment['trigger']
+  if (typeof trigger !== 'string' || !objectIds.has(trigger)) {
+    fail('fragments', where, `trigger ${JSON.stringify(trigger)} is not an object id`)
+  } else {
+    const target = objects.find((o) => o['id'] === trigger)
+    const act = fragment['act']
+    const actMin = target?.['act_min']
+    if (typeof act === 'number' && typeof actMin === 'number' && act < actMin) {
+      fail('fragments', where, `act ${act} is before its trigger's act_min of ${actMin}`)
+    }
+  }
+
+  const act = fragment['act']
+  if (typeof act !== 'number' || !Number.isInteger(act) || act < 1 || act > 3) {
+    fail('fragments', where, 'act must be 1, 2 or 3')
+  }
+
+  // Section 4.3 asks for three to six lines of interior monologue.
+  const lines = fragment['lines']
+  if (!Array.isArray(lines)) {
+    fail('fragments', where, 'lines must be an array')
+  } else {
+    if (lines.length < 3 || lines.length > 6) {
+      fail('fragments', where, `has ${lines.length} lines, section 4.3 asks for 3 to 6`)
+    }
+    lines.forEach((line, index) => {
+      if (!nonEmptyString(line)) fail('fragments', `${where} line ${index}`, 'line is empty')
+    })
+  }
+}
+
+// Section 6 names exactly twelve.
+for (let n = 1; n <= 12; n += 1) {
+  const id = `F-${String(n).padStart(2, '0')}`
+  if (!fragmentIds.has(id)) fail('fragments', `fragment ${id}`, 'named in section 6 but missing')
+}
+
+// ---------------------------------------------------------------------------
+// Keystone texts
+// ---------------------------------------------------------------------------
+
+const seenTextIds = new Set<string>()
+
+for (const text of texts) {
+  const rawId = text['id']
+  const id = typeof rawId === 'string' ? rawId : '(no id)'
+  const where = `text ${id}`
+
+  if (typeof rawId !== 'string' || !ID_PATTERN.test(rawId)) fail('texts', where, 'id must be snake_case')
+  if (seenTextIds.has(id)) fail('texts', where, 'duplicate id')
+  seenTextIds.add(id)
+
+  for (const field of ['section', 'title', 'form']) {
+    if (!nonEmptyString(text[field])) fail('texts', where, `"${field}" is missing or empty`)
+  }
+
+  const owner = text['object']
+  if (typeof owner !== 'string' || !objectIds.has(owner)) {
+    fail('texts', where, `object ${JSON.stringify(owner)} does not exist`)
+  }
+
+  const claimants = objects.filter((o) => o['text'] === id)
+  if (claimants.length === 0) {
+    fail('texts', where, 'no object opens this document')
+  } else if (claimants.length > 1) {
+    fail('texts', where, `claimed by ${claimants.length} objects: ${claimants.map((o) => String(o['id'])).join(', ')}`)
+  }
+
+  checkBlocks('texts', where, text['blocks'])
+}
+
+// ---------------------------------------------------------------------------
+// Acts and scenes
+// ---------------------------------------------------------------------------
+
+const acts = sceneData['acts']
+if (!Array.isArray(acts)) {
+  fail('scenes', 'data/scenes.json', 'acts must be an array')
+} else {
+  const seenActs = new Set<number>()
+
+  for (const act of acts) {
+    if (!isRecord(act)) {
+      fail('scenes', 'data/scenes.json', 'act must be an object')
+      continue
+    }
+
+    const number = act['act']
+    const where = `act ${String(number)}`
+
+    if (typeof number !== 'number' || number < 1 || number > 3) {
+      fail('scenes', where, 'act must be 1, 2 or 3')
+      continue
+    }
+    if (seenActs.has(number)) fail('scenes', where, 'duplicate act')
+    seenActs.add(number)
+
+    for (const field of ['id', 'title', 'layer', 'lighting']) {
+      if (!nonEmptyString(act[field])) fail('scenes', where, `"${field}" is missing or empty`)
+    }
+
+    const gate = act['gate_to_next']
+    if (gate !== undefined) {
+      if (!isRecord(gate)) {
+        fail('scenes', where, 'gate_to_next must be an object')
+      } else {
+        if (!nonEmptyString(gate['description'])) {
+          fail('scenes', where, 'gate_to_next.description is missing or empty')
+        }
+
+        const required = gate['requires_flags']
+        if (required !== undefined) {
+          if (!Array.isArray(required)) {
+            fail('scenes', where, 'gate_to_next.requires_flags must be an array')
+          } else {
+            for (const flag of required) {
+              if (typeof flag !== 'string' || !BOOLEAN_FLAG_SET.has(flag)) {
+                fail('scenes', where, `gate names unknown flag ${JSON.stringify(flag)}`)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (const n of [1, 2, 3]) {
+    if (!seenActs.has(n)) fail('scenes', `act ${n}`, 'missing')
+  }
+
+  // Act 3 ends the game, so nothing may gate past it.
+  const third = acts.find((a) => isRecord(a) && a['act'] === 3)
+  if (isRecord(third) && third['gate_to_next'] !== undefined) {
+    fail('scenes', 'act 3', 'has a gate_to_next, but there is no act 4')
+  }
+}
+
+const scenes = sceneData['scenes']
+if (!Array.isArray(scenes)) {
+  fail('scenes', 'data/scenes.json', 'scenes must be an array')
+} else {
+  const seenScenes = new Set<string>()
+
+  for (const scene of scenes) {
+    if (!isRecord(scene)) {
+      fail('scenes', 'data/scenes.json', 'scene must be an object')
+      continue
+    }
+
+    const rawId = scene['id']
+    const id = typeof rawId === 'string' ? rawId : '(no id)'
+    const where = `scene ${id}`
+
+    if (typeof rawId !== 'string' || !ID_PATTERN.test(rawId)) fail('scenes', where, 'id must be snake_case')
+    if (seenScenes.has(id)) fail('scenes', where, 'duplicate id')
+    seenScenes.add(id)
+
+    for (const field of ['section', 'title', 'summary']) {
+      if (!nonEmptyString(scene[field])) fail('scenes', where, `"${field}" is missing or empty`)
+    }
+
+    const act = scene['act']
+    if (typeof act !== 'number' || act < 1 || act > 3) fail('scenes', where, 'act must be 1, 2 or 3')
+
+    if (scene['blocks'] !== undefined) checkBlocks('scenes', where, scene['blocks'])
+
+    const steps = scene['steps']
+    if (steps !== undefined) {
+      if (!Array.isArray(steps) || steps.length === 0) {
+        fail('scenes', where, 'steps must be a non-empty array')
+      } else {
+        steps.forEach((step, index) => {
+          if (!nonEmptyString(step)) fail('scenes', `${where} step ${index}`, 'step is empty')
+        })
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Resources, and Hard Rule 9
+// ---------------------------------------------------------------------------
+
+const advisory = resources['advisory']
+if (!isRecord(advisory)) {
+  fail('resources', 'data/resources.json', 'advisory is missing')
+} else {
+  if (!nonEmptyString(advisory['title'])) fail('resources', 'advisory', 'title is missing or empty')
+  if (!nonEmptyString(advisory['lead_in'])) fail('resources', 'advisory', 'lead_in is missing or empty')
+
+  const lines = advisory['lines']
+  if (!Array.isArray(lines) || lines.length === 0) {
+    fail('resources', 'advisory', 'Hard Rule 9: the advisory must carry at least one line')
+  } else {
+    lines.forEach((line, index) => {
+      if (!nonEmptyString(line)) fail('resources', `advisory line ${index}`, 'line is empty')
+    })
+  }
+}
+
+const regions = resources['regions']
+const defaultRegion = resources['default_region']
+
+if (!isRecord(regions) || Object.keys(regions).length === 0) {
+  fail('resources', 'data/resources.json', 'Hard Rule 9: at least one region must be configured')
+} else {
+  if (typeof defaultRegion !== 'string' || regions[defaultRegion] === undefined) {
+    fail('resources', 'data/resources.json', `default_region ${JSON.stringify(defaultRegion)} is not a configured region`)
+  }
+
+  for (const [key, region] of Object.entries(regions)) {
+    if (!isRecord(region)) {
+      fail('resources', `region ${key}`, 'region must be an object')
+      continue
+    }
+
+    if (!nonEmptyString(region['label'])) fail('resources', `region ${key}`, 'label is missing or empty')
+
+    const entries = region['entries']
+    if (!Array.isArray(entries) || entries.length === 0) {
+      fail('resources', `region ${key}`, 'must carry at least one entry')
+      continue
+    }
+
+    entries.forEach((entry, index) => {
+      const at = `region ${key} entry ${index}`
+      if (!isRecord(entry)) {
+        fail('resources', at, 'entry must be an object')
+        return
+      }
+
+      for (const field of ['id', 'name', 'detail', 'url']) {
+        if (!nonEmptyString(entry[field])) fail('resources', at, `"${field}" is missing or empty`)
+      }
+
+      // A number nobody checked is worse than no number at all.
+      if (!nonEmptyString(entry['source'])) {
+        fail('resources', at, 'every entry must record where it was verified, in "source"')
+      }
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Report
+// ---------------------------------------------------------------------------
+
+function report(): void {
+  console.log('Content validation')
+  console.log(
+    `  ${objects.length} objects, ${fragments.length} fragments, ${texts.length} keystone texts, ` +
+      `${Array.isArray(rooms) ? rooms.length : 0} rooms`,
+  )
+
+  if (problems.length === 0) {
+    console.log('\nNo problems found.')
+    return
+  }
+
+  const byCategory = new Map<string, Problem[]>()
+  for (const problem of problems) {
+    const bucket = byCategory.get(problem.category)
+    if (bucket === undefined) byCategory.set(problem.category, [problem])
+    else bucket.push(problem)
+  }
+
+  for (const [category, found] of byCategory) {
+    console.error(`\n${category} (${found.length})`)
+    for (const problem of found) console.error(`  ${problem.where}: ${problem.message}`)
+  }
+
+  console.error(`\n${problems.length} problem${problems.length === 1 ? '' : 's'}.`)
+}
+
+report()
+process.exit(problems.length === 0 ? 0 : 1)

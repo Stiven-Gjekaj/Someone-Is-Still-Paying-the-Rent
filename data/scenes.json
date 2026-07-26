@@ -1,0 +1,98 @@
+{
+  "acts": [
+    {
+      "act": 1,
+      "id": "boxes",
+      "title": "Boxes",
+      "layer": "surface",
+      "lighting": "Warm and dim. Rain on the windows.",
+      "gate_to_next": {
+        "description": "The player has sorted at least ten objects and has found the dead phone on the bedside table. Finding it sets the goal text: His phone. Dead. The charger wasn't with it.",
+        "sorted_count_min": 10,
+        "requires_flags": ["phone_found"]
+      }
+    },
+    {
+      "act": 2,
+      "id": "under_things",
+      "title": "Under Things",
+      "layer": "middle",
+      "lighting": "Deeper night. The rain gets heavier.",
+      "gate_to_next": {
+        "description": "The phone charges in real time while the player keeps sorting, then the chime. The waiting is the point: it builds dread out of an ordinary household delay.",
+        "requires_flags": ["charger_found", "phone_on"],
+        "charge_seconds": 240
+      }
+    },
+    {
+      "act": 3,
+      "id": "the_phone",
+      "title": "The Phone",
+      "layer": "deep",
+      "lighting": "The stillest hour."
+    }
+  ],
+  "scenes": [
+    {
+      "id": "opening",
+      "section": "8.1",
+      "act": 1,
+      "title": "Opening",
+      "summary": "Black screen. Rain. Key in the lock, the specific loose-cylinder sound of a door you have opened a thousand times.",
+      "title_card": "November. The lease ends Sunday.",
+      "steps": [
+        "Black screen. Rain.",
+        "Key in the lock. The loose cylinder.",
+        "Interior title card.",
+        "First interactables: the light switch, lena_note, rako_note."
+      ]
+    },
+    {
+      "id": "chime",
+      "section": "8.2",
+      "act": 2,
+      "title": "The chime",
+      "summary": "The phone has been charging for a few real minutes while the player keeps sorting. The chime is quiet and lands mid-task, wherever the player happens to be standing.",
+      "design_note": "Everything about the sound design should make the player stop on their own. No forced camera, no objective marker, no interruption of whatever they were doing. If they keep sorting for another ten minutes, that is allowed."
+    },
+    {
+      "id": "desk_scene",
+      "section": "8.3",
+      "act": 3,
+      "title": "The desk scene, the no-note beat",
+      "summary": "After the thread is read, the desk activates. Interaction becomes rapid: drawers open in sequence, papers lift, and the monologue shortens to fragments. The drawer sounds get faster, then stop. Long silence on the last empty drawer.",
+      "blocks": [
+        { "kind": "stage", "text": "(Drawers open in sequence. Papers lift. The sounds get faster.)" },
+        { "kind": "line", "text": "invoices... warranty... sketches... nothing... nothing..." },
+        { "kind": "stage", "text": "(The sounds stop. Long silence on the last empty drawer.)" },
+        { "kind": "line", "text": "Most people don't leave one. You knew that. You looked anyway." },
+        { "kind": "stage", "text": "(Nothing else. No music sting. The rain continues.)" }
+      ],
+      "design_note": "Hard Rule 3. This absence is the scene. It must never be fixed and no note may ever be added, not as content and not as cut content. The single line is the entire payoff and nothing may be appended to it."
+    },
+    {
+      "id": "ending",
+      "section": "8.4",
+      "act": 3,
+      "title": "Ending sequence",
+      "summary": "The keep box seals, the player takes one thing, the voicemail plays, and the flat is left the way it was always going to be left.",
+      "steps": [
+        "The SHIP TO LENA box seals. Tape sound, printed label with her address.",
+        "Prompt: Take one thing. The player picks any single object out of the keep box. No commentary on the choice, ever. It slides into your bag beside the eight envelopes.",
+        "Your own phone buzzes softly. Not a call. You open Saved voicemails: one entry, two years old.",
+        "Key in the bowl. String lights off, unless the player left them on, in which case they stay on and are visible from the street below in the final exterior shot.",
+        "Door. Stairwell. Grey-gold morning. The rain has stopped.",
+        "Final card in small type, then the resources screen."
+      ],
+      "blocks": [
+        { "kind": "stage", "text": "(street noise, wind)" },
+        { "kind": "message", "sender": "Niko", "timestamp": "saved voicemail, two years old", "text": "okay so, update... Beni says if we win tonight he's naming the sauce after us..." },
+        { "kind": "stage", "text": "(laughing, losing it)" },
+        { "kind": "line", "text": "that's it, that's the whole message. bring cash. see you Wednesday." },
+        { "kind": "stage", "text": "(click)" },
+        { "kind": "line", "text": "If you're carrying something like this, you don't have to sort it alone." }
+      ],
+      "design_note": "The last line is the final card, and it leads to the resources screen. The voicemail is the last time the player hears him, and it is about nothing at all, which is the point."
+    }
+  ]
+}

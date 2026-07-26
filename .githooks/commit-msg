@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# Rejects a commit message that does not follow the house conventions:
+#
+#   vX.N.A: <description>     one version stamp per commit, patch incrementing
+#   no em-dashes
+#   no emoji
+#   no co-author, session, or model trailers
+#
+# Install with:
+#
+#   git config core.hooksPath .githooks
+#
+# The em-dash is matched through printf rather than written out, so that this
+# file passes the same check it enforces. See scripts/validate-content.ts.
+
+MSG_FILE="$1"
+
+fail() {
+  echo "commit-msg: $1" >&2
+  echo "" >&2
+  echo "  expected subject: vX.N.A: <description>" >&2
+  echo "  no em-dashes, no emoji, no trailers" >&2
+  exit 1
+}
+
+# Drop the comment lines git adds to the template.
+BODY=$(grep -v '^#' "$MSG_FILE")
+
+SUBJECT=$(printf '%s\n' "$BODY" | sed '/^[[:space:]]*$/d' | head -n 1)
+
+if [ -z "$SUBJECT" ]; then
+  fail "the message is empty"
+fi
+
+if ! printf '%s' "$SUBJECT" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+: .+'; then
+  fail "subject carries no version stamp: \"$SUBJECT\""
+fi
+
+EM_DASH=$(printf '\342\200\224')
+if printf '%s' "$BODY" | grep -qF "$EM_DASH"; then
+  fail "the message contains an em-dash. Use a comma, a colon, or a full stop."
+fi
+
+if printf '%s' "$BODY" | grep -Eiq '^[[:space:]]*(co-authored-by|signed-off-by|claude-session|session|model|generated with|assisted-by)'; then
+  fail "the message carries a trailer this project does not use"
+fi
+
+if command -v node >/dev/null 2>&1; then
+  if ! printf '%s' "$BODY" | node --input-type=module -e '
+    import { readFileSync } from "node:fs"
+    const message = readFileSync(0, "utf8")
+    process.exit(/\p{Extended_Pictographic}/u.test(message) ? 1 : 0)
+  '; then
+    fail "the message contains an emoji"
+  fi
+fi
+
+exit 0

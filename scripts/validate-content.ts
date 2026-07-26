@@ -10,8 +10,8 @@
  * the raw text as well as the parsed objects.
  */
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync, readdirSync } from 'node:fs'
+import { extname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { OBJECT_TYPES, ROOM_IDS, TEXT_BLOCK_KINDS } from '../src/content/types.ts'
@@ -717,6 +717,72 @@ const AMBIGUITY_LEDGER: readonly string[] = [
 ]
 
 // ---------------------------------------------------------------------------
+// Writing style
+// ---------------------------------------------------------------------------
+
+/**
+ * No em-dashes and no emoji, anywhere in the repository. This covers source,
+ * data, docs, and config alike, and there are no exemptions: the lore bible was
+ * normalized along with everything else. The `commit-msg` hook applies the same
+ * two checks to commit messages.
+ *
+ * Written as escapes rather than literals so that this file passes its own check.
+ */
+const EM_DASH = '\u2014'
+const EMOJI = /\p{Extended_Pictographic}/u
+
+const SCAN_EXTENSIONS: ReadonlySet<string> = new Set([
+  '.ts', '.js', '.mjs', '.cjs', '.json', '.jsonc',
+  '.md', '.html', '.css', '.yml', '.yaml',
+])
+
+const SCAN_FILENAMES: ReadonlySet<string> = new Set([
+  '.editorconfig', '.nvmrc', '.gitignore', 'commit-msg',
+])
+
+const SKIP_DIRECTORIES: ReadonlySet<string> = new Set(['.git', 'node_modules', 'dist', '.vite'])
+
+/** Generated, not written. Its contents are not ours to style. */
+const SKIP_FILES: ReadonlySet<string> = new Set(['package-lock.json'])
+
+function walk(directory: string, found: string[]): string[] {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      if (SKIP_DIRECTORIES.has(entry.name)) continue
+      walk(join(directory, entry.name), found)
+      continue
+    }
+
+    if (!entry.isFile() || SKIP_FILES.has(entry.name)) continue
+    if (SCAN_EXTENSIONS.has(extname(entry.name)) || SCAN_FILENAMES.has(entry.name)) {
+      found.push(join(directory, entry.name))
+    }
+  }
+
+  return found
+}
+
+const scannedFiles = walk(ROOT, [])
+
+for (const file of scannedFiles) {
+  const where = relative(ROOT, file)
+  const lines = readFileSync(file, 'utf8').split('\n')
+
+  lines.forEach((line, index) => {
+    const at = `${where}:${index + 1}`
+
+    if (line.includes(EM_DASH)) {
+      fail('writing style', at, 'em-dash. Use a comma, a colon, a full stop, or restructure.')
+    }
+
+    const emoji = EMOJI.exec(line)
+    if (emoji !== null) {
+      fail('writing style', at, `emoji ${JSON.stringify(emoji[0])}. Remove it.`)
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Report
 // ---------------------------------------------------------------------------
 
@@ -728,6 +794,7 @@ function report(): void {
   )
 
   console.log(`  ${playerFacing.length} player-facing strings scanned against the section 0 lexicons`)
+  console.log(`  ${scannedFiles.length} files scanned for em-dashes and emoji`)
 
   if (problems.length === 0) {
     console.log('\nNo problems found.')

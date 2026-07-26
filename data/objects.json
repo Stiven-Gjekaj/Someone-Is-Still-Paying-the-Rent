@@ -1,0 +1,84 @@
+[
+  {
+    "id": "lena_note",
+    "name": "Lena's note",
+    "room": "entry_hall",
+    "type": ["keystone", "readable"],
+    "act_min": 1,
+    "sortable": true,
+    "examine": "Weighted down with the key bowl so it would be the first thing you saw. Her handwriting gets smaller toward the bottom of the page.",
+    "text": "lena_note",
+    "design_note": "Opens the game and teaches the sorting philosophy before the player has sorted anything."
+  },
+  {
+    "id": "rako_note",
+    "name": "Mr. Rako's note",
+    "room": "entry_hall",
+    "type": ["keystone", "readable"],
+    "act_min": 1,
+    "sortable": true,
+    "examine": "Pushed through the mail slot, face down on the mat. You already know what it says. You read it anyway.",
+    "text": "rako_note",
+    "design_note": "Sets the clock. The new tenants come on the 1st."
+  },
+  {
+    "id": "key_bowl",
+    "name": "Key bowl",
+    "room": "entry_hall",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "Chipped ceramic, made by Mira. You've dropped keys in it a hundred times without looking at it. You look at it."
+  },
+  {
+    "id": "boots_muddy",
+    "name": "Muddy football boots",
+    "room": "entry_hall",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "By the door, where he kicked them off. The mud dried a long time ago.",
+    "second_look": {
+      "requires_flag": "examined:team_photo",
+      "text": "The mud is from a Wednesday in March. He played four days before. Everyone said he was man of the match, and nobody can bear that it's true."
+    }
+  },
+  {
+    "id": "team_bib",
+    "name": "Bib #1",
+    "room": "entry_hall",
+    "type": ["memory"],
+    "act_min": 1,
+    "sortable": true,
+    "fragment": "F-02",
+    "examine": "Number one. Nylon, stretched at the neck from six years of being pulled on over a coat."
+  },
+  {
+    "id": "corkboard",
+    "name": "Corkboard",
+    "room": "entry_hall",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": false,
+    "section": "5",
+    "examine": "Takeaway menus, a five-a-side schedule, a 5:45 a.m. gym class circled in pen.",
+    "second_look": {
+      "requires_flag": "examined:notebook_4am",
+      "text": "The 5:45 class, circled. You never once knew him to be up before nine. Now you wonder which side of sleep this was on."
+    }
+  },
+  {
+    "id": "pc_bag",
+    "name": "Your bag",
+    "room": "entry_hall",
+    "type": ["keystone", "memory"],
+    "act_min": 3,
+    "sortable": false,
+    "fragment": "F-12",
+    "text": "pc_receipts",
+    "examine": "You brought it in and put it down without thinking, the way you have every month for eight months.",
+    "design_note": "Locked until act 3. Contains the rent receipts."
+  }
+]

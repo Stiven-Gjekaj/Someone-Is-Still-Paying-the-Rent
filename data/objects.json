@@ -351,5 +351,46 @@
     "sortable": true,
     "section": "5",
     "examine": "On the windowsill, roots visible through the glass. Still alive. He was propagating. Plural. Plans, plural."
+  },
+
+  {
+    "id": "cologne",
+    "name": "Almost-empty cologne",
+    "room": "bathroom",
+    "type": ["memory"],
+    "act_min": 1,
+    "sortable": true,
+    "fragment": "F-07",
+    "examine": "A centimetre left in the bottom of it. You take the cap off without deciding to."
+  },
+  {
+    "id": "spare_towel",
+    "name": "The spare towel",
+    "room": "bathroom",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "Yours. For the nights that ended here. It's been folded on this shelf for eight months."
+  },
+  {
+    "id": "appt_card",
+    "name": "Old appointment card",
+    "room": "bathroom",
+    "type": ["readable"],
+    "act_min": 2,
+    "sortable": true,
+    "examine": "A counselling service, three years old. CANCELLED written across it in his hand. He kept it anyway.",
+    "design_note": "No commentary text anywhere near this object. The object is the text. Hard Rule 6: this and the referral letter are the only mental-health objects in the flat, and neither is medication."
+  },
+  {
+    "id": "toothbrush_cup",
+    "name": "Toothbrush cup",
+    "room": "bathroom",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "One toothbrush. The single most ordinary object in the world, and you have to hold the sink for a second."
   }
 ]

@@ -508,6 +508,215 @@ if (!isRecord(regions) || Object.keys(regions).length === 0) {
 }
 
 // ---------------------------------------------------------------------------
+// Section 0, the hard rules
+// ---------------------------------------------------------------------------
+
+/**
+ * Only strings the player can actually encounter are scanned below.
+ *
+ * `design_note` fields, scene summaries and steps, room descriptions, and act
+ * definitions are production notes. They have to be able to name the rules in
+ * order to explain them, so scanning them would make every lexicon unusable.
+ * Nothing in a production note reaches the player.
+ *
+ * False positives here are the point, not a bug. Hard Rule 1 says no object in
+ * the flat relates to means in any way, so a kitchen knife or a wardrobe belt
+ * flagging is the check working. Rewrite the string. Do not add a suppression.
+ */
+interface Strand {
+  where: string
+  text: string
+  room?: string
+}
+
+const playerFacing: Strand[] = []
+
+function collect(where: string, value: unknown, room?: string): void {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    playerFacing.push(room === undefined ? { where, text: value } : { where, text: value, room })
+  }
+}
+
+function collectBlocks(where: string, blocks: unknown, room?: string): void {
+  if (!Array.isArray(blocks)) return
+  blocks.forEach((block, index) => {
+    if (!isRecord(block)) return
+    for (const field of ['text', 'time', 'where', 'label', 'sender']) {
+      collect(`${where} block ${index}`, block[field], room)
+    }
+  })
+}
+
+const roomOf = new Map<string, string>()
+for (const object of objects) {
+  const id = String(object['id'])
+  const room = object['room']
+  if (typeof room === 'string') roomOf.set(id, room)
+}
+
+for (const object of objects) {
+  const id = String(object['id'])
+  const room = roomOf.get(id)
+  collect(`object ${id} name`, object['name'], room)
+  collect(`object ${id} examine`, object['examine'], room)
+
+  const secondLook = object['second_look']
+  if (isRecord(secondLook)) collect(`object ${id} second_look`, secondLook['text'], room)
+}
+
+for (const fragment of fragments) {
+  const id = String(fragment['id'])
+  // A fragment inherits the room of the object that triggers it, so balcony
+  // fragments are held to Hard Rule 10 like balcony objects are.
+  const room = roomOf.get(String(fragment['trigger']))
+  collect(`fragment ${id} beat`, fragment['beat'], room)
+
+  const lines = fragment['lines']
+  if (Array.isArray(lines)) {
+    lines.forEach((line, index) => collect(`fragment ${id} line ${index}`, line, room))
+  }
+}
+
+for (const text of texts) {
+  const id = String(text['id'])
+  const room = roomOf.get(String(text['object']))
+  collect(`text ${id} title`, text['title'], room)
+  collectBlocks(`text ${id}`, text['blocks'], room)
+}
+
+if (Array.isArray(scenes)) {
+  for (const scene of scenes) {
+    if (!isRecord(scene)) continue
+    const id = String(scene['id'])
+    collect(`scene ${id} title_card`, scene['title_card'])
+    collectBlocks(`scene ${id}`, scene['blocks'])
+  }
+}
+
+if (isRecord(advisory)) {
+  collect('advisory lead_in', advisory['lead_in'])
+  const lines = advisory['lines']
+  if (Array.isArray(lines)) {
+    lines.forEach((line, index) => collect(`advisory line ${index}`, line))
+  }
+}
+
+if (isRecord(regions)) {
+  for (const [key, region] of Object.entries(regions)) {
+    if (!isRecord(region)) continue
+    const entries = region['entries']
+    if (!Array.isArray(entries)) continue
+    entries.forEach((entry, index) => {
+      if (!isRecord(entry)) return
+      collect(`region ${key} entry ${index} name`, entry['name'])
+      collect(`region ${key} entry ${index} detail`, entry['detail'])
+    })
+  }
+}
+
+interface Lexicon {
+  rule: string
+  terms: readonly string[]
+  /** When present, only strands this returns true for are scanned. */
+  only?: (strand: Strand) => boolean
+}
+
+const onBalcony = (strand: Strand): boolean => strand.room === 'balcony'
+
+const LEXICONS: readonly Lexicon[] = [
+  {
+    rule: 'Hard Rule 1 and 2: the method is never named, shown, implied, or hinted at',
+    terms: [
+      'noose', 'rope', 'ligature', 'hang', 'hanged', 'hanging',
+      'blade', 'razor', 'knife', 'knives', 'wrist', 'wrists',
+      'overdose', 'poison', 'poisoned',
+      'carbon monoxide', 'exhaust fumes', 'gas',
+      'firearm', 'gun', 'pistol', 'rifle', 'bullet', 'gunshot', 'shot himself',
+      'drown', 'drowned', 'suffocate', 'suffocated', 'asphyxiate',
+      'plastic bag', 'belt',
+      'took his own life', 'ended his life', 'killed himself', 'how he did it',
+      'the body', 'identify the body', 'where it happened', 'found him',
+    ],
+  },
+  {
+    rule: 'Hard Rule 3: there is no note, and none may ever be added',
+    terms: [
+      'suicide note', 'farewell note', 'goodbye note', 'a note for you',
+      'last letter', 'final letter', 'note he left', 'left you a note',
+      'his last words', 'final words',
+    ],
+  },
+  {
+    rule: 'Hard Rule 6: the bathroom contains no medication objects',
+    terms: [
+      'medication', 'medicine', 'pills', 'pill bottle', 'tablets',
+      'prescription', 'antidepressant', 'antidepressants', 'ssri',
+      'dosage', 'sedative', 'benzodiazepine', 'sleeping pills',
+      'blister pack', 'pharmacy',
+    ],
+  },
+  {
+    rule: 'Hard Rule 10: nothing on the balcony may carry dark connotation',
+    only: onBalcony,
+    terms: [
+      'jump', 'jumped', 'jumping', 'leap', 'leapt',
+      'ledge', 'edge of', 'over the side', 'over the edge',
+      'look down', 'looking down', 'floors down', 'storeys', 'stories down',
+      'drop from', 'fell from', 'fall from', 'the drop',
+    ],
+  },
+]
+
+function containsTerm(text: string, term: string): boolean {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`\\b${escaped}\\b`, 'i').test(text)
+}
+
+for (const lexicon of LEXICONS) {
+  for (const strand of playerFacing) {
+    if (lexicon.only !== undefined && !lexicon.only(strand)) continue
+    for (const term of lexicon.terms) {
+      if (containsTerm(strand.text, term)) {
+        fail('hard rules', strand.where, `${lexicon.rule}. Matched "${term}".`)
+      }
+    }
+  }
+}
+
+// Hard Rule 7. The word belongs on the advisory screen and nowhere else, so this
+// one scans the raw files rather than the parsed strings: not even a production
+// note in the game data may carry it.
+const WORD_ALLOWED_IN = 'data/resources.json'
+
+for (const file of ['data/objects.json', 'data/fragments.json', 'data/texts.json', 'data/scenes.json', 'data/rooms.json']) {
+  if (/\bsuicide\b/i.test(readFileSync(join(ROOT, file), 'utf8'))) {
+    fail(
+      'hard rules',
+      file,
+      `Hard Rule 7: the word "suicide" appears on the advisory screen only, which lives in ${WORD_ALLOWED_IN}. In-game documents talk around it, the way people actually do.`,
+    )
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Section 9, the ambiguity ledger
+// ---------------------------------------------------------------------------
+
+/**
+ * Nothing mechanical can check these. They are printed after a clean run so that
+ * whoever changed the content reads them again before shipping it.
+ */
+const AMBIGUITY_LEDGER: readonly string[] = [
+  'What the unsent draft was going to say.',
+  "When Mira's letter was written, and exactly why they ended.",
+  'Who the second concert ticket was for.',
+  'Whether the 4 a.m. entries were his worst nights or ordinary insomnia.',
+  'Why he never called the referral number, and what would have happened if he had.',
+  'Whether anyone, including the player, could have changed anything.',
+  'Why. The answer to why is the whole flat, and the whole flat is not an answer.',
+]
+
+// ---------------------------------------------------------------------------
 // Report
 // ---------------------------------------------------------------------------
 
@@ -518,8 +727,16 @@ function report(): void {
       `${Array.isArray(rooms) ? rooms.length : 0} rooms`,
   )
 
+  console.log(`  ${playerFacing.length} player-facing strings scanned against the section 0 lexicons`)
+
   if (problems.length === 0) {
     console.log('\nNo problems found.')
+    console.log('\nSection 9 still needs a human. The game must never answer:')
+    AMBIGUITY_LEDGER.forEach((question, index) => {
+      console.log(`  ${index + 1}. ${question}`)
+    })
+    console.log('\nFour of the ten hard rules cannot be checked mechanically at all.')
+    console.log('See docs/CONTENT_RULES.md.')
     return
   }
 

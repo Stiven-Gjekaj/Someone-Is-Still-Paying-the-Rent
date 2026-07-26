@@ -1,0 +1,120 @@
+/*
+ * The advisory screen. It comes before the main menu and it is the only screen
+ * this build has, so it is styled to sit in the same room as the game: a warm
+ * bulb in a dark flat, nothing decorative.
+ */
+
+:root {
+  --ink: #d8d4cd;
+  --ink-dim: #8a857d;
+  --ink-faint: #5d5952;
+  --bulb: #d9b26f;
+  --ground: #0e0f11;
+  --rule: #24262a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 6rem;
+}
+
+.title {
+  margin: 0 0 3rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.advisory-heading {
+  margin: 0 0 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.advisory-line {
+  margin: 0 0 1.25rem;
+}
+
+.advisory-line:last-of-type {
+  color: var(--ink-dim);
+}
+
+.support {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--rule);
+}
+
+.support-lead {
+  margin: 0 0 1.5rem;
+  color: var(--ink-dim);
+}
+
+.support-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.support-item + .support-item {
+  margin-top: 1.5rem;
+}
+
+.support-name {
+  display: inline-block;
+  color: var(--bulb);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.support-name:hover,
+.support-name:focus-visible {
+  border-bottom-color: var(--bulb);
+}
+
+.support-detail,
+.support-phone {
+  margin: 0.25rem 0 0;
+  color: var(--ink-dim);
+  font-size: 0.9375rem;
+}
+
+.support-phone {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.footnote {
+  margin-top: 4rem;
+  color: var(--ink-faint);
+  font-size: 0.875rem;
+}
+
+:focus-visible {
+  outline: 2px solid var(--bulb);
+  outline-offset: 3px;
+}

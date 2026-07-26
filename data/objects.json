@@ -514,5 +514,50 @@
     "sortable": true,
     "section": "5",
     "examine": "Tucked into the mirror frame, not displayed, not hidden. Kept at the exact distance he could stand."
+  },
+
+  {
+    "id": "two_chairs",
+    "name": "Two folding chairs",
+    "room": "balcony",
+    "type": ["memory"],
+    "act_min": 1,
+    "sortable": true,
+    "fragment": "F-11",
+    "examine": "Two. Never one, never three. Angled slightly toward each other, the way you both left them."
+  },
+  {
+    "id": "caps_jar",
+    "name": "Jar of bottle caps",
+    "room": "balcony",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "Years of them. An archive of good evenings, kept in glass."
+  },
+  {
+    "id": "string_lights",
+    "name": "String lights",
+    "room": "balcony",
+    "type": ["system"],
+    "act_min": 1,
+    "sortable": false,
+    "examine": "Strung corner to corner, the same way for six summers. Still, against all odds, working.",
+    "design_note": "Turning them on is optional and sets lights_on. If they are on at the end, they stay on, visible from the street in the final exterior shot."
+  },
+  {
+    "id": "empty_pots",
+    "name": "Stack of empty pots",
+    "room": "balcony",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "Terracotta, four of them, stacked and clean and waiting for spring.",
+    "second_look": {
+      "requires_flag": "secondlook:zlatan_plant",
+      "text": "He was getting back to it. The pots were waiting. So was everything."
+    }
   }
 ]

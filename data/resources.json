@@ -1,0 +1,26 @@
+{
+  "advisory": {
+    "section": "11",
+    "title": "Content advisory",
+    "lines": [
+      "This game is about losing a friend to suicide. It contains grief and depictions of depression. It does not depict the act, the method, or the death itself.",
+      "Play gently. You can pause any time. The flat will wait."
+    ],
+    "lead_in": "If you or someone you love is struggling, support is real and reachable:"
+  },
+  "default_region": "international",
+  "regions": {
+    "international": {
+      "label": "International",
+      "entries": [
+        {
+          "id": "findahelpline",
+          "name": "Find A Helpline",
+          "detail": "Free, confidential support lines, searchable by country.",
+          "url": "https://findahelpline.com",
+          "source": "Named as the default international pointer in section 11 of the lore bible. Not independently re-verified in this repository. Confirm the service is still operating before shipping."
+        }
+      ]
+    }
+  }
+}

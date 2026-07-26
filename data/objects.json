@@ -249,5 +249,107 @@
     "sortable": true,
     "section": "5",
     "examine": "It still smells like the flat. The flat still smells like him."
+  },
+
+  {
+    "id": "fridge_photos",
+    "name": "Fridge magnets and photos",
+    "room": "kitchen",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": false,
+    "examine": "Other people's weddings, a postcard from his mother, a magnet from a town neither of you has been to. Something glossy is peeking out from behind the team photo.",
+    "design_note": "The corner of the photo-booth strip foreshadows Mira, well before the under-bed box opens."
+  },
+  {
+    "id": "team_photo",
+    "name": "The team photo",
+    "room": "kitchen",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "examine": "Eleven of them squinting into the sun, one caught mid-blink. He is the only one in gloves, and the only one who looks certain about anything.",
+    "design_note": "Promoted to its own object: the bible mentions it by id inside fridge_photos and uses it as the boots_muddy second-look gate."
+  },
+  {
+    "id": "fridge_towel",
+    "name": "Towel under the fridge",
+    "room": "kitchen",
+    "type": ["memory"],
+    "act_min": 1,
+    "sortable": true,
+    "fragment": "F-05",
+    "section": "5",
+    "examine": "Folded into quarters and wedged under the front left corner. Engineering, of a kind.",
+    "second_look": {
+      "requires_flag": "examined:fridge_towel",
+      "text": "It works. It always worked. You just never noticed the quiet."
+    },
+    "design_note": "After the fragment, the fridge-hum audio bed drops to a muffled version. He wins, posthumously. The second look is self-gated: any examine after the first one."
+  },
+  {
+    "id": "junk_drawer",
+    "name": "Junk drawer",
+    "room": "kitchen",
+    "type": ["system"],
+    "act_min": 1,
+    "sortable": false,
+    "section": "5",
+    "examine": "Stuck. Everything in it is a monument to 'later.'",
+    "design_note": "Jammed until act 2. Then it gives up batteries, takeaway chopsticks, forty pen caps, and the phone charger."
+  },
+  {
+    "id": "mug_chipped",
+    "name": "The chipped mug",
+    "room": "kitchen",
+    "type": ["memory"],
+    "act_min": 1,
+    "sortable": true,
+    "fragment": "F-06",
+    "examine": "Yours, by a designation he took more seriously than most legal documents. The chip is on the left, where you drink from."
+  },
+  {
+    "id": "mug_blue",
+    "name": "The blue mug",
+    "room": "kitchen",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "Second shelf, front left, handle turned out. You have never once seen him drink from it.",
+    "second_look": {
+      "requires_flag": "underbed_found",
+      "text": "Hers. He kept it where it had always gone, like the cupboard hadn't heard yet."
+    }
+  },
+  {
+    "id": "recipe_card",
+    "name": "Vera's recipe card",
+    "room": "kitchen",
+    "type": ["keystone", "readable"],
+    "act_min": 1,
+    "sortable": true,
+    "text": "vera_letter",
+    "examine": "Grease-spotted, in his mother's handwriting, propped against the tin where he could see it while he cooked. There is a letter folded behind it."
+  },
+  {
+    "id": "calendar_wall",
+    "name": "Wall calendar",
+    "room": "kitchen",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": false,
+    "section": "5",
+    "examine": "Still on March. You could turn it. You don't."
+  },
+  {
+    "id": "cuttings_jar",
+    "name": "Plant cuttings jar",
+    "room": "kitchen",
+    "type": ["ambient"],
+    "act_min": 1,
+    "sortable": true,
+    "section": "5",
+    "examine": "On the windowsill, roots visible through the glass. Still alive. He was propagating. Plural. Plans, plural."
   }
 ]

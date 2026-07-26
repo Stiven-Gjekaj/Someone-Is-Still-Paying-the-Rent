@@ -1,0 +1,145 @@
+[
+  {
+    "id": "lena_note",
+    "section": "7.1",
+    "object": "lena_note",
+    "title": "Lena's note",
+    "form": "handwritten note, entry table",
+    "blocks": [
+      { "kind": "line", "text": "I took Dad's watch and the albums from the big shelf. I couldn't do more. I'm sorry." },
+      { "kind": "line", "text": "Whatever you keep of his, keep it because it's him, not because it hurts to put it down. He would hate that." },
+      { "kind": "line", "text": "Ship me the keep box, I'll pay for it. Call me when you're done." },
+      { "kind": "line", "text": "Please don't do this alone." },
+      { "kind": "signature", "text": "L." }
+    ],
+    "design_note": "The player is, of course, doing it alone. No text anywhere points this out."
+  },
+  {
+    "id": "rako_note",
+    "section": "7.2",
+    "object": "rako_note",
+    "title": "Mr. Rako's note",
+    "form": "note pushed through the mail slot",
+    "blocks": [
+      { "kind": "line", "text": "Sorry to write again. The new tenants come on the 1st, I cannot move it more." },
+      { "kind": "line", "text": "Leave the key in the bowl like always, I will come up after." },
+      { "kind": "line", "text": "He was a good boy. He fixed my radio and would not take money for it." },
+      { "kind": "signature", "text": "E. Rako" }
+    ]
+  },
+  {
+    "id": "notebook_4am",
+    "section": "7.3",
+    "object": "notebook_4am",
+    "title": "The 4 a.m. notebook",
+    "form": "cheap notebook, biro, times but no dates",
+    "blocks": [
+      { "kind": "entry", "time": "04:10", "text": "toast again. the fridge won tonight. need a thicker towel." },
+      { "kind": "entry", "time": "03:40", "text": "rewatched the semifinal. we were so loud that night the neighbors banged on the wall and Dad banged back. still the funniest thing I've ever seen him do." },
+      { "kind": "entry", "time": "04:55", "text": "tired of being tired. gym tomorrow." },
+      { "kind": "annotation", "where": "beneath, in different ink", "text": "didn't. tuesday then." }
+    ],
+    "design_note": "Exhausted, honest, self-aware, and pointed at tomorrow. No ideation, no plans, ever. Ambiguity 4: whether these were his worst nights or ordinary insomnia is never answered."
+  },
+  {
+    "id": "referral_letter",
+    "section": "7.3",
+    "object": "referral_letter",
+    "title": "The referral letter",
+    "form": "worn envelope, bedside drawer",
+    "blocks": [
+      { "kind": "line", "text": "A date, a service, and a number to call." },
+      { "kind": "stage", "text": "(The folds have been opened and closed enough times that the paper has gone soft. He never called.)" }
+    ],
+    "design_note": "The worn envelope IS the writing. Do not give this document a body. Adding one would turn Ambiguity 5 into an answer, and the interaction is required to offer no judgment."
+  },
+  {
+    "id": "vera_letter",
+    "section": "7.4",
+    "object": "recipe_card",
+    "title": "Vera's letter",
+    "form": "letter, folded behind the recipe card",
+    "blocks": [
+      { "kind": "line", "text": "My Niko. I am sending the proper recipe because whatever you are making from memory is wrong, I can feel it from here. Double the lemon. Are you eating? Send a photo of the plant, not the sky this time." },
+      { "kind": "signature", "text": "Your mother." }
+    ]
+  },
+  {
+    "id": "mira_draft",
+    "section": "7.4",
+    "object": "mira_draft",
+    "title": "Mira's unsent letter",
+    "form": "letter, folded many times, never sent",
+    "blocks": [
+      { "kind": "line", "text": "M," },
+      { "kind": "line", "text": "I keep starting this and it turns into a list of things I should have said in October, so here is the shortest version. None of it was your fault, and most of it was good. The blue mug is yours whenever you want it." },
+      { "kind": "stage", "text": "(unsigned, unfinished)" }
+    ],
+    "design_note": "Never dated. Whether he wrote it the week they ended or much later is Ambiguity 2, and nothing in the flat resolves it."
+  },
+  {
+    "id": "job_application",
+    "section": "7.5",
+    "object": "job_application",
+    "title": "Cover letter draft",
+    "form": "printout, red pen",
+    "blocks": [
+      { "kind": "line", "text": "...seven years across motion and illustration, most recently freelance. I work best on small teams, and I am trying to work smaller and slower on purpose..." },
+      { "kind": "annotation", "where": "red pen, margin", "text": "too honest?" },
+      { "kind": "annotation", "where": "red pen, lower", "text": "keep it. they should know who's showing up." }
+    ],
+    "design_note": "The sentence breaks off because he was interrupted, not because anything was wrong. He argues with himself and takes his own side."
+  },
+  {
+    "id": "hike_caption_year_one",
+    "section": "7.6",
+    "object": "photo_hike_framed",
+    "title": "Year one, on the back",
+    "form": "his handwriting on the back of a photograph",
+    "blocks": [
+      { "kind": "caption", "label": "Year 1", "text": "first one. your idea actually. it rained the whole way and you said good. nobody else gets the view when it rains." }
+    ],
+    "design_note": "He credits the player character. F-01 remembers it as his idea. Neither is corrected. Grief and memory disagree politely."
+  },
+  {
+    "id": "hike_captions_box",
+    "section": "7.6",
+    "object": "photo_hike_box",
+    "title": "The rest of them, on the backs",
+    "form": "his handwriting on the backs of photographs",
+    "blocks": [
+      { "kind": "caption", "label": "Year 3", "text": "same spot. you were late. documented for the record." },
+      { "kind": "caption", "label": "Year 5", "text": "same spot. we look 12. we have always looked 12." },
+      { "kind": "caption", "label": "Year 7", "text": "same spot. brought the film camera, lost the light, kept the blur one anyway. best one." }
+    ]
+  },
+  {
+    "id": "phone_thread",
+    "section": "7.7",
+    "object": "phone_dead",
+    "title": "The thread",
+    "form": "phone screen, act 3",
+    "blocks": [
+      { "kind": "message", "sender": "Niko", "timestamp": "Thu 23:42", "text": "[photo: hike, year one] found this backing up the drive. year one. we look 12" },
+      { "kind": "message", "sender": "Niko", "timestamp": "Thu 23:42", "text": "same spot in spring? i'll bring the good camera this time" },
+      { "kind": "message", "sender": "You", "timestamp": "Fri 08:15", "text": "haha we do. crunch is killing me, will reply properly tonight" },
+      { "kind": "stage", "text": "(Seen. No reply was sent. The thread ends.)" },
+      { "kind": "stage", "text": "(In the message box, an unsent draft the phone saved for him. The timestamp is unrecoverable.)" },
+      { "kind": "message", "sender": "Draft", "timestamp": "", "text": "yeah spring works. also wanted to say" },
+      { "kind": "stage", "text": "(It ends there.)" }
+    ],
+    "design_note": "An ordinary text, interrupted by something as small as a kettle or as large as anything. What he wanted to say is Ambiguity 1. The game never speculates, and no later object may hint at it."
+  },
+  {
+    "id": "pc_receipts",
+    "section": "7.8",
+    "object": "pc_bag",
+    "title": "The rent receipts",
+    "form": "eight envelopes, your handwriting, one per month",
+    "blocks": [
+      { "kind": "line", "text": "You told Lena the landlord was being flexible. You told yourself it was practical, someone had to deal with the flat eventually." },
+      { "kind": "line", "text": "Eight receipts. What you were paying for was the door staying shut." },
+      { "kind": "line", "text": "Tonight you stopped." }
+    ]
+  }
+]

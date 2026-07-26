@@ -1,0 +1,147 @@
+[
+  {
+    "id": "F-01",
+    "trigger": "photo_hike_framed",
+    "act": 1,
+    "beat": "Year one. His idea. It rained the whole way up and he called it perfect: \"nobody else gets the view when it rains.\"",
+    "lines": [
+      "His idea, the first one. He had it in a kebab shop at one in the morning.",
+      "It rained from the car park to the top.",
+      "You said something about turning back. He kept walking.",
+      "There was no view up there at all, just white, and he called it perfect. Nobody else gets the view when it rains.",
+      "You took the photo to make him stop talking."
+    ]
+  },
+  {
+    "id": "F-02",
+    "trigger": "team_bib",
+    "act": 1,
+    "beat": "Nobody wants to play keeper. He raised his hand every single week like it was an honor.",
+    "lines": [
+      "Nobody wants to go in goal.",
+      "Every Wednesday, eleven grown men studying their own shoes, and his hand already up.",
+      "He was not good. He was enthusiastic, which is a different thing and much louder.",
+      "He kept the bib in his own bag so the job could never be given to anyone else."
+    ]
+  },
+  {
+    "id": "F-03",
+    "trigger": "zlatan_plant",
+    "act": 1,
+    "beat": "The naming ceremony. He watered it with a wine glass because \"Zlatan deserves stemware.\"",
+    "lines": [
+      "The naming took forty minutes and involved a shortlist.",
+      "You argued for something ordinary. You lost, on the grounds that ordinary plants die.",
+      "He watered it out of a wine glass that first night, because Zlatan deserves stemware.",
+      "Every green thing he owned before this one died. He never mentioned them again, out of respect."
+    ]
+  },
+  {
+    "id": "F-04",
+    "trigger": "game_controller",
+    "act": 1,
+    "beat": "The co-op save at 83%. You were saving the last level \"for a good night.\"",
+    "lines": [
+      "Eighty-three percent, and his save slot named so that nobody could delete it by accident.",
+      "You were saving the last level for a good night.",
+      "There was no shortage of good nights. That was never the problem.",
+      "You assumed there would be another one. Everyone assumes that. It is how a week gets made."
+    ]
+  },
+  {
+    "id": "F-05",
+    "trigger": "fridge_towel",
+    "act": 1,
+    "beat": "The war with the fridge, dramatized. He lost for years. The towel was his masterpiece.",
+    "lines": [
+      "The fridge hummed in a key he described, seriously, as hostile.",
+      "Two years of shims. A folded envelope. A paperback he had not enjoyed.",
+      "Then the towel, quartered, wedged under the front left corner.",
+      "He called you at eleven at night to listen to nothing. You listened to nothing for a full minute. Best call of that year."
+    ]
+  },
+  {
+    "id": "F-06",
+    "trigger": "mug_chipped",
+    "act": 1,
+    "beat": "You chipped it the first month he lived here. He declared it legally yours at a small ceremony.",
+    "lines": [
+      "You chipped it on the tap, first month he lived here.",
+      "There was a ceremony. There was a speech. The speech was deliberately too long.",
+      "From then on it was your mug, and guests were informed.",
+      "He never drank from it again. It was yours, and he was strict about it."
+    ]
+  },
+  {
+    "id": "F-07",
+    "trigger": "cologne",
+    "act": 1,
+    "beat": "Shortest fragment. Smell is the fastest road back. One image: him late, jogging to meet you, smelling like this.",
+    "lines": [
+      "He is late.",
+      "He is jogging up the street with his coat open, apologising before he is close enough to be heard.",
+      "He smells like this."
+    ]
+  },
+  {
+    "id": "F-08",
+    "trigger": "dad_lighter",
+    "act": 2,
+    "beat": "He didn't smoke. He carried his father's fire in his pocket for eight years and lit other people's birthdays with it.",
+    "lines": [
+      "He never smoked a day in his life.",
+      "He carried it for eight years anyway. Right-hand pocket, always the right-hand pocket.",
+      "Other people's candles. Other people's cigarettes, outside, in the cold, while he stood there not smoking.",
+      "You never asked him about it. It seemed like the kind of thing you did not ask about."
+    ]
+  },
+  {
+    "id": "F-09",
+    "trigger": "phone_dead",
+    "act": 1,
+    "beat": "The hospital, age 19. Him printing your name in the emergency contact line: \"so Mum never gets a call like that again.\" You signed witness like it was nothing. It was not nothing.",
+    "lines": [
+      "The hospital, the year his father died. A clipboard, a biro on a string.",
+      "He printed your name into the emergency contact line without asking whether you minded.",
+      "So Mum never gets a call like that again.",
+      "You signed underneath as the witness, in the corridor, standing up.",
+      "You were nineteen. It took four seconds. You did not think about it once in eight years, and then you thought about nothing else."
+    ]
+  },
+  {
+    "id": "F-10",
+    "trigger": "bass_case",
+    "act": 2,
+    "beat": "Low Orbit's one real gig. The broken string mid-set, and him finishing the song anyway, laughing, on three strings.",
+    "lines": [
+      "One real gig. Forty people, most of them related to somebody on stage.",
+      "The string went in the second song. You heard it go from the back of the room.",
+      "He finished on three, laughing, and not one person out there could tell.",
+      "Tomi still says they were tight that night. Tomi was and remains a liar."
+    ]
+  },
+  {
+    "id": "F-11",
+    "trigger": "two_chairs",
+    "act": 1,
+    "beat": "Summer nights out here. The time he leaned back too far and grabbed the string lights and they held. The whole street heard you both.",
+    "lines": [
+      "Summer. Both chairs out, the door propped open with a boot.",
+      "He tipped his chair back one time too many and caught the lights on the way.",
+      "They held. Of course they held. He had put them up himself, with a great deal more hardware than the job needed.",
+      "You both made a noise the whole street heard. Somebody applauded from two floors down."
+    ]
+  },
+  {
+    "id": "F-12",
+    "trigger": "pc_bag",
+    "act": 3,
+    "beat": "Eight envelopes in your handwriting. What you told everyone. What you were actually buying: a door that stayed closed. Text 7.8.",
+    "lines": [
+      "Eight envelopes. Your handwriting on every one of them.",
+      "You told Lena the landlord was being flexible. You told Mr. Rako you were handling the estate.",
+      "You told yourself it was practical, and practical is an excellent place to keep something you would rather not look at.",
+      "What you were buying, every month, on time, was a door that stayed shut."
+    ]
+  }
+]

@@ -81,6 +81,19 @@ const LAMPS: Lamp[] = [
   },
 
   {
+    // The string lights are off until the player turns them on, so this is only
+    // what falls out of the living room door and bounces off wet concrete. It
+    // exists because Hard Rule 10 makes the balcony a place of warm memory, and a
+    // balcony too dark to see the two chairs on cannot be that.
+    room: 'balcony',
+    note: 'String lights. They still work, but nobody has switched them on.',
+    position: [6.2, 1.85, -0.15],
+    color: 0xffc98d,
+    intensity: 1.7,
+    distance: 4.6,
+  },
+
+  {
     room: 'bedroom',
     note: 'The darkest room. Bedside lamp only.',
     position: [2.24, 0.86, 7.15],

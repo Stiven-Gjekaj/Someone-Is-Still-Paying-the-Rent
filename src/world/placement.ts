@@ -76,11 +76,16 @@ export function placeObjects(
     offset.applyAxisAngle(Y_AXIS, surface.yaw)
 
     if (surface.orientation === 'vertical') {
-      // Tip the prop up so the face that pointed at the ceiling now points out of
-      // the wall, then turn it to match the wall.
-      prop.quaternion
-        .setFromAxisAngle(Y_AXIS, surface.yaw)
-        .multiply(new THREE.Quaternion().setFromAxisAngle(X_AXIS, Math.PI / 2))
+      // Most things on a wall are flat and want tipping up, so the face that
+      // pointed at the ceiling ends up pointing into the room. Things that hang
+      // do not: tipping a run of string lights turns its sag into depth and
+      // pushes it straight through the wall. `pose: upright` opts out.
+      const upright = placement.pose === 'upright'
+
+      prop.quaternion.setFromAxisAngle(Y_AXIS, surface.yaw)
+      if (!upright) {
+        prop.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(X_AXIS, Math.PI / 2))
+      }
 
       prop.position.copy(surface.position).add(offset)
     } else {

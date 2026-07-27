@@ -7,6 +7,7 @@ import { buildFlat } from './world/flat.ts'
 import { buildFurniture } from './world/furniture.ts'
 import { createPropFactory } from './world/props.ts'
 import { buildLighting } from './world/lighting.ts'
+import { buildWeather } from './world/rain.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -79,7 +80,12 @@ function enterFlat(mount: HTMLElement): void {
   const lighting = buildLighting(currentAct())
   engine.scene.add(lighting.group)
 
-  engine.start(() => {})
+  const weather = buildWeather(plan)
+  engine.scene.add(weather.group)
+
+  engine.start((delta) => {
+    weather.update(delta)
+  })
 }
 
 function showAdvisory(mount: HTMLElement): void {

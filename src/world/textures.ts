@@ -170,6 +170,121 @@ export function paperTexture(tint = '#e8e2d4', seed = 5): THREE.CanvasTexture {
   return finish(s, 1)
 }
 
+/**
+ * The city across the street, wrapped around the flat.
+ *
+ * Deliberately warm. It is the only thing outside the windows and the only thing
+ * visible from the balcony, and Hard Rule 10 makes the balcony a place of warm
+ * memory only. Other people's lit windows do that; an empty skyline does not.
+ * There is no street surface here and no drop, at any height.
+ */
+export function cityTexture(seed = 21): THREE.CanvasTexture {
+  const width = 2048
+  const height = 1024
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('2d canvas context unavailable')
+
+  const random = seeded(seed)
+
+  const sky = ctx.createLinearGradient(0, 0, 0, height * 0.4)
+  sky.addColorStop(0, '#0a0c12')
+  sky.addColorStop(1, '#191722')
+  ctx.fillStyle = sky
+  ctx.fillRect(0, 0, width, height * 0.4)
+
+  ctx.fillStyle = '#12111a'
+  ctx.fillRect(0, height * 0.38, width, height * 0.38)
+
+  // Buildings, back row first so the front row overlaps it.
+  for (const layer of [0, 1]) {
+    const base = height * (layer === 0 ? 0.7 : 0.76)
+    const shade = layer === 0 ? '#16151f' : '#0e0d15'
+    let x = -60
+
+    while (x < width + 60) {
+      const w = 90 + random() * 190
+      const h = (layer === 0 ? 120 : 190) + random() * 210
+      const top = base - h
+
+      ctx.fillStyle = shade
+      ctx.fillRect(x, top, w, base - top)
+
+      // Windows. Most are dark. Somebody is up, but not everybody.
+      const cols = Math.max(2, Math.floor(w / 34))
+      const rows = Math.max(2, Math.floor(h / 42))
+      for (let cx = 0; cx < cols; cx += 1) {
+        for (let cy = 0; cy < rows; cy += 1) {
+          const lit = random()
+          if (lit > 0.72) {
+            const warmth = 0.55 + random() * 0.45
+            ctx.fillStyle = `rgba(${Math.floor(255 * warmth)},${Math.floor(190 * warmth)},${Math.floor(120 * warmth)},${0.5 + random() * 0.5})`
+            ctx.fillRect(
+              x + 12 + cx * (w / cols),
+              top + 14 + cy * (h / rows),
+              Math.max(6, w / cols - 16),
+              Math.max(8, h / rows - 20),
+            )
+          }
+        }
+      }
+
+      x += w + 8 + random() * 26
+    }
+  }
+
+  // Street glow below, so looking down finds warmth rather than a drop.
+  const glow = ctx.createLinearGradient(0, height * 0.74, 0, height)
+  glow.addColorStop(0, 'rgba(255,176,96,0.22)')
+  glow.addColorStop(0.45, 'rgba(180,110,60,0.10)')
+  glow.addColorStop(1, 'rgba(10,9,12,1)')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, height * 0.74, width, height * 0.26)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.wrapS = THREE.RepeatWrapping
+  texture.wrapT = THREE.ClampToEdgeWrapping
+  texture.colorSpace = THREE.SRGBColorSpace
+  return texture
+}
+
+/** Water running down glass. Tiles vertically so it can be scrolled forever. */
+export function rainStreakTexture(seed = 22): THREE.CanvasTexture {
+  const size = 512
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('2d canvas context unavailable')
+
+  ctx.clearRect(0, 0, size, size)
+
+  const random = seeded(seed)
+  for (let i = 0; i < 150; i += 1) {
+    const x = random() * size
+    const y = random() * size
+    const length = 20 + random() * 120
+    const alpha = 0.05 + random() * 0.16
+
+    const streak = ctx.createLinearGradient(x, y, x, y + length)
+    streak.addColorStop(0, 'rgba(210,225,235,0)')
+    streak.addColorStop(0.4, `rgba(210,225,235,${alpha})`)
+    streak.addColorStop(1, 'rgba(210,225,235,0)')
+
+    ctx.fillStyle = streak
+    ctx.fillRect(x, y, 1 + random() * 1.6, length)
+  }
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.wrapS = THREE.RepeatWrapping
+  texture.wrapT = THREE.RepeatWrapping
+  return texture
+}
+
 /** Sofa, blankets, towels, the hoodie. A soft weave. */
 export function fabricTexture(color: string, seed = 6): THREE.CanvasTexture {
   const s = surface(128)

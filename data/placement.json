@@ -477,7 +477,8 @@
       0,
       0.62,
       0
-    ]
+    ],
+    "pose": "upright"
   },
   {
     "id": "empty_pots",

@@ -1,12 +1,14 @@
 import './styles.css'
 import * as THREE from 'three'
 import { renderAdvisory } from './advisory.ts'
-import { getFloorPlan, getFurniture } from './content/index.ts'
+import { content, getFloorPlan, getFurniture, getPlacements } from './content/index.ts'
 import { createEngine } from './core/engine.ts'
 import { createMaterials } from './world/materials.ts'
 import { buildFlat } from './world/flat.ts'
 import { buildFurniture } from './world/furniture.ts'
-import type { RoomId } from './content/types.ts'
+import { createPropFactory } from './world/props.ts'
+import { placeObjects } from './world/placement.ts'
+import type { ActNumber, RoomId } from './content/types.ts'
 
 /**
  * Dev aid. `?room=kitchen` starts the camera in the middle of that room instead
@@ -21,6 +23,16 @@ function requestedRoom(): RoomId | null {
   return plan.rooms.some((room) => room.id === asked) ? (asked as RoomId) : null
 }
 
+/**
+ * The flat is act 1, so only act 1 objects stand in it. `?act=2` spawns the later
+ * ones for content review, which is the only reason to look at them before the
+ * game gets there.
+ */
+function currentAct(): ActNumber {
+  const asked = Number(new URLSearchParams(window.location.search).get('act') ?? '1')
+  return asked === 2 ? 2 : asked === 3 ? 3 : 1
+}
+
 function enterFlat(mount: HTMLElement): void {
   mount.replaceChildren()
 
@@ -32,6 +44,10 @@ function enterFlat(mount: HTMLElement): void {
 
   const furnishings = buildFurniture(plan, getFurniture(), materials)
   engine.scene.add(furnishings.group)
+
+  const props = createPropFactory(materials)
+  const placed = placeObjects(getPlacements(), furnishings.surfaces, props, content.objects, currentAct())
+  engine.scene.add(placed.group)
 
   const room = requestedRoom()
   const rect = room === null ? undefined : plan.rooms.find((r) => r.id === room)

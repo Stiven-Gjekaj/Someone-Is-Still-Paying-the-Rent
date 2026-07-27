@@ -14,6 +14,7 @@
 import roomsRaw from '../../data/rooms.json'
 import floorPlanRaw from '../../data/floorplan.json'
 import furnitureRaw from '../../data/furniture.json'
+import placementRaw from '../../data/placement.json'
 import objectsRaw from '../../data/objects.json'
 import fragmentsRaw from '../../data/fragments.json'
 import textsRaw from '../../data/texts.json'
@@ -29,6 +30,7 @@ import type {
   FurniturePiece,
   GameObject,
   KeystoneText,
+  Placement,
   ResourceData,
   ResourceRegion,
   RoomData,
@@ -39,6 +41,7 @@ import type {
 const roomData = roomsRaw as unknown as RoomData
 const floorPlan = floorPlanRaw as unknown as FloorPlan
 const furniture = furnitureRaw as unknown as FurniturePiece[]
+const placements = placementRaw as unknown as Placement[]
 const objects = objectsRaw as unknown as GameObject[]
 const fragments = fragmentsRaw as unknown as Fragment[]
 const texts = textsRaw as unknown as KeystoneText[]
@@ -83,6 +86,10 @@ export function getFloorPlan(): FloorPlan {
 
 export function getFurniture(): FurniturePiece[] {
   return furniture
+}
+
+export function getPlacements(): Placement[] {
+  return placements
 }
 
 /** Everything the player could interact with by this act. Section 4.5. */

@@ -8,6 +8,7 @@ import { buildFurniture } from './world/furniture.ts'
 import { createPropFactory } from './world/props.ts'
 import { buildLighting } from './world/lighting.ts'
 import { buildWeather } from './world/rain.ts'
+import { createPlayer } from './player/controller.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -50,13 +51,18 @@ function enterFlat(mount: HTMLElement): void {
   const placed = placeObjects(getPlacements(), furnishings.surfaces, props, content.objects, currentAct())
   engine.scene.add(placed.group)
 
+  const player = createPlayer(engine.camera, engine.renderer.domElement, plan)
+
+  // Clicking the flat takes the pointer. Escape gives it back, which the browser
+  // handles for us and which Hard Rule 9 requires to always work.
+  engine.renderer.domElement.addEventListener('click', () => {
+    if (!player.isLocked()) player.lock()
+  })
+
   const room = requestedRoom()
   const rect = room === null ? undefined : plan.rooms.find((r) => r.id === room)
 
-  if (rect === undefined) {
-    engine.camera.position.set(plan.spawn.position[0], plan.eye_height, plan.spawn.position[1])
-    engine.camera.rotation.y = plan.spawn.facing
-  } else {
+  if (rect !== undefined) {
     engine.camera.position.set(
       (rect.min[0] + rect.max[0]) / 2,
       plan.eye_height,
@@ -84,6 +90,7 @@ function enterFlat(mount: HTMLElement): void {
   engine.scene.add(weather.group)
 
   engine.start((delta) => {
+    if (player.isLocked()) player.update(delta)
     weather.update(delta)
   })
 }

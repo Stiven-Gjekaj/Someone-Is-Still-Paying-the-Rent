@@ -36,9 +36,12 @@ function readConfig(): SessionConfig {
   const yaw = Number(search.get('yaw') ?? '0')
   const pitch = Number(search.get('pitch') ?? '0')
 
+  const dev = ['room', 'yaw', 'pitch', 'act'].some((key) => search.has(key))
+
   return {
     plan,
     act,
+    ...(dev ? { dev } : {}),
     view: {
       ...(room === undefined ? {} : { room }),
       yaw: Number.isFinite(yaw) ? yaw : 0,

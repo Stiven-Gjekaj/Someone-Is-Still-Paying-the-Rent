@@ -180,9 +180,22 @@ export interface Scene {
   design_note?: string
 }
 
+/**
+ * Section 4.5. The one line of objective text, revealed by a flag rather than by
+ * an act, because finding the phone sets it partway through act 1 and it carries
+ * on into act 2. The last entry whose condition holds is the one shown.
+ */
+export interface Goal {
+  id: string
+  /** A flag reference, in the same namespace second looks use. */
+  when: string
+  text: string
+}
+
 export interface SceneData {
   acts: Act[]
   scenes: Scene[]
+  goals: Goal[]
 }
 
 /** Section 11. The advisory is the only place the word "suicide" appears. */

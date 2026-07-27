@@ -11,7 +11,7 @@
  * and its GPU buffers makes that unusable after the second try.
  */
 
-import { content, getFurniture, getPlacements, getText } from '../content/index.ts'
+import { content, getFurniture, getPlacements, getScenes, getText } from '../content/index.ts'
 import { createInitialState } from '../content/flags.ts'
 import { createEngine } from '../core/engine.ts'
 import { createMaterials } from '../world/materials.ts'
@@ -24,6 +24,7 @@ import { buildWeather } from '../world/rain.ts'
 import { createPlayer } from '../player/controller.ts'
 import { createCollider } from '../player/collision.ts'
 import { createHud } from '../ui/hud.ts'
+import { createGoalLine } from '../ui/goal.ts'
 import { createOverlay } from '../ui/overlay.ts'
 import { createMenu } from '../ui/menu.ts'
 import { renderDocument } from '../ui/document.ts'
@@ -43,6 +44,12 @@ export interface SessionConfig {
     yaw?: number
     pitch?: number
   }
+  /**
+   * Set when the URL carried any dev parameter. Attaches a handle to the canvas
+   * so a headless pass can aim the camera and read the state without reloading
+   * the world for every angle. Absent in a normal session.
+   */
+  dev?: boolean
 }
 
 export interface Session {
@@ -83,6 +90,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   const player = createPlayer(engine.camera, engine.renderer.domElement, plan, { collider })
 
   const hud = createHud(mount)
+  const goalLine = createGoalLine(mount, getScenes().goals)
   const overlay = createOverlay(mount)
   const menu = createMenu(mount)
   const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
@@ -93,6 +101,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   const state = createInitialState()
   state.act = act
+  goalLine.refresh(state)
 
   // Dev camera placement, applied after the player has taken its spawn.
   const view = config.view
@@ -155,8 +164,10 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     if (locked) {
       menu.close()
       hud.setVisible(true)
+      goalLine.setVisible(true)
       return
     }
+    goalLine.setVisible(false)
     // The overlay unlocks on purpose when a document opens. That is not a pause.
     if (overlay.isOpen()) return
     showPause()
@@ -164,6 +175,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   overlay.onClose(() => {
     hud.setVisible(true)
+    goalLine.setVisible(true)
     if (!player.isLocked()) player.lock()
   })
 
@@ -174,11 +186,17 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     const reading = resolveExamine(target.object, state)
     markExamined(state, target.id, reading.secondLook)
 
+    // Section 4.5. Finding the phone is what sets the goal for the rest of the
+    // night, and finding it is just examining it.
+    if (target.id === 'phone_dead') state.phone_found = true
+    goalLine.refresh(state)
+
     // Section 5. He wedged a folded towel under the front left corner and it
     // worked. You just never noticed the quiet until you looked at it.
     if (target.id === 'fridge_towel') audio.setFridgeMuffled(true)
 
     hud.setVisible(false)
+    goalLine.setVisible(false)
     player.unlock()
 
     // A readable opens its document. Everything else is a thought you have while
@@ -199,6 +217,10 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   function onCanvasClick(): void {
     if (player.isLocked()) interact()
     else player.lock()
+  }
+
+  if (config.dev === true) {
+    Object.assign(engine.renderer.domElement, { __dev: { camera: engine.camera, state, targeting } })
   }
 
   window.addEventListener('keydown', onKeyDown)
@@ -229,6 +251,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       overlay.dispose()
       menu.dispose()
       hud.dispose()
+      goalLine.dispose()
 
       placed.dispose()
       props.dispose()

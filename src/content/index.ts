@@ -84,6 +84,10 @@ export function getFloorPlan(): FloorPlan {
   return floorPlan
 }
 
+export function getScenes(): SceneData {
+  return sceneData
+}
+
 export function getFurniture(): FurniturePiece[] {
   return furniture
 }

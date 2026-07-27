@@ -456,6 +456,44 @@ if (!Array.isArray(scenes)) {
   }
 }
 
+// Section 4.5. The objective line, revealed by a flag rather than by an act.
+const goals = sceneData['goals']
+if (!Array.isArray(goals) || goals.length === 0) {
+  fail('scenes', 'data/scenes.json', 'goals must be a non-empty array')
+} else {
+  const seenGoals = new Set<string>()
+
+  for (const goal of goals) {
+    if (!isRecord(goal)) {
+      fail('scenes', 'data/scenes.json', 'goal must be an object')
+      continue
+    }
+
+    const rawId = goal['id']
+    const id = typeof rawId === 'string' ? rawId : '(no id)'
+    const where = `goal ${id}`
+
+    if (typeof rawId !== 'string' || !ID_PATTERN.test(rawId)) fail('scenes', where, 'id must be snake_case')
+    if (seenGoals.has(id)) fail('scenes', where, 'duplicate id')
+    seenGoals.add(id)
+
+    if (!nonEmptyString(goal['text'])) fail('scenes', where, 'text is missing or empty')
+
+    const when = goal['when']
+    if (typeof when !== 'string') {
+      fail('scenes', where, '"when" must be a string')
+      continue
+    }
+
+    const reference = parseFlagReference(when)
+    if (reference === null) {
+      fail('scenes', where, `"when" names no known flag: ${JSON.stringify(when)}`)
+    } else if (reference.kind === 'derived' && !objectIds.has(reference.object)) {
+      fail('scenes', where, `"when" refers to object ${reference.object}, which does not exist`)
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Resources, and Hard Rule 9
 // ---------------------------------------------------------------------------

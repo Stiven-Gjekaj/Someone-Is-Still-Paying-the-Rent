@@ -9,7 +9,9 @@
       "gate_to_next": {
         "description": "The player has sorted at least ten objects and has found the dead phone on the bedside table. Finding it sets the goal text: His phone. Dead. The charger wasn't with it.",
         "sorted_count_min": 10,
-        "requires_flags": ["phone_found"]
+        "requires_flags": [
+          "phone_found"
+        ]
       }
     },
     {
@@ -20,7 +22,10 @@
       "lighting": "Deeper night. The rain gets heavier.",
       "gate_to_next": {
         "description": "The phone charges in real time while the player keeps sorting, then the chime. The waiting is the point: it builds dread out of an ordinary household delay.",
-        "requires_flags": ["charger_found", "phone_on"],
+        "requires_flags": [
+          "charger_found",
+          "phone_on"
+        ],
         "charge_seconds": 240
       }
     },
@@ -62,11 +67,26 @@
       "title": "The desk scene, the no-note beat",
       "summary": "After the thread is read, the desk activates. Interaction becomes rapid: drawers open in sequence, papers lift, and the monologue shortens to fragments. The drawer sounds get faster, then stop. Long silence on the last empty drawer.",
       "blocks": [
-        { "kind": "stage", "text": "(Drawers open in sequence. Papers lift. The sounds get faster.)" },
-        { "kind": "line", "text": "invoices... warranty... sketches... nothing... nothing..." },
-        { "kind": "stage", "text": "(The sounds stop. Long silence on the last empty drawer.)" },
-        { "kind": "line", "text": "Most people don't leave one. You knew that. You looked anyway." },
-        { "kind": "stage", "text": "(Nothing else. No music sting. The rain continues.)" }
+        {
+          "kind": "stage",
+          "text": "(Drawers open in sequence. Papers lift. The sounds get faster.)"
+        },
+        {
+          "kind": "line",
+          "text": "invoices... warranty... sketches... nothing... nothing..."
+        },
+        {
+          "kind": "stage",
+          "text": "(The sounds stop. Long silence on the last empty drawer.)"
+        },
+        {
+          "kind": "line",
+          "text": "Most people don't leave one. You knew that. You looked anyway."
+        },
+        {
+          "kind": "stage",
+          "text": "(Nothing else. No music sting. The rain continues.)"
+        }
       ],
       "design_note": "Hard Rule 3. This absence is the scene. It must never be fixed and no note may ever be added, not as content and not as cut content. The single line is the entire payoff and nothing may be appended to it."
     },
@@ -85,14 +105,46 @@
         "Final card in small type, then the resources screen."
       ],
       "blocks": [
-        { "kind": "stage", "text": "(street noise, wind)" },
-        { "kind": "message", "sender": "Niko", "timestamp": "saved voicemail, two years old", "text": "okay so, update... Beni says if we win tonight he's naming the sauce after us..." },
-        { "kind": "stage", "text": "(laughing, losing it)" },
-        { "kind": "line", "text": "that's it, that's the whole message. bring cash. see you Wednesday." },
-        { "kind": "stage", "text": "(click)" },
-        { "kind": "line", "text": "If you're carrying something like this, you don't have to sort it alone." }
+        {
+          "kind": "stage",
+          "text": "(street noise, wind)"
+        },
+        {
+          "kind": "message",
+          "sender": "Niko",
+          "timestamp": "saved voicemail, two years old",
+          "text": "okay so, update... Beni says if we win tonight he's naming the sauce after us..."
+        },
+        {
+          "kind": "stage",
+          "text": "(laughing, losing it)"
+        },
+        {
+          "kind": "line",
+          "text": "that's it, that's the whole message. bring cash. see you Wednesday."
+        },
+        {
+          "kind": "stage",
+          "text": "(click)"
+        },
+        {
+          "kind": "line",
+          "text": "If you're carrying something like this, you don't have to sort it alone."
+        }
       ],
       "design_note": "The last line is the final card, and it leads to the resources screen. The voicemail is the last time the player hears him, and it is about nothing at all, which is the point."
+    }
+  ],
+  "goals": [
+    {
+      "id": "pack_the_flat",
+      "when": "examined:lena_note",
+      "text": "Pack what you can. The lease ends Sunday."
+    },
+    {
+      "id": "find_the_charger",
+      "when": "phone_found",
+      "text": "His phone. Dead. The charger wasn't with it."
     }
   ]
 }

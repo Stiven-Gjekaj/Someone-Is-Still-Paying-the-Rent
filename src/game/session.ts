@@ -236,6 +236,20 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     showPause()
   })
 
+  /**
+   * Hands the flat back after an overlay or a memory.
+   *
+   * Not if the player has paused in the meantime. Escape out of a memory and
+   * straight into the pause menu, and the memory's own release would arrive a
+   * beat later and take the pointer back, closing the menu under them.
+   */
+  function release(): void {
+    if (menu.isOpen()) return
+    hud.setVisible(true)
+    goalLine.setVisible(true)
+    if (!player.isLocked()) player.lock()
+  }
+
   overlay.onClose(() => {
     // Section 4.3. Object, then thought, then memory: closing the thought is what
     // lets the memory in, and only the first time.
@@ -246,16 +260,12 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       audio.setDucked(true)
       memories.play(owed, () => {
         audio.setDucked(false)
-        hud.setVisible(true)
-        goalLine.setVisible(true)
-        if (!player.isLocked()) player.lock()
+        release()
       })
       return
     }
 
-    hud.setVisible(true)
-    goalLine.setVisible(true)
-    if (!player.isLocked()) player.lock()
+    release()
   })
 
   /**
@@ -401,6 +411,20 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   function onKeyDown(event: KeyboardEvent): void {
     if (opening.isPlaying()) return
+
+    // Hard Rule 9. Pausing normally hangs off the pointer unlock, which is the
+    // right hook while the player is walking around. It is the wrong hook every
+    // other time: a document, a chooser, and a memory all release the pointer on
+    // purpose, so Escape during one of them produces no unlock event and there is
+    // nothing to pause from.
+    //
+    // This listener is registered after the overlay's and the fragment player's,
+    // so whichever of them consumed the key has already said so.
+    if (event.key === 'Escape' && !event.defaultPrevented && !menu.isOpen()) {
+      showPause()
+      return
+    }
+
     if (event.code === 'KeyE' && !overlay.isOpen()) interact()
   }
 

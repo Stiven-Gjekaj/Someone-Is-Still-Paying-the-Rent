@@ -110,6 +110,39 @@ function enterFlat(mount: HTMLElement): void {
   const state = createInitialState()
   state.act = currentAct()
 
+  const menu = createMenu(mount)
+
+  function showPause(): void {
+    hud.setVisible(false)
+    menu.showPause([
+      {
+        label: 'Resume',
+        onSelect: (): void => {
+          menu.close()
+          player.lock()
+        },
+      },
+      {
+        // Hard Rule 9. Always reachable, from anywhere, without unloading the flat.
+        label: 'Support resources',
+        onSelect: (): void => menu.showResources(showPause),
+      },
+    ])
+  }
+
+  // Escape releases the pointer, and the browser owns that key, so the pause menu
+  // hangs off the unlock rather than off a key handler that could be missed.
+  player.onLockChange((locked) => {
+    if (locked) {
+      menu.close()
+      hud.setVisible(true)
+      return
+    }
+    // The overlay unlocks on purpose when a document opens. That is not a pause.
+    if (overlay.isOpen()) return
+    showPause()
+  })
+
   overlay.onClose(() => {
     hud.setVisible(true)
     if (!player.isLocked()) player.lock()

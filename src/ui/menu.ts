@@ -6,7 +6,8 @@
  * decide.
  */
 
-import { element, GAME_TITLE } from '../advisory.ts'
+import { element, GAME_TITLE, renderResourceList } from '../advisory.ts'
+import { getAdvisory } from '../content/index.ts'
 
 export interface MenuItem {
   label: string
@@ -15,6 +16,9 @@ export interface MenuItem {
 
 export interface Menu {
   showTitle(items: MenuItem[]): void
+  showPause(items: MenuItem[]): void
+  /** Hard Rule 9. Reachable from the pause menu at all times. */
+  showResources(onBack: () => void): void
   close(): void
   isOpen(): boolean
   dispose(): void
@@ -56,6 +60,36 @@ export function createMenu(mount: HTMLElement): Menu {
 
       const actions = element('div', 'menu-actions')
       items.forEach((item, index) => actions.append(button(item, index === 0)))
+      nodes.push(actions)
+
+      present(nodes)
+    },
+
+    showPause(items: MenuItem[]): void {
+      const nodes: HTMLElement[] = [
+        element('p', 'menu-heading', 'Paused'),
+        // Lena's note says it, the pause screen says it, and it is true either
+        // way. The flat is not going anywhere.
+        element('p', 'menu-subtitle', 'The flat will wait.'),
+      ]
+
+      const actions = element('div', 'menu-actions')
+      items.forEach((item, index) => actions.append(button(item, index === 0)))
+      nodes.push(actions)
+
+      present(nodes)
+    },
+
+    showResources(onBack: () => void): void {
+      const advisory = getAdvisory()
+      const nodes: HTMLElement[] = [
+        element('p', 'menu-heading', 'Support'),
+        element('p', 'support-lead', advisory.lead_in),
+        renderResourceList(),
+      ]
+
+      const actions = element('div', 'menu-actions')
+      actions.append(button({ label: 'Back', onSelect: onBack }, false))
       nodes.push(actions)
 
       present(nodes)

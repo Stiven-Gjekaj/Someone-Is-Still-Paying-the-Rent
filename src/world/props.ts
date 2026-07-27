@@ -12,8 +12,10 @@
 
 import * as THREE from 'three'
 
-import type { PaletteKey, PropShape } from '../content/types.ts'
+import type { PaletteKey, PropShape, SortDestination } from '../content/types.ts'
+import { sortDestinations, sortLabel } from '../rules/sorting.ts'
 import { materialByKey, type Materials } from './materials.ts'
+import { markerLabelTexture } from './textures.ts'
 
 export interface PropFactory {
   build(shape: PropShape, tint?: PaletteKey): THREE.Group
@@ -69,6 +71,28 @@ export function createPropFactory(materials: Materials): PropFactory {
     mesh.receiveShadow = true
     parent.add(mesh)
     return mesh
+  }
+
+  // Drawing a label costs a canvas, so the three are drawn once and shared even
+  // if the trio is ever built more than once.
+  const labels = new Map<SortDestination, THREE.MeshStandardMaterial>()
+
+  function labelMaterial(destination: SortDestination): THREE.MeshStandardMaterial {
+    const existing = labels.get(destination)
+    if (existing !== undefined) return existing
+
+    const map = markerLabelTexture(sortLabel(destination), 30 + labels.size)
+    const material = new THREE.MeshStandardMaterial({
+      map,
+      roughness: 0.9,
+      transparent: true,
+      // Sitting 2mm proud of the card and drawn after it. Without this the
+      // transparent parts of the label write depth and punch a hole in the box.
+      depthWrite: false,
+    })
+    owned.push(material, map)
+    labels.set(destination, material)
+    return material
   }
 
   function build(shape: PropShape, tint?: PaletteKey): THREE.Group {
@@ -144,6 +168,44 @@ export function createPropFactory(materials: Materials): PropFactory {
       box(group, 0.3, 0.235, 0.24, card, 0, 0.1175, 0)
       // Tape across the top, so it reads as packed rather than empty.
       box(group, 0.06, 0.002, 0.24, materials.paper, 0, 0.236, 0)
+      return group
+    }
+
+    if (shape === 'carton_trio') {
+      const card = accent ?? materials.card
+      const width = 0.3
+      const depth = 0.24
+      const height = 0.235
+
+      // Three, side by side, because section 4.1 has three destinations. They are
+      // one interactable: the choice is made in the overlay, not by aiming at a
+      // particular box, so that a misaimed reticle can never send his coat to the
+      // wrong place.
+      sortDestinations().forEach((destination, index) => {
+        const x = (index - 1) * (width + 0.055)
+        // Not squared up. He put them down one at a time.
+        const yaw = [-0.05, 0.02, 0.07][index] ?? 0
+
+        const carton = new THREE.Group()
+        box(carton, width, height, depth, card, 0, height / 2, 0)
+        // Flaps open, waiting. The taped carton is a different shape.
+        for (const side of [-1, 1]) {
+          box(carton, width, 0.004, 0.09, card, 0, height + 0.043, side * 0.155, 0)
+            .rotation.x = side * 0.55
+        }
+
+        const label = new THREE.Mesh(
+          keep(new THREE.PlaneGeometry(width * 0.86, height * 0.34)),
+          labelMaterial(destination),
+        )
+        label.position.set(0, height * 0.56, depth / 2 + 0.002)
+        carton.add(label)
+
+        carton.position.set(x, 0, 0)
+        carton.rotation.y = yaw
+        group.add(carton)
+      })
+
       return group
     }
 

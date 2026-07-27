@@ -171,6 +171,57 @@ export function paperTexture(tint = '#e8e2d4', seed = 5): THREE.CanvasTexture {
 }
 
 /**
+ * A word written on cardboard in marker.
+ *
+ * The three sorting boxes are told apart by their labels and by nothing else,
+ * so the labels have to be legible from standing height across a couple of
+ * metres. Hence the heavy stroke and the deliberate slant: he wrote these
+ * himself, standing up, holding the box with the other hand.
+ */
+export function markerLabelTexture(text: string, seed = 30): THREE.CanvasTexture {
+  const width = 512
+  const height = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('2d canvas context unavailable')
+
+  // Transparent behind the letters. The marker went straight onto the box, so
+  // there is no patch, no sticker, and nothing for the light to catch differently
+  // from the cardboard around it.
+  // The seed only decides how badly this one is written. Three labels squared up
+  // identically would read as printed.
+  const random = seeded(seed)
+  const slant = (random() - 0.5) * 0.09
+  const drift = (random() - 0.5) * 10
+
+  // Marker bleeds into corrugation, so the letters are drawn twice: a soft wide
+  // pass for the bleed and a tighter one on top for the stroke itself.
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.translate(width / 2, height / 2 + drift)
+  ctx.rotate(slant)
+
+  const size = text.length > 12 ? 52 : 66
+  ctx.font = `600 ${size}px "Helvetica Neue", Helvetica, Arial, sans-serif`
+
+  ctx.fillStyle = 'rgba(28,26,30,0.35)'
+  ctx.filter = 'blur(2px)'
+  ctx.fillText(text, 0, 0)
+
+  ctx.filter = 'none'
+  ctx.fillStyle = '#1c1a1e'
+  ctx.fillText(text, 0, 0)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.anisotropy = 4
+  return texture
+}
+
+/**
  * The city across the street, wrapped around the flat.
  *
  * Deliberately warm. It is the only thing outside the windows and the only thing

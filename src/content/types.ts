@@ -426,6 +426,7 @@ export const PROP_SHAPES = [
   'phone',
   'frame',
   'carton',
+  'carton_trio',
   'plant',
   'cloth',
   'footwear',

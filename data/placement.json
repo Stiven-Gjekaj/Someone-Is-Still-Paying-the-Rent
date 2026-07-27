@@ -76,13 +76,14 @@
   {
     "id": "sorting_boxes",
     "surface": "living_room_floor",
-    "shape": "carton",
+    "shape": "carton_trio",
     "offset": [
       -0.6,
       0,
       1.0
     ],
-    "scale": 1.7
+    "yaw": 3.1416,
+    "scale": 1.5
   },
   {
     "id": "record_player",

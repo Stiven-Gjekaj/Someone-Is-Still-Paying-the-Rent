@@ -10,6 +10,8 @@ import { buildLighting } from './world/lighting.ts'
 import { buildWeather } from './world/rain.ts'
 import { createPlayer } from './player/controller.ts'
 import { createCollider } from './player/collision.ts'
+import { createHud } from './ui/hud.ts'
+import { createTargeting, verbFor } from './interaction/targeting.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -91,9 +93,16 @@ function enterFlat(mount: HTMLElement): void {
   const weather = buildWeather(plan)
   engine.scene.add(weather.group)
 
+  const hud = createHud(mount)
+  const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
+
   engine.start((delta) => {
     if (player.isLocked()) player.update(delta)
     weather.update(delta)
+
+    const target = targeting.update()
+    if (target === null) hud.setPrompt(null)
+    else hud.setPrompt(verbFor(target.object), target.object.name)
   })
 }
 

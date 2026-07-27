@@ -27,6 +27,7 @@ import { createHud } from '../ui/hud.ts'
 import { createGoalLine } from '../ui/goal.ts'
 import { createOverlay } from '../ui/overlay.ts'
 import { createFragmentPlayer } from '../ui/fragment.ts'
+import { createOpening } from '../ui/opening.ts'
 import { createMenu } from '../ui/menu.ts'
 import { renderDocument } from '../ui/document.ts'
 import { createTargeting } from '../interaction/targeting.ts'
@@ -106,6 +107,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   const goalLine = createGoalLine(mount, getScenes().goals)
   const overlay = createOverlay(mount)
   const memories = createFragmentPlayer(mount)
+  const opening = createOpening(mount, () => void audio.playKeyInLock())
   const menu = createMenu(mount)
   const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
   const highlight = createHighlight()
@@ -200,8 +202,9 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     }
     goalLine.setVisible(false)
     // The overlay unlocks on purpose when a document opens, and so does a memory.
-    // Neither is a pause.
-    if (overlay.isOpen() || memories.isPlaying()) return
+    // Neither is a pause, and neither is the opening, which nobody has started
+    // playing yet.
+    if (overlay.isOpen() || memories.isPlaying() || opening.isPlaying()) return
     showPause()
   })
 
@@ -369,22 +372,40 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   }
 
   function onKeyDown(event: KeyboardEvent): void {
+    if (opening.isPlaying()) return
     if (event.code === 'KeyE' && !overlay.isOpen()) interact()
   }
 
   function onCanvasClick(): void {
+    if (opening.isPlaying()) return
     if (player.isLocked()) interact()
     else player.lock()
   }
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, placed, weather, lighting, interact },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, placed, weather, lighting, opening, interact },
     })
   }
 
   window.addEventListener('keydown', onKeyDown)
   engine.renderer.domElement.addEventListener('click', onCanvasClick)
+
+  /**
+   * Section 8.1. Only at the start of a night, and never when a dev parameter is
+   * in the URL: a headless pass inspecting the flat should not have to sit
+   * through the front door, and neither should somebody resuming act 2.
+   */
+  const titleCard = getScenes().scenes.find((scene) => scene.id === 'opening')?.title_card
+
+  if (config.dev !== true && act === 1 && titleCard !== undefined) {
+    hud.setVisible(false)
+    goalLine.setVisible(false)
+    opening.play(titleCard, () => {
+      hud.setVisible(true)
+      goalLine.setVisible(true)
+    })
+  }
 
   engine.start((delta) => {
     if (player.isLocked()) player.update(delta)
@@ -416,6 +437,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       // and putting it back is what returns it to the group that owns it.
       carry.dispose()
       memories.dispose()
+      opening.dispose()
 
       highlight.dispose()
       overlay.dispose()

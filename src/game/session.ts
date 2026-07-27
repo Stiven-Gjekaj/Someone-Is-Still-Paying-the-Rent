@@ -12,7 +12,7 @@
  */
 
 import { content, getFragment, getFurniture, getPlacements, getScenes, getText } from '../content/index.ts'
-import { createInitialState } from '../content/flags.ts'
+import { createInitialState, type GameState } from '../content/flags.ts'
 import { createEngine } from '../core/engine.ts'
 import { createMaterials } from '../world/materials.ts'
 import { buildFlat } from '../world/flat.ts'
@@ -38,6 +38,7 @@ import { documentReadable, verbFor } from '../rules/verbs.ts'
 import { recordSort, sortDestinations, sortLabel } from '../rules/sorting.ts'
 import { createCarry } from './carry.ts'
 import { createActs } from './acts.ts'
+import { writeCheckpoint } from './save.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
 import type {
   ActNumber,
@@ -51,6 +52,11 @@ import type {
 export interface SessionConfig {
   plan: FloorPlan
   act: ActNumber
+  /**
+   * A restored checkpoint. The act comes from the state rather than from `act`,
+   * and anything already put in a box is taken back out of the flat.
+   */
+  resume?: GameState
   /** Dev aids, resolved by the caller. See the README. */
   view?: {
     room?: RoomId
@@ -70,7 +76,11 @@ export interface Session {
 }
 
 export function startSession(mount: HTMLElement, config: SessionConfig): Session {
-  const { plan, act } = config
+  const { plan } = config
+  const state = config.resume ?? createInitialState()
+  const act = config.resume?.act ?? config.act
+
+  if (config.resume === undefined) state.act = act
 
   mount.replaceChildren()
 
@@ -84,8 +94,25 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   engine.scene.add(furnishings.group)
 
   const props = createPropFactory(materials)
-  const placed = placeObjects(getPlacements(), furnishings.surfaces, props, content.objects, act)
+
+  // The flat is furnished for act 1 whatever act is being played. Act 2's objects
+  // are placed under the bed, and spawning them without the box having been
+  // opened gives away the whole Mira thread: see the note in src/game/acts.ts.
+  // The dev `?act=` parameter overrides this, because previewing them is the
+  // only reason to ask for them.
+  const placementAct: ActNumber = config.dev === true ? act : 1
+
+  const placed = placeObjects(getPlacements(), furnishings.surfaces, props, content.objects, placementAct)
   engine.scene.add(placed.group)
+
+  // Anything already in a box stays in the box. Without this, resuming act 2
+  // would put every sorted object back on its shelf and the count would no
+  // longer describe the flat.
+  for (const id of Object.keys(state.objects)) {
+    if (state.objects[id]?.sorted_to == null) continue
+    placed.byObject.get(id)?.removeFromParent()
+    placed.byObject.delete(id)
+  }
 
   // Say plainly what is not in the room. A flat quietly missing sixteen objects
   // looks identical to a flat where placement silently failed.
@@ -116,9 +143,6 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   const audio = createAudio(plan)
   void audio.start()
 
-  const state = createInitialState()
-  state.act = act
-
   // Owed by the object currently being looked at, and paid when its thought closes.
   let pendingFragment: Fragment | null = null
   goalLine.refresh(state)
@@ -132,6 +156,10 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       lighting.applyAct(next)
       weather.applyAct(next)
       goalLine.refresh(state)
+
+      // Section 12. One checkpoint, written when an act begins. Not mid-act: the
+      // decisions inside an act are supposed to stand.
+      writeCheckpoint(state)
       console.info(`act ${next}`)
     },
   })

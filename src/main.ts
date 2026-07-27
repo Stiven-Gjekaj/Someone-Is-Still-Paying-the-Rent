@@ -19,6 +19,7 @@ import { createInitialState } from './content/flags.ts'
 import { markExamined, resolveExamine } from './rules/secondlook.ts'
 import { renderDocument } from './ui/document.ts'
 import { createAudio } from './audio/audio.ts'
+import { loadSettings, saveSettings, type Settings } from './settings.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -112,6 +113,18 @@ function enterFlat(mount: HTMLElement): void {
 
   const menu = createMenu(mount)
 
+  let settings = loadSettings()
+
+  function applySettings(next: Settings): void {
+    settings = next
+    saveSettings(next)
+    player.setHeadBob(next.headBob)
+    player.setSensitivity(next.sensitivity)
+    engine.setFieldOfView(next.fieldOfView)
+  }
+
+  applySettings(settings)
+
   function showPause(): void {
     hud.setVisible(false)
     menu.showPause([
@@ -121,6 +134,10 @@ function enterFlat(mount: HTMLElement): void {
           menu.close()
           player.lock()
         },
+      },
+      {
+        label: 'Comfort',
+        onSelect: (): void => menu.showComfort(settings, applySettings, showPause),
       },
       {
         // Hard Rule 9. Always reachable, from anywhere, without unloading the flat.

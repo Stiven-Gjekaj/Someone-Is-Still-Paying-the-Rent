@@ -8,6 +8,11 @@
 
 import { element, GAME_TITLE, renderResourceList } from '../advisory.ts'
 import { getAdvisory } from '../content/index.ts'
+import {
+  FIELD_OF_VIEW_RANGE,
+  SENSITIVITY_RANGE,
+  type Settings,
+} from '../settings.ts'
 
 export interface MenuItem {
   label: string
@@ -19,6 +24,7 @@ export interface Menu {
   showPause(items: MenuItem[]): void
   /** Hard Rule 9. Reachable from the pause menu at all times. */
   showResources(onBack: () => void): void
+  showComfort(settings: Settings, onChange: (next: Settings) => void, onBack: () => void): void
   close(): void
   isOpen(): boolean
   dispose(): void
@@ -87,6 +93,72 @@ export function createMenu(mount: HTMLElement): Menu {
         element('p', 'support-lead', advisory.lead_in),
         renderResourceList(),
       ]
+
+      const actions = element('div', 'menu-actions')
+      actions.append(button({ label: 'Back', onSelect: onBack }, false))
+      nodes.push(actions)
+
+      present(nodes)
+    },
+
+    showComfort(settings: Settings, onChange: (next: Settings) => void, onBack: () => void): void {
+      const current: Settings = { ...settings }
+      const nodes: HTMLElement[] = [element('p', 'menu-heading', 'Comfort')]
+
+      const bobRow = element('label', 'option-row')
+      const bobInput = document.createElement('input')
+      bobInput.type = 'checkbox'
+      bobInput.className = 'option-toggle'
+      bobInput.checked = current.headBob
+      bobInput.addEventListener('change', () => {
+        current.headBob = bobInput.checked
+        onChange({ ...current })
+      })
+      bobRow.append(bobInput)
+      bobRow.append(element('span', 'option-label', 'Head movement while walking'))
+      nodes.push(bobRow)
+
+      const slider = (
+        label: string,
+        value: number,
+        range: { min: number; max: number; step: number },
+        format: (v: number) => string,
+        apply: (v: number) => void,
+      ): HTMLElement => {
+        const row = element('label', 'option-row')
+        row.append(element('span', 'option-label', label))
+
+        const readout = element('span', 'option-value', format(value))
+
+        const input = document.createElement('input')
+        input.type = 'range'
+        input.className = 'option-slider'
+        input.min = String(range.min)
+        input.max = String(range.max)
+        input.step = String(range.step)
+        input.value = String(value)
+        input.addEventListener('input', () => {
+          const next = Number(input.value)
+          readout.textContent = format(next)
+          apply(next)
+          onChange({ ...current })
+        })
+
+        row.append(input)
+        row.append(readout)
+        return row
+      }
+
+      nodes.push(
+        slider('Look sensitivity', current.sensitivity, SENSITIVITY_RANGE, (v) => v.toFixed(2), (v) => {
+          current.sensitivity = v
+        }),
+      )
+      nodes.push(
+        slider('Field of view', current.fieldOfView, FIELD_OF_VIEW_RANGE, (v) => `${Math.round(v)}`, (v) => {
+          current.fieldOfView = v
+        }),
+      )
 
       const actions = element('div', 'menu-actions')
       actions.append(button({ label: 'Back', onSelect: onBack }, false))

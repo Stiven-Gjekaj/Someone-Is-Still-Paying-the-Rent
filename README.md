@@ -15,11 +15,16 @@ What exists today:
 - TypeScript definitions for the object schema, memory fragments, keystone texts, and state flags.
 - A content validator that enforces the ten hard rules in section 0 of the bible, plus the
   house writing style, and fails CI on any violation.
-- The content advisory screen, rendered from data. This is the one screen that has to exist
-  before anything else does, because Hard Rule 9 requires it.
+- The content advisory screen, a title screen, and a pause menu that reaches the support
+  resources from anywhere, which is what Hard Rule 9 requires.
+- The flat itself: six rooms built from `data/floorplan.json`, furniture, all fifty-one objects
+  placed on named surfaces, per-room lighting, rain, and procedural audio.
+- Walking, looking, examining, and reading, with second-look text resolving against the state
+  flags.
 
-What does not exist yet: the renderer, the flat, the player controller, interaction, sorting,
-memory fragments, the phone, the acts, or the ending.
+What does not exist yet: sorting, memory fragments, act transitions, the phone, the desk scene,
+and the ending. The flat itself is built and walkable, every act 1 object can be examined, and the
+keystone documents can be read.
 
 ## Requirements
 
@@ -51,6 +56,10 @@ first.
 `?room=<id>` starts the camera in the middle of that room rather than at the front door, using the
 room ids in `data/rooms.json`. `?yaw=<degrees>` turns it clockwise from north and
 `?pitch=<degrees>` tilts it, negative looking down.
+
+`?act=2` or `?act=3` spawns the objects belonging to those acts as well. The flat is act 1 and
+only act 1 objects stand in it, so this is the only way to look at the later ones for content
+review before the game itself gets there. It changes nothing else: there is no act gating yet.
 
 They exist so the flat can be screenshotted in a headless browser without pointer lock, and they
 are how the verification pass checks that each room reads the way `data/rooms.json` says it

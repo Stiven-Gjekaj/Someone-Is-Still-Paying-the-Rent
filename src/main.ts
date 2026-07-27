@@ -59,8 +59,15 @@ function enterFlat(mount: HTMLElement): void {
   engine.scene.add(furnishings.group)
 
   const props = createPropFactory(materials)
-  const placed = placeObjects(getPlacements(), furnishings.surfaces, props, content.objects, currentAct())
+  const act = currentAct()
+  const placed = placeObjects(getPlacements(), furnishings.surfaces, props, content.objects, act)
   engine.scene.add(placed.group)
+
+  // Say plainly what is not in the room. A flat quietly missing sixteen objects
+  // looks identical to a flat where placement silently failed.
+  console.info(
+    `act ${act}: ${placed.byObject.size} objects placed, ${placed.deferred.length} held back for later acts`,
+  )
 
   const collider = createCollider(plan, getFurniture())
   const player = createPlayer(engine.camera, engine.renderer.domElement, plan, { collider })

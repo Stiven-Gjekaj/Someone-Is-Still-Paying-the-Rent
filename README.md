@@ -49,9 +49,12 @@ first.
 ## Dev parameters
 
 `?room=<id>` starts the camera in the middle of that room rather than at the front door, using the
-room ids in `data/rooms.json`. It exists so the rooms can be screenshotted in a headless browser
-without needing pointer lock, and it is how the verification pass checks that each room reads the
-way `data/rooms.json` says it should.
+room ids in `data/rooms.json`. `?yaw=<degrees>` turns it clockwise from north and
+`?pitch=<degrees>` tilts it, negative looking down.
+
+They exist so the flat can be screenshotted in a headless browser without pointer lock, and they
+are how the verification pass checks that each room reads the way `data/rooms.json` says it
+should. `?room=bedroom&yaw=180&pitch=-28` looks at the bed.
 
 ## Layout
 

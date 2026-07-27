@@ -383,7 +383,7 @@ export interface FurniturePiece {
   elevation?: number
   /** Radians about Y. */
   rotation?: number
-  material?: string
+  material?: PaletteKey
   /**
    * Some furniture is itself an object the player can examine: the desk, the
    * wardrobe, the vinyl shelf, the jammed junk drawer. Naming the object id here

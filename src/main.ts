@@ -1,10 +1,11 @@
 import './styles.css'
 import * as THREE from 'three'
 import { renderAdvisory } from './advisory.ts'
-import { getFloorPlan } from './content/index.ts'
+import { getFloorPlan, getFurniture } from './content/index.ts'
 import { createEngine } from './core/engine.ts'
 import { createMaterials } from './world/materials.ts'
 import { buildFlat } from './world/flat.ts'
+import { buildFurniture } from './world/furniture.ts'
 import type { RoomId } from './content/types.ts'
 
 /**
@@ -29,6 +30,9 @@ function enterFlat(mount: HTMLElement): void {
   const flat = buildFlat(plan, materials)
   engine.scene.add(flat.group)
 
+  const furnishings = buildFurniture(plan, getFurniture(), materials)
+  engine.scene.add(furnishings.group)
+
   const room = requestedRoom()
   const rect = room === null ? undefined : plan.rooms.find((r) => r.id === room)
 
@@ -41,6 +45,19 @@ function enterFlat(mount: HTMLElement): void {
       plan.eye_height,
       (rect.min[1] + rect.max[1]) / 2,
     )
+  }
+
+  // `?yaw=180&pitch=-25` aims the camera, in degrees, with negative pitch looking
+  // down. Pairs with `?room=` so a headless pass can inspect any wall or the
+  // things standing on the floor without pointer lock.
+  const search = new URLSearchParams(window.location.search)
+  const yaw = Number(search.get('yaw') ?? '0')
+  const pitch = Number(search.get('pitch') ?? '0')
+
+  if (Number.isFinite(yaw) && Number.isFinite(pitch) && (yaw !== 0 || pitch !== 0)) {
+    engine.camera.rotation.order = 'YXZ'
+    engine.camera.rotation.y = (yaw * Math.PI) / 180
+    engine.camera.rotation.x = (pitch * Math.PI) / 180
   }
 
   // Placeholder light so the geometry is legible before the lighting rig lands.

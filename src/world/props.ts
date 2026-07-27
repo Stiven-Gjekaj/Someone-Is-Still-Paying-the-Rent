@@ -214,13 +214,16 @@ export function createPropFactory(materials: Materials): PropFactory {
       return group
     }
 
-    // string_lights: a run of bulbs on a sagging wire. They still work.
+    // string_lights: a run of bulbs on a sagging wire. They still work, but they
+    // are not on: section 5 makes switching them on the player's choice, and the
+    // flag it sets decides whether they are burning in the final exterior shot.
+    // The faint emissive is glass catching the street, not a lit filament.
     const span = 2.2
     const segments = 11
     const bulb = new THREE.MeshStandardMaterial({
       color: 0xffd89b,
       emissive: 0xffb457,
-      emissiveIntensity: 0.6,
+      emissiveIntensity: 0.07,
       roughness: 0.4,
     })
     owned.push(bulb)

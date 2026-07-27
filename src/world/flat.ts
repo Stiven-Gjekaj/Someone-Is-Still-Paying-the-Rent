@@ -55,10 +55,24 @@ export interface Flat {
   dispose(): void
 }
 
-function scaleUv(geometry: THREE.BufferGeometry, u: number, v: number): void {
+/**
+ * Rescales a plane's UVs into world-sized tiles, optionally shifting them.
+ *
+ * The shift is what keeps a wall looking like one wall. A wall cut around a door
+ * becomes several quads, and if each starts its texture at zero the plaster
+ * restarts at every cut, which reads as a seam running floor to ceiling. Offsetting
+ * each quad by where it actually starts along the wall makes the surface continuous.
+ */
+function transformUv(
+  geometry: THREE.BufferGeometry,
+  scaleU: number,
+  scaleV: number,
+  offsetU = 0,
+  offsetV = 0,
+): void {
   const uv = geometry.getAttribute('uv')
   for (let i = 0; i < uv.count; i += 1) {
-    uv.setXY(i, uv.getX(i) * u, uv.getY(i) * v)
+    uv.setXY(i, uv.getX(i) * scaleU + offsetU, uv.getY(i) * scaleV + offsetV)
   }
   uv.needsUpdate = true
 }
@@ -186,7 +200,8 @@ export function buildFlat(plan: FloorPlan, materials: Materials): Flat {
 
     // Floor.
     const floorGeometry = track(new THREE.PlaneGeometry(width, depth))
-    scaleUv(floorGeometry, width / (UV_METRES[room.floor] ?? 4), depth / (UV_METRES[room.floor] ?? 4))
+    const floorUv = UV_METRES[room.floor] ?? 4
+    transformUv(floorGeometry, width / floorUv, depth / floorUv)
     const floor = new THREE.Mesh(floorGeometry, floorMaterialFor(room.floor, materials))
     floor.rotation.x = -Math.PI / 2
     floor.position.set(midX, 0, midZ)
@@ -197,7 +212,7 @@ export function buildFlat(plan: FloorPlan, materials: Materials): Flat {
     if (room.ceiling) {
       const ceilingGeometry = track(new THREE.PlaneGeometry(width, depth))
       const uv = UV_METRES['ceiling'] ?? 4.5
-      scaleUv(ceilingGeometry, width / uv, depth / uv)
+      transformUv(ceilingGeometry, width / uv, depth / uv)
       const ceiling = new THREE.Mesh(ceilingGeometry, materials.ceiling)
       ceiling.rotation.x = Math.PI / 2
       ceiling.position.set(midX, height, midZ)
@@ -242,7 +257,15 @@ export function buildFlat(plan: FloorPlan, materials: Materials): Flat {
 
         const geometry = track(new THREE.PlaneGeometry(quadWidth, quadHeight))
         const uv = UV_METRES['wall'] ?? 4.5
-        scaleUv(geometry, quadWidth / uv, quadHeight / uv)
+
+        // Offset by where this quad sits on the wall, so the plaster runs
+        // continuously past every door and window rather than restarting at each
+        // cut. Turning a plane to face south or west also reverses which way its
+        // U axis runs, so those two measure from the far end instead.
+        const mirrored = side === 'south' || side === 'west'
+        const offsetU = mirrored ? -quad.high / uv : quad.low / uv
+
+        transformUv(geometry, quadWidth / uv, quadHeight / uv, offsetU, quad.bottom / uv)
 
         const mesh = new THREE.Mesh(geometry, materials.wall)
         const along = (quad.low + quad.high) / 2

@@ -1,54 +1,494 @@
 [
-  { "id": "lena_note", "surface": "entry_table", "shape": "paper", "offset": [-0.2, 0, 0] },
-  { "id": "rako_note", "surface": "entry_hall_floor", "shape": "paper", "offset": [0, 0, 0.76], "yaw": 0.4 },
-  { "id": "key_bowl", "surface": "entry_table", "shape": "bowl", "offset": [0.15, 0, 0] },
-  { "id": "boots_muddy", "surface": "entry_hall_floor", "shape": "footwear", "offset": [-0.9, 0, 0.7], "yaw": 0.3 },
-  { "id": "team_bib", "surface": "entry_table", "shape": "cloth", "offset": [0.3, 0, 0.02], "scale": 0.7 },
-  { "id": "corkboard", "surface": "entry_hall_wall_south", "shape": "frame", "offset": [-1.0, 0.15, 0], "scale": 1.3 },
-  { "id": "pc_bag", "surface": "entry_hall_floor", "shape": "case", "offset": [0.7, 0, 0.55] },
-
-  { "id": "sorting_boxes", "surface": "living_room_floor", "shape": "carton", "offset": [-0.6, 0, 1.0], "scale": 1.7 },
-  { "id": "record_player", "surface": "vinyl_shelf_top", "shape": "carton", "offset": [-0.45, 0, 0], "scale": 0.95 },
-  { "id": "zlatan_plant", "surface": "plant_stand", "shape": "plant" },
-  { "id": "photo_hike_framed", "surface": "vinyl_shelf_top", "shape": "frame", "pose": "leaning", "offset": [0.45, 0, -0.04], "scale": 0.7 },
-  { "id": "concert_tickets", "surface": "desk", "shape": "paper", "offset": [0.46, 0, 0.06], "scale": 0.55, "yaw": 0.2 },
-  { "id": "library_books", "surface": "coffee_table", "shape": "book", "offset": [-0.26, 0, 0] },
-  { "id": "game_controller", "surface": "coffee_table", "shape": "carton", "offset": [0.22, 0, 0.05], "scale": 0.45 },
-  { "id": "blanket_sofa", "surface": "sofa", "shape": "cloth", "offset": [0.45, 0, 0.04] },
-  { "id": "photo_hike_box", "surface": "desk", "shape": "carton", "offset": [-0.44, 0, -0.06], "scale": 0.8 },
-  { "id": "sketchbook_new", "surface": "desk", "shape": "book", "offset": [0.12, 0, -0.12] },
-  { "id": "job_application", "surface": "desk", "shape": "paper", "offset": [-0.08, 0, 0.1], "yaw": -0.15 },
-  { "id": "finances_folder", "surface": "wardrobe_shelf", "shape": "book", "offset": [0, 0, 0] },
-  { "id": "demo_cdr", "surface": "vinyl_shelf_top", "shape": "disc", "offset": [0.08, 0, 0.06] },
-
-  { "id": "fridge_photos", "surface": "fridge_door", "shape": "paper", "offset": [-0.13, 0.22, 0], "scale": 0.65, "yaw": 0.12 },
-  { "id": "team_photo", "surface": "fridge_door", "shape": "paper", "offset": [0.1, 0.04, 0], "scale": 0.8 },
-  { "id": "fridge_towel", "surface": "kitchen_floor", "shape": "cloth", "offset": [0.68, 0, 0.8], "scale": 0.55 },
-  { "id": "mug_chipped", "surface": "kitchen_counter", "shape": "mug", "offset": [-0.5, 0, 0] },
-  { "id": "mug_blue", "surface": "kitchen_counter", "shape": "mug", "offset": [-0.26, 0, 0.02], "tint": "ceramicBlue" },
-  { "id": "recipe_card", "surface": "kitchen_counter", "shape": "paper", "offset": [0.42, 0, 0], "yaw": 0.1 },
-  { "id": "calendar_wall", "surface": "kitchen_wall_north", "shape": "paper", "offset": [-0.9, 0.18, 0], "scale": 1.5 },
-  { "id": "cuttings_jar", "surface": "kitchen_north_sill", "shape": "jar", "scale": 0.8 },
-
-  { "id": "cologne", "surface": "bathroom_sink", "shape": "bottle", "offset": [0.2, 0, -0.05] },
-  { "id": "spare_towel", "surface": "bathroom_shelf", "shape": "cloth", "offset": [-0.1, 0, 0], "scale": 0.8 },
-  { "id": "appt_card", "surface": "bathroom_shelf", "shape": "paper", "offset": [0.22, 0, 0], "scale": 0.5 },
-  { "id": "toothbrush_cup", "surface": "bathroom_sink", "shape": "mug", "offset": [-0.18, 0, -0.05], "scale": 0.8 },
-
-  { "id": "phone_dead", "surface": "bedside_table", "shape": "phone", "pose": "face_down", "offset": [0.05, 0, 0] },
-  { "id": "alarm_clock", "surface": "bedside_table", "shape": "carton", "offset": [-0.11, 0, -0.06], "scale": 0.55 },
-  { "id": "referral_letter", "surface": "bedside_table", "shape": "paper", "offset": [0.02, 0, 0.08], "scale": 0.7 },
-  { "id": "notebook_4am", "surface": "bedside_table", "shape": "book", "offset": [-0.1, 0, 0.07], "scale": 0.75 },
-  { "id": "underbed_box", "surface": "under_bed", "shape": "carton", "scale": 1.1 },
-  { "id": "hoodie_mira", "surface": "under_bed", "shape": "cloth", "offset": [0.35, 0, 0] },
-  { "id": "photobooth_strip", "surface": "under_bed", "shape": "paper", "offset": [-0.3, 0, 0.12], "scale": 0.45 },
-  { "id": "mira_draft", "surface": "under_bed", "shape": "paper", "offset": [-0.3, 0, -0.1], "scale": 0.6 },
-  { "id": "dad_lighter", "surface": "under_bed", "shape": "carton", "offset": [0.08, 0, -0.16], "scale": 0.22, "tint": "metalBrass" },
-  { "id": "bass_case", "surface": "bedroom_floor", "shape": "case", "pose": "leaning", "offset": [-0.9, 0, -1.15], "scale": 1.3 },
-  { "id": "photo_dad", "surface": "bedroom_wall_west", "shape": "frame", "offset": [0.2, 0.22, 0], "scale": 0.5 },
-
-  { "id": "two_chairs", "surface": "balcony_floor", "shape": "folding_seat", "offset": [-0.5, 0, 0.2] },
-  { "id": "caps_jar", "surface": "balcony_floor", "shape": "jar", "offset": [0.7, 0, 0.3] },
-  { "id": "string_lights", "surface": "balcony_wall_south", "shape": "string_lights", "offset": [0, 0.62, 0] },
-  { "id": "empty_pots", "surface": "balcony_floor", "shape": "jar", "offset": [0.9, 0, -0.35], "scale": 1.2, "tint": "terracotta" }
+  {
+    "id": "lena_note",
+    "surface": "entry_table",
+    "shape": "paper",
+    "offset": [
+      -0.2,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "rako_note",
+    "surface": "entry_hall_floor",
+    "shape": "paper",
+    "offset": [
+      0,
+      0,
+      0.76
+    ],
+    "yaw": 0.4
+  },
+  {
+    "id": "key_bowl",
+    "surface": "entry_table",
+    "shape": "bowl",
+    "offset": [
+      0.15,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "boots_muddy",
+    "surface": "entry_hall_floor",
+    "shape": "footwear",
+    "offset": [
+      -0.9,
+      0,
+      0.7
+    ],
+    "yaw": 0.3
+  },
+  {
+    "id": "team_bib",
+    "surface": "entry_table",
+    "shape": "cloth",
+    "offset": [
+      0.3,
+      0,
+      0.02
+    ],
+    "scale": 0.7
+  },
+  {
+    "id": "corkboard",
+    "surface": "entry_hall_wall_south",
+    "shape": "frame",
+    "offset": [
+      -1.0,
+      0.15,
+      0
+    ],
+    "scale": 3.0
+  },
+  {
+    "id": "pc_bag",
+    "surface": "entry_hall_floor",
+    "shape": "case",
+    "offset": [
+      0.7,
+      0,
+      0.55
+    ]
+  },
+  {
+    "id": "sorting_boxes",
+    "surface": "living_room_floor",
+    "shape": "carton",
+    "offset": [
+      -0.6,
+      0,
+      1.0
+    ],
+    "scale": 1.7
+  },
+  {
+    "id": "record_player",
+    "surface": "vinyl_shelf_top",
+    "shape": "carton",
+    "offset": [
+      -0.45,
+      0,
+      0
+    ],
+    "scale": 0.95
+  },
+  {
+    "id": "zlatan_plant",
+    "surface": "plant_stand",
+    "shape": "plant"
+  },
+  {
+    "id": "photo_hike_framed",
+    "surface": "vinyl_shelf_top",
+    "shape": "frame",
+    "pose": "leaning",
+    "offset": [
+      0.45,
+      0,
+      -0.04
+    ]
+  },
+  {
+    "id": "concert_tickets",
+    "surface": "desk",
+    "shape": "paper",
+    "offset": [
+      0.46,
+      0,
+      0.06
+    ],
+    "scale": 0.55,
+    "yaw": 0.2
+  },
+  {
+    "id": "library_books",
+    "surface": "coffee_table",
+    "shape": "book",
+    "offset": [
+      -0.26,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "game_controller",
+    "surface": "coffee_table",
+    "shape": "carton",
+    "offset": [
+      0.22,
+      0,
+      0.05
+    ],
+    "scale": 0.45
+  },
+  {
+    "id": "blanket_sofa",
+    "surface": "sofa",
+    "shape": "cloth",
+    "offset": [
+      0.45,
+      0,
+      0.04
+    ]
+  },
+  {
+    "id": "photo_hike_box",
+    "surface": "desk",
+    "shape": "carton",
+    "offset": [
+      -0.44,
+      0,
+      -0.06
+    ],
+    "scale": 0.8
+  },
+  {
+    "id": "sketchbook_new",
+    "surface": "desk",
+    "shape": "book",
+    "offset": [
+      0.12,
+      0,
+      -0.12
+    ]
+  },
+  {
+    "id": "job_application",
+    "surface": "desk",
+    "shape": "paper",
+    "offset": [
+      -0.08,
+      0,
+      0.1
+    ],
+    "yaw": -0.15
+  },
+  {
+    "id": "finances_folder",
+    "surface": "wardrobe_shelf",
+    "shape": "book",
+    "offset": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "demo_cdr",
+    "surface": "vinyl_shelf_top",
+    "shape": "disc",
+    "offset": [
+      0.08,
+      0,
+      0.06
+    ]
+  },
+  {
+    "id": "fridge_photos",
+    "surface": "fridge_door",
+    "shape": "paper",
+    "offset": [
+      -0.13,
+      0.22,
+      0
+    ],
+    "scale": 0.65,
+    "yaw": 0.12
+  },
+  {
+    "id": "team_photo",
+    "surface": "fridge_door",
+    "shape": "paper",
+    "offset": [
+      0.1,
+      0.04,
+      0
+    ],
+    "scale": 0.8
+  },
+  {
+    "id": "fridge_towel",
+    "surface": "kitchen_floor",
+    "shape": "cloth",
+    "offset": [
+      0.68,
+      0,
+      0.8
+    ],
+    "scale": 0.55
+  },
+  {
+    "id": "mug_chipped",
+    "surface": "kitchen_counter",
+    "shape": "mug",
+    "offset": [
+      -0.5,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "mug_blue",
+    "surface": "kitchen_counter",
+    "shape": "mug",
+    "offset": [
+      -0.26,
+      0,
+      0.02
+    ],
+    "tint": "ceramicBlue"
+  },
+  {
+    "id": "recipe_card",
+    "surface": "kitchen_counter",
+    "shape": "paper",
+    "offset": [
+      0.42,
+      0,
+      0
+    ],
+    "yaw": 0.1
+  },
+  {
+    "id": "calendar_wall",
+    "surface": "kitchen_wall_north",
+    "shape": "paper",
+    "offset": [
+      -0.9,
+      0.18,
+      0
+    ],
+    "scale": 1.5
+  },
+  {
+    "id": "cuttings_jar",
+    "surface": "kitchen_north_sill",
+    "shape": "jar",
+    "scale": 0.8
+  },
+  {
+    "id": "cologne",
+    "surface": "bathroom_sink",
+    "shape": "bottle",
+    "offset": [
+      0.2,
+      0,
+      -0.05
+    ]
+  },
+  {
+    "id": "spare_towel",
+    "surface": "bathroom_shelf",
+    "shape": "cloth",
+    "offset": [
+      -0.1,
+      0,
+      0
+    ],
+    "scale": 0.8
+  },
+  {
+    "id": "appt_card",
+    "surface": "bathroom_shelf",
+    "shape": "paper",
+    "offset": [
+      0.22,
+      0,
+      0
+    ],
+    "scale": 0.5
+  },
+  {
+    "id": "toothbrush_cup",
+    "surface": "bathroom_sink",
+    "shape": "mug",
+    "offset": [
+      -0.18,
+      0,
+      -0.05
+    ],
+    "scale": 0.8
+  },
+  {
+    "id": "phone_dead",
+    "surface": "bedside_table",
+    "shape": "phone",
+    "pose": "face_down",
+    "offset": [
+      0.05,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "alarm_clock",
+    "surface": "bedside_table",
+    "shape": "carton",
+    "offset": [
+      -0.11,
+      0,
+      -0.06
+    ],
+    "scale": 0.55
+  },
+  {
+    "id": "referral_letter",
+    "surface": "bedside_table",
+    "shape": "paper",
+    "offset": [
+      0.02,
+      0,
+      0.08
+    ],
+    "scale": 0.7
+  },
+  {
+    "id": "notebook_4am",
+    "surface": "bedside_table",
+    "shape": "book",
+    "offset": [
+      -0.1,
+      0,
+      0.07
+    ],
+    "scale": 0.75
+  },
+  {
+    "id": "underbed_box",
+    "surface": "under_bed",
+    "shape": "carton",
+    "scale": 1.1
+  },
+  {
+    "id": "hoodie_mira",
+    "surface": "under_bed",
+    "shape": "cloth",
+    "offset": [
+      0.35,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "photobooth_strip",
+    "surface": "under_bed",
+    "shape": "paper",
+    "offset": [
+      -0.3,
+      0,
+      0.12
+    ],
+    "scale": 0.45
+  },
+  {
+    "id": "mira_draft",
+    "surface": "under_bed",
+    "shape": "paper",
+    "offset": [
+      -0.3,
+      0,
+      -0.1
+    ],
+    "scale": 0.6
+  },
+  {
+    "id": "dad_lighter",
+    "surface": "under_bed",
+    "shape": "carton",
+    "offset": [
+      0.08,
+      0,
+      -0.16
+    ],
+    "scale": 0.22,
+    "tint": "metalBrass"
+  },
+  {
+    "id": "bass_case",
+    "surface": "bedroom_floor",
+    "shape": "case",
+    "pose": "leaning",
+    "offset": [
+      -0.9,
+      0,
+      -1.15
+    ],
+    "scale": 1.3
+  },
+  {
+    "id": "photo_dad",
+    "surface": "bedroom_wall_west",
+    "shape": "frame",
+    "offset": [
+      0.2,
+      0.22,
+      0
+    ],
+    "scale": 0.5
+  },
+  {
+    "id": "two_chairs",
+    "surface": "balcony_floor",
+    "shape": "folding_seat",
+    "offset": [
+      -0.5,
+      0,
+      0.2
+    ]
+  },
+  {
+    "id": "caps_jar",
+    "surface": "balcony_floor",
+    "shape": "jar",
+    "offset": [
+      0.7,
+      0,
+      0.3
+    ]
+  },
+  {
+    "id": "string_lights",
+    "surface": "balcony_wall_south",
+    "shape": "string_lights",
+    "offset": [
+      0,
+      0.62,
+      0
+    ]
+  },
+  {
+    "id": "empty_pots",
+    "surface": "balcony_floor",
+    "shape": "jar",
+    "offset": [
+      0.9,
+      0,
+      -0.35
+    ],
+    "scale": 1.2,
+    "tint": "terracotta"
+  }
 ]

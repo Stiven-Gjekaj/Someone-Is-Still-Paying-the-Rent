@@ -1,5 +1,4 @@
 import './styles.css'
-import * as THREE from 'three'
 import { renderAdvisory } from './advisory.ts'
 import { content, getFloorPlan, getFurniture, getPlacements } from './content/index.ts'
 import { createEngine } from './core/engine.ts'
@@ -7,6 +6,7 @@ import { createMaterials } from './world/materials.ts'
 import { buildFlat } from './world/flat.ts'
 import { buildFurniture } from './world/furniture.ts'
 import { createPropFactory } from './world/props.ts'
+import { buildLighting } from './world/lighting.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -76,8 +76,8 @@ function enterFlat(mount: HTMLElement): void {
     engine.camera.rotation.x = (pitch * Math.PI) / 180
   }
 
-  // Placeholder light so the geometry is legible before the lighting rig lands.
-  engine.scene.add(new THREE.HemisphereLight(0xb9a888, 0x2a2622, 1.4))
+  const lighting = buildLighting(currentAct())
+  engine.scene.add(lighting.group)
 
   engine.start(() => {})
 }

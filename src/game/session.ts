@@ -36,6 +36,7 @@ import { markExamined, resolveExamine } from '../rules/secondlook.ts'
 import { documentReadable, verbFor } from '../rules/verbs.ts'
 import { recordSort, sortDestinations, sortLabel } from '../rules/sorting.ts'
 import { createCarry } from './carry.ts'
+import { createActs } from './acts.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
 import type {
   ActNumber,
@@ -118,6 +119,18 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   // Owed by the object currently being looked at, and paid when its thought closes.
   let pendingFragment: Fragment | null = null
   goalLine.refresh(state)
+
+  const acts = createActs({
+    acts: content.acts,
+    state,
+    onEnter: (next): void => {
+      // Section 4.6. The night gets later. The flat does not get fuller: see the
+      // note in src/game/acts.ts for why nothing respawns here.
+      lighting.applyAct(next)
+      goalLine.refresh(state)
+      console.info(`act ${next}`)
+    },
+  })
 
   // Dev camera placement, applied after the player has taken its spawn.
   const view = config.view
@@ -264,6 +277,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     hud.setCarrying(null)
     recordSort(state, held.id, destination)
     goalLine.refresh(state)
+    acts.check()
   }
 
   /**
@@ -331,6 +345,10 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     // worked. You just never noticed the quiet until you looked at it.
     if (target.id === 'fridge_towel') audio.setFridgeMuffled(true)
 
+    // Section 4.5. Looking at something is the only thing that can open a gate
+    // other than sorting, so this is the other place the act is checked.
+    acts.check()
+
     hud.setVisible(false)
     goalLine.setVisible(false)
     player.unlock()
@@ -359,7 +377,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, interact },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, placed, interact },
     })
   }
 

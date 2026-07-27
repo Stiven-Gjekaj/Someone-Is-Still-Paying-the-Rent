@@ -3,7 +3,10 @@
     "id": "lena_note",
     "name": "Lena's note",
     "room": "entry_hall",
-    "type": ["keystone", "readable"],
+    "type": [
+      "keystone",
+      "readable"
+    ],
     "act_min": 1,
     "sortable": true,
     "examine": "Weighted down with the key bowl so it would be the first thing you saw. Her handwriting gets smaller toward the bottom of the page.",
@@ -14,7 +17,10 @@
     "id": "rako_note",
     "name": "Mr. Rako's note",
     "room": "entry_hall",
-    "type": ["keystone", "readable"],
+    "type": [
+      "keystone",
+      "readable"
+    ],
     "act_min": 1,
     "sortable": true,
     "examine": "Pushed through the mail slot, face down on the mat. You already know what it says. You read it anyway.",
@@ -25,7 +31,9 @@
     "id": "key_bowl",
     "name": "Key bowl",
     "room": "entry_hall",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
@@ -35,7 +43,9 @@
     "id": "boots_muddy",
     "name": "Muddy football boots",
     "room": "entry_hall",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
@@ -49,7 +59,9 @@
     "id": "team_bib",
     "name": "Bib #1",
     "room": "entry_hall",
-    "type": ["memory"],
+    "type": [
+      "memory"
+    ],
     "act_min": 1,
     "sortable": true,
     "fragment": "F-02",
@@ -59,7 +71,9 @@
     "id": "corkboard",
     "name": "Corkboard",
     "room": "entry_hall",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": false,
     "section": "5",
@@ -73,7 +87,10 @@
     "id": "pc_bag",
     "name": "Your bag",
     "room": "entry_hall",
-    "type": ["keystone", "memory"],
+    "type": [
+      "keystone",
+      "memory"
+    ],
     "act_min": 3,
     "sortable": false,
     "fragment": "F-12",
@@ -81,12 +98,13 @@
     "examine": "You brought it in and put it down without thinking, the way you have every month for eight months.",
     "design_note": "Locked until act 3. Contains the rent receipts."
   },
-
   {
     "id": "sorting_boxes",
     "name": "The three boxes",
     "room": "living_room",
-    "type": ["system"],
+    "type": [
+      "system"
+    ],
     "act_min": 1,
     "sortable": false,
     "examine": "SHIP TO LENA. DONATE. LET GO. You wrote the labels yourself, in marker, standing up.",
@@ -96,7 +114,9 @@
     "id": "vinyl_shelf",
     "name": "Vinyl shelf",
     "room": "living_room",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": false,
     "examine": "Alphabetized, rigorously, by a man who alphabetized nothing else in his life. One record is out of place.",
@@ -110,7 +130,9 @@
     "id": "record_player",
     "name": "Record player",
     "room": "living_room",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "examine": "Lid up. Still plugged in. The needle is sitting where he left it.",
@@ -120,7 +142,9 @@
     "id": "zlatan_plant",
     "name": "Zlatan (monstera)",
     "room": "living_room",
-    "type": ["memory"],
+    "type": [
+      "memory"
+    ],
     "act_min": 1,
     "sortable": false,
     "fragment": "F-03",
@@ -135,7 +159,10 @@
     "id": "photo_hike_framed",
     "name": "Framed hike photo (year one)",
     "room": "living_room",
-    "type": ["keystone", "memory"],
+    "type": [
+      "keystone",
+      "memory"
+    ],
     "act_min": 1,
     "sortable": true,
     "fragment": "F-01",
@@ -146,7 +173,10 @@
     "id": "photo_hike_box",
     "name": "Shoebox of hike photos (years 2-7)",
     "room": "living_room",
-    "type": ["keystone", "readable"],
+    "type": [
+      "keystone",
+      "readable"
+    ],
     "act_min": 2,
     "sortable": true,
     "text": "hike_captions_box",
@@ -156,7 +186,9 @@
     "id": "concert_tickets",
     "name": "Two concert tickets",
     "room": "living_room",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
@@ -170,7 +202,9 @@
     "id": "library_books",
     "name": "Library books",
     "room": "living_room",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "examine": "Three of them, due back in April. One has a receipt shoved in two-thirds through, holding his place."
@@ -179,7 +213,9 @@
     "id": "sketchbook_new",
     "name": "New sketchbook",
     "room": "living_room",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 2,
     "sortable": true,
     "section": "5",
@@ -193,7 +229,9 @@
     "id": "game_controller",
     "name": "Second controller",
     "room": "living_room",
-    "type": ["memory"],
+    "type": [
+      "memory"
+    ],
     "act_min": 1,
     "sortable": true,
     "fragment": "F-04",
@@ -203,7 +241,9 @@
     "id": "desk",
     "name": "The desk",
     "room": "living_room",
-    "type": ["scripted"],
+    "type": [
+      "scripted"
+    ],
     "act_min": 1,
     "sortable": false,
     "section": "5",
@@ -214,7 +254,10 @@
     "id": "job_application",
     "name": "Cover letter draft",
     "room": "living_room",
-    "type": ["keystone", "readable"],
+    "type": [
+      "keystone",
+      "readable"
+    ],
     "act_min": 2,
     "sortable": true,
     "text": "job_application",
@@ -224,7 +267,9 @@
     "id": "finances_folder",
     "name": "Invoice folder",
     "room": "living_room",
-    "type": ["readable"],
+    "type": [
+      "readable"
+    ],
     "act_min": 2,
     "sortable": true,
     "examine": "Polite reminders at the front, final notices at the back, in order. On the back of a gig flyer, a budget in his handwriting that almost balances.",
@@ -234,7 +279,9 @@
     "id": "demo_cdr",
     "name": "Low Orbit demo CD-R",
     "room": "living_room",
-    "type": ["readable"],
+    "type": [
+      "readable"
+    ],
     "act_min": 2,
     "sortable": true,
     "examine": "A paper sleeve, one line of Sharpie across it: we'll fix the mix later.",
@@ -244,18 +291,21 @@
     "id": "blanket_sofa",
     "name": "Sofa blanket",
     "room": "living_room",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
     "examine": "It still smells like the flat. The flat still smells like him."
   },
-
   {
     "id": "fridge_photos",
     "name": "Fridge magnets and photos",
     "room": "kitchen",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": false,
     "examine": "Other people's weddings, a postcard from his mother, a magnet from a town neither of you has been to. Something glossy is peeking out from behind the team photo.",
@@ -265,7 +315,9 @@
     "id": "team_photo",
     "name": "The team photo",
     "room": "kitchen",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "examine": "Eleven of them squinting into the sun, one caught mid-blink. He is the only one in gloves, and the only one who looks certain about anything.",
@@ -275,7 +327,9 @@
     "id": "fridge_towel",
     "name": "Towel under the fridge",
     "room": "kitchen",
-    "type": ["memory"],
+    "type": [
+      "memory"
+    ],
     "act_min": 1,
     "sortable": true,
     "fragment": "F-05",
@@ -291,7 +345,9 @@
     "id": "junk_drawer",
     "name": "Junk drawer",
     "room": "kitchen",
-    "type": ["system"],
+    "type": [
+      "system"
+    ],
     "act_min": 1,
     "sortable": false,
     "section": "5",
@@ -302,7 +358,9 @@
     "id": "mug_chipped",
     "name": "The chipped mug",
     "room": "kitchen",
-    "type": ["memory"],
+    "type": [
+      "memory"
+    ],
     "act_min": 1,
     "sortable": true,
     "fragment": "F-06",
@@ -312,7 +370,9 @@
     "id": "mug_blue",
     "name": "The blue mug",
     "room": "kitchen",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
@@ -326,7 +386,10 @@
     "id": "recipe_card",
     "name": "Vera's recipe card",
     "room": "kitchen",
-    "type": ["keystone", "readable"],
+    "type": [
+      "keystone",
+      "readable"
+    ],
     "act_min": 1,
     "sortable": true,
     "text": "vera_letter",
@@ -336,7 +399,9 @@
     "id": "calendar_wall",
     "name": "Wall calendar",
     "room": "kitchen",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": false,
     "section": "5",
@@ -346,18 +411,21 @@
     "id": "cuttings_jar",
     "name": "Plant cuttings jar",
     "room": "kitchen",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
     "examine": "On the windowsill, roots visible through the glass. Still alive. He was propagating. Plural. Plans, plural."
   },
-
   {
     "id": "cologne",
     "name": "Almost-empty cologne",
     "room": "bathroom",
-    "type": ["memory"],
+    "type": [
+      "memory"
+    ],
     "act_min": 1,
     "sortable": true,
     "fragment": "F-07",
@@ -367,7 +435,9 @@
     "id": "spare_towel",
     "name": "The spare towel",
     "room": "bathroom",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
@@ -377,7 +447,9 @@
     "id": "appt_card",
     "name": "Old appointment card",
     "room": "bathroom",
-    "type": ["readable"],
+    "type": [
+      "readable"
+    ],
     "act_min": 2,
     "sortable": true,
     "examine": "A counselling service, three years old. CANCELLED written across it in his hand. He kept it anyway.",
@@ -387,22 +459,28 @@
     "id": "toothbrush_cup",
     "name": "Toothbrush cup",
     "room": "bathroom",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
     "examine": "One toothbrush. The single most ordinary object in the world, and you have to hold the sink for a second."
   },
-
   {
     "id": "phone_dead",
     "name": "His phone",
     "room": "bedroom",
-    "type": ["keystone", "memory", "system"],
+    "type": [
+      "keystone",
+      "memory",
+      "system"
+    ],
     "act_min": 1,
     "sortable": false,
     "fragment": "F-09",
     "text": "phone_thread",
+    "text_from_act": 3,
     "examine": "Face-down on the bedside table, where they put it back. Dead. The charger wasn't with it.",
     "design_note": "The act 1 discovery that creates the game's engine. Read in act 3, after it has charged in real time. Section 4.5."
   },
@@ -410,7 +488,10 @@
     "id": "referral_letter",
     "name": "The referral letter",
     "room": "bedroom",
-    "type": ["keystone", "readable"],
+    "type": [
+      "keystone",
+      "readable"
+    ],
     "act_min": 2,
     "sortable": true,
     "text": "referral_letter",
@@ -421,7 +502,10 @@
     "id": "notebook_4am",
     "name": "The 4 a.m. notebook",
     "room": "bedroom",
-    "type": ["keystone", "readable"],
+    "type": [
+      "keystone",
+      "readable"
+    ],
     "act_min": 2,
     "sortable": true,
     "text": "notebook_4am",
@@ -431,7 +515,9 @@
     "id": "underbed_box",
     "name": "The under-bed box",
     "room": "bedroom",
-    "type": ["system"],
+    "type": [
+      "system"
+    ],
     "act_min": 2,
     "sortable": false,
     "examine": "A shoebox pushed to the far side, against the wall, where you would have to be looking to find it.",
@@ -441,7 +527,9 @@
     "id": "hoodie_mira",
     "name": "The hoodie",
     "room": "bedroom",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 2,
     "sortable": true,
     "examine": "Not his size. Washed and folded before it went into the box, which is the part that gets you."
@@ -450,7 +538,9 @@
     "id": "photobooth_strip",
     "name": "Photo-booth strip",
     "room": "bedroom",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 2,
     "sortable": true,
     "examine": "Four frames. They behave for the first two. By the third they are laughing, and after that neither of them looks at the camera again."
@@ -459,7 +549,10 @@
     "id": "mira_draft",
     "name": "Mira's unsent letter",
     "room": "bedroom",
-    "type": ["keystone", "readable"],
+    "type": [
+      "keystone",
+      "readable"
+    ],
     "act_min": 2,
     "sortable": true,
     "text": "mira_draft",
@@ -470,7 +563,9 @@
     "id": "dad_lighter",
     "name": "His father's lighter",
     "room": "bedroom",
-    "type": ["memory"],
+    "type": [
+      "memory"
+    ],
     "act_min": 2,
     "sortable": true,
     "fragment": "F-08",
@@ -480,7 +575,9 @@
     "id": "wardrobe",
     "name": "Wardrobe",
     "room": "bedroom",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": false,
     "examine": "The Low Orbit tour shirt, for a tour that never happened. A winter coat with two ticket stubs and a receipt in the pocket. A folder on the top shelf that you will get to."
@@ -489,7 +586,9 @@
     "id": "bass_case",
     "name": "Bass case",
     "room": "bedroom",
-    "type": ["memory"],
+    "type": [
+      "memory"
+    ],
     "act_min": 2,
     "sortable": true,
     "fragment": "F-10",
@@ -499,7 +598,9 @@
     "id": "alarm_clock",
     "name": "Alarm clock",
     "room": "bedroom",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
@@ -509,18 +610,21 @@
     "id": "photo_dad",
     "name": "Photo of his dad",
     "room": "bedroom",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 2,
     "sortable": true,
     "section": "5",
     "examine": "Tucked into the mirror frame, not displayed, not hidden. Kept at the exact distance he could stand."
   },
-
   {
     "id": "two_chairs",
     "name": "Two folding chairs",
     "room": "balcony",
-    "type": ["memory"],
+    "type": [
+      "memory"
+    ],
     "act_min": 1,
     "sortable": true,
     "fragment": "F-11",
@@ -530,7 +634,9 @@
     "id": "caps_jar",
     "name": "Jar of bottle caps",
     "room": "balcony",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",
@@ -540,7 +646,9 @@
     "id": "string_lights",
     "name": "String lights",
     "room": "balcony",
-    "type": ["system"],
+    "type": [
+      "system"
+    ],
     "act_min": 1,
     "sortable": false,
     "examine": "Strung corner to corner, the same way for six summers. Still, against all odds, working.",
@@ -550,7 +658,9 @@
     "id": "empty_pots",
     "name": "Stack of empty pots",
     "room": "balcony",
-    "type": ["ambient"],
+    "type": [
+      "ambient"
+    ],
     "act_min": 1,
     "sortable": true,
     "section": "5",

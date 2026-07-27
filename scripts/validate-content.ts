@@ -234,6 +234,19 @@ for (const object of objects) {
     }
   }
 
+  // Section 5 lets an object appear in one act and become readable in a later
+  // one. The two numbers have to agree in that direction.
+  const textFromAct = object['text_from_act']
+  if (textFromAct !== undefined) {
+    if (typeof textFromAct !== 'number' || !Number.isInteger(textFromAct) || textFromAct < 1 || textFromAct > 3) {
+      fail('objects', where, 'text_from_act must be 1, 2 or 3')
+    } else if (object['text'] === undefined) {
+      fail('objects', where, 'text_from_act is set but the object has no text to read')
+    } else if (typeof actMin === 'number' && textFromAct < actMin) {
+      fail('objects', where, `text_from_act ${textFromAct} is before the object exists in act ${actMin}`)
+    }
+  }
+
   const secondLook = object['second_look']
   if (secondLook !== undefined) {
     if (!isRecord(secondLook)) {

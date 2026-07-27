@@ -28,7 +28,7 @@ import { createGoalLine } from '../ui/goal.ts'
 import { createOverlay } from '../ui/overlay.ts'
 import { createMenu } from '../ui/menu.ts'
 import { renderDocument } from '../ui/document.ts'
-import { createTargeting, verbFor } from '../interaction/targeting.ts'
+import { createTargeting, documentReadable, verbFor } from '../interaction/targeting.ts'
 import { createHighlight } from '../interaction/highlight.ts'
 import { createAudio } from '../audio/audio.ts'
 import { markExamined, resolveExamine } from '../rules/secondlook.ts'
@@ -199,9 +199,11 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     goalLine.setVisible(false)
     player.unlock()
 
-    // A readable opens its document. Everything else is a thought you have while
-    // standing in front of it.
-    const keystone = target.object.text === undefined ? undefined : getText(target.object.text)
+    // A readable opens its document, if this act is allowed to read it. The dead
+    // phone is the reason for the second half of that sentence.
+    const keystone = documentReadable(target.object, state.act) && target.object.text !== undefined
+      ? getText(target.object.text)
+      : undefined
 
     if (keystone === undefined) {
       overlay.showExamine(reading.text, reading.secondLook)
@@ -235,7 +237,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     highlight.set(target === null ? null : target.owner)
 
     if (target === null) hud.setPrompt(null)
-    else hud.setPrompt(verbFor(target.object), target.object.name)
+    else hud.setPrompt(verbFor(target.object, state.act), target.object.name)
   })
 
   return {

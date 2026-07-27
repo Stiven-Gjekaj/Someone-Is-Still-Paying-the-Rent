@@ -67,6 +67,15 @@ export interface GameObject {
   fragment?: string
   /** Keystone text id, for objects typed `keystone`. */
   text?: string
+  /**
+   * The act from which the document may actually be read. Defaults to `act_min`.
+   *
+   * Section 5 lists the phone as "Act 1 (found) / Act 3 (read)": it is on the
+   * bedside table from the first minute and it is dead until the third act. One
+   * number cannot say both, and without this the thread opens in act 1 and gives
+   * away the ending of the game.
+   */
+  text_from_act?: ActNumber
   second_look?: SecondLook
   /** Present when the strings are verbatim from the bible. Absent means authored. */
   section?: string

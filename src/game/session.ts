@@ -28,10 +28,12 @@ import { createGoalLine } from '../ui/goal.ts'
 import { createOverlay } from '../ui/overlay.ts'
 import { createMenu } from '../ui/menu.ts'
 import { renderDocument } from '../ui/document.ts'
-import { createTargeting, documentReadable, verbFor } from '../interaction/targeting.ts'
+import { createTargeting } from '../interaction/targeting.ts'
 import { createHighlight } from '../interaction/highlight.ts'
 import { createAudio } from '../audio/audio.ts'
 import { markExamined, resolveExamine } from '../rules/secondlook.ts'
+import { documentReadable, verbFor } from '../rules/verbs.ts'
+import { createCarry } from './carry.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
 import type { ActNumber, FloorPlan, RoomId } from '../content/types.ts'
 
@@ -95,6 +97,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   const menu = createMenu(mount)
   const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
   const highlight = createHighlight()
+  const carry = createCarry(engine.camera)
 
   const audio = createAudio(plan)
   void audio.start()
@@ -179,9 +182,50 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     if (!player.isLocked()) player.lock()
   })
 
+  function verbContext(id: string): { act: ActNumber; examined: boolean; carrying: boolean } {
+    return {
+      act: state.act,
+      examined: state.objects[id]?.examined === true,
+      carrying: carry.held() !== null,
+    }
+  }
+
+  /** Lifts an examined sortable out of the world. Section 4.1. */
+  function take(id: string): void {
+    const node = placed.byObject.get(id)
+    const object = content.objects.find((o) => o.id === id)
+    if (node === undefined || object === undefined) return
+
+    if (carry.take(id, object, node)) {
+      highlight.set(null)
+      hud.setCarrying(object.name)
+    }
+  }
+
+  function putBack(): void {
+    if (carry.putBack() === null) return
+    hud.setCarrying(null)
+  }
+
   function interact(): void {
+    if (overlay.isOpen()) return
+
     const target = targeting.current()
-    if (target === null || overlay.isOpen()) return
+
+    // Hands full. Only the boxes answer; anything else, and the object goes back
+    // exactly where it was standing. Section 4.1 has no wrong answers, so it must
+    // not be possible to lose one down the back of the mechanic.
+    if (carry.held() !== null) {
+      if (target === null || target.object.sort_target !== true) putBack()
+      return
+    }
+
+    if (target === null) return
+
+    if (verbFor(target.object, verbContext(target.id)) === 'Take') {
+      take(target.id)
+      return
+    }
 
     const reading = resolveExamine(target.object, state)
     markExamined(state, target.id, reading.secondLook)
@@ -222,7 +266,9 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   }
 
   if (config.dev === true) {
-    Object.assign(engine.renderer.domElement, { __dev: { camera: engine.camera, state, targeting } })
+    Object.assign(engine.renderer.domElement, {
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, interact },
+    })
   }
 
   window.addEventListener('keydown', onKeyDown)
@@ -236,8 +282,13 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     const target = targeting.update()
     highlight.set(target === null ? null : target.owner)
 
-    if (target === null) hud.setPrompt(null)
-    else hud.setPrompt(verbFor(target.object, state.act), target.object.name)
+    if (target === null) {
+      hud.setPrompt(null)
+      return
+    }
+
+    const verb = verbFor(target.object, verbContext(target.id))
+    hud.setPrompt(verb, target.object.name)
   })
 
   return {
@@ -248,6 +299,10 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       engine.stop()
       player.dispose()
       audio.dispose()
+
+      // Before the props are disposed: a held object is parented to the camera,
+      // and putting it back is what returns it to the group that owns it.
+      carry.dispose()
 
       highlight.dispose()
       overlay.dispose()

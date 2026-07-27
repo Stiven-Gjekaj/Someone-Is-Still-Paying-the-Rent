@@ -10,6 +10,8 @@ export interface Hud {
   element: HTMLElement
   /** Pass null for the verb to clear the prompt. */
   setPrompt(verb: string | null, name?: string): void
+  /** What is in the player's hands, or null when their hands are empty. */
+  setCarrying(name: string | null): void
   setVisible(visible: boolean): void
   dispose(): void
 }
@@ -35,6 +37,21 @@ export function createHud(mount: HTMLElement): Hud {
   nameLabel.className = 'prompt-name'
   prompt.append(nameLabel)
 
+  // Sits under the reticle rather than in a corner. It is not an inventory, it is
+  // a reminder that your hands are full, and it should be in the way.
+  const carrying = document.createElement('div')
+  carrying.className = 'carrying'
+  element.append(carrying)
+
+  const carryName = document.createElement('span')
+  carryName.className = 'carrying-name'
+  carrying.append(carryName)
+
+  const carryHint = document.createElement('span')
+  carryHint.className = 'carrying-hint'
+  carryHint.textContent = 'Put it back'
+  carrying.append(carryHint)
+
   mount.append(element)
 
   return {
@@ -46,6 +63,11 @@ export function createHud(mount: HTMLElement): Hud {
       reticle.classList.toggle('is-active', showing)
       verbLabel.textContent = verb ?? ''
       nameLabel.textContent = showing ? name : ''
+    },
+
+    setCarrying(name: string | null): void {
+      carrying.classList.toggle('is-visible', name !== null)
+      carryName.textContent = name === null ? '' : `Carrying ${name.toLowerCase()}`
     },
 
     setVisible(visible: boolean): void {

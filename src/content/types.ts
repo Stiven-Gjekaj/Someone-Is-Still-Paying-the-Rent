@@ -62,6 +62,15 @@ export interface GameObject {
   type: ObjectType[]
   act_min: ActNumber
   sortable: boolean
+  /**
+   * Where sorted objects go. Exactly one object in the flat carries this, and it
+   * is never itself sortable.
+   *
+   * The rules need to recognise the three boxes without knowing their id, so that
+   * the sorting logic stays testable against a made-up object rather than against
+   * a string that happens to be in `data/objects.json`.
+   */
+  sort_target?: boolean
   examine: string
   /** Fragment id, for objects typed `memory`. */
   fragment?: string

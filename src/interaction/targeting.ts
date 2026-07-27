@@ -13,7 +13,7 @@
 
 import * as THREE from 'three'
 
-import type { ActNumber, GameObject } from '../content/types.ts'
+import type { GameObject } from '../content/types.ts'
 
 const REACH = 2.4
 
@@ -101,21 +101,4 @@ export function createTargeting(
       return target
     },
   }
-}
-
-/**
- * Whether this object's document can be opened yet.
- *
- * Section 5 lists the phone as found in act 1 and read in act 3. It is on the
- * bedside table from the first minute, and its document is the thread that ends
- * the game. Opening it early does not spoil a detail, it spoils the whole thing.
- */
-export function documentReadable(object: GameObject, act: ActNumber): boolean {
-  if (object.text === undefined) return false
-  return act >= (object.text_from_act ?? object.act_min)
-}
-
-/** Section 4.2. One context action, chosen by what the object is and when. */
-export function verbFor(object: GameObject, act: ActNumber): string {
-  return documentReadable(object, act) ? 'Read' : 'Examine'
 }

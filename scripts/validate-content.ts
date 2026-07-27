@@ -166,6 +166,7 @@ if (!Array.isArray(roomData['lighting_progression']) || roomData['lighting_progr
 // ---------------------------------------------------------------------------
 
 const seenObjectIds = new Set<string>()
+const sortTargets: string[] = []
 
 for (const object of objects) {
   const rawId = object['id']
@@ -181,6 +182,18 @@ for (const object of objects) {
   if (!nonEmptyString(object['name'])) fail('objects', where, 'name is missing or empty')
   if (!nonEmptyString(object['examine'])) fail('objects', where, 'examine is missing or empty')
   if (typeof object['sortable'] !== 'boolean') fail('objects', where, 'sortable must be a boolean')
+
+  const sortTarget = object['sort_target']
+  if (sortTarget !== undefined) {
+    if (sortTarget !== true) {
+      fail('objects', where, 'sort_target may only be true, or left out')
+    } else {
+      if (object['sortable'] === true) {
+        fail('objects', where, 'the boxes cannot be put in the boxes: sort_target and sortable disagree')
+      }
+      sortTargets.push(id)
+    }
+  }
 
   const room = object['room']
   if (typeof room !== 'string' || !ROOM_ID_SET.has(room)) {
@@ -269,6 +282,19 @@ for (const object of objects) {
       }
     }
   }
+}
+
+// Section 4.1 has one place things go. Two would mean the destination chooser
+// depended on which set of boxes you happened to walk up to, and none would mean
+// twenty-four sortable objects with nowhere to put them.
+if (sortTargets.length !== 1) {
+  fail(
+    'objects',
+    'sorting',
+    `exactly one object must carry sort_target, found ${sortTargets.length}${
+      sortTargets.length === 0 ? '' : `: ${sortTargets.join(', ')}`
+    }`,
+  )
 }
 
 // ---------------------------------------------------------------------------

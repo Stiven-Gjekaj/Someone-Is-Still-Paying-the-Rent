@@ -262,6 +262,37 @@ main {
   color: var(--ink);
 }
 
+/* Your hands. Below the prompt, so a Sort offer still reads first. */
+.carrying {
+  position: absolute;
+  top: calc(50% + 4.4rem);
+  left: 0;
+  right: 0;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
+
+.carrying.is-visible {
+  opacity: 1;
+}
+
+.carrying-name {
+  color: var(--ink);
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+}
+
+.carrying-hint {
+  display: block;
+  margin-top: 0.2rem;
+  color: rgba(216, 212, 205, 0.45);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 /* Examine and read. One element, two moods. */
 .overlay {
   position: fixed;

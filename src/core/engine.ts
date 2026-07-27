@@ -58,6 +58,11 @@ export function createEngine(mount: HTMLElement, options: EngineOptions = {}): E
     60,
   )
 
+  // A carried object is parented to the camera so it stays in shot while you walk
+  // it across the flat. Three.js only draws what hangs off the scene, so a camera
+  // outside the graph renders its own children into nothing.
+  scene.add(camera)
+
   const clock = new THREE.Clock(false)
   let update: ((delta: number, elapsed: number) => void) | null = null
   let running = false

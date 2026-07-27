@@ -107,6 +107,7 @@
     ],
     "act_min": 1,
     "sortable": false,
+    "sort_target": true,
     "examine": "SHIP TO LENA. DONATE. LET GO. You wrote the labels yourself, in marker, standing up.",
     "design_note": "Section 4.1. No scoring, no wrong answers. The Lena box is sealed in the ending."
   },

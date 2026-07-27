@@ -119,7 +119,8 @@
     "room": "bathroom",
     "shape": "shelf",
     "position": [2.48, 4.4],
-    "size": [0.22, 0.04, 0.7],
+    "size": [0.7, 0.04, 0.22],
+    "rotation": 1.5708,
     "elevation": 1.25,
     "material": "woodPale",
     "surfaces": [{ "name": "bathroom_shelf", "height": 1.29, "inset": 0.04 }]

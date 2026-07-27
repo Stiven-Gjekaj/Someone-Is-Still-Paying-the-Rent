@@ -20,6 +20,8 @@ import {
   OBJECT_TYPES,
   OPENING_KINDS,
   PALETTE_KEYS,
+  PROP_POSES,
+  PROP_SHAPES,
   ROOM_IDS,
   SURFACE_ORIENTATIONS,
   TEXT_BLOCK_KINDS,
@@ -1001,6 +1003,181 @@ for (const piece of furniture) {
       }
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Placement
+// ---------------------------------------------------------------------------
+
+/**
+ * Every object has to end up somewhere, exactly once, on a surface that exists,
+ * within that surface's edges. An object placed 40cm off the side of a bedside
+ * table hangs in the air, and nothing else in the pipeline would notice.
+ *
+ * The surface extents here mirror the ones furniture.ts builds. That is a real
+ * duplication, and it is worth it: without it an off-the-edge placement is only
+ * findable by walking up to it.
+ */
+const PROP_SHAPE_SET: ReadonlySet<string> = new Set(PROP_SHAPES)
+const PROP_POSE_SET: ReadonlySet<string> = new Set(PROP_POSES)
+
+interface SurfaceExtent {
+  orientation: string
+  /** Half-extents, [along, across]. */
+  halfAlong: number
+  halfAcross: number
+}
+
+const surfaceExtents = new Map<string, SurfaceExtent>()
+
+for (const piece of furniture) {
+  const size = piece['size']
+  if (!Array.isArray(size)) continue
+  const width = Number(size[0])
+  const depth = Number(size[2])
+
+  for (const surface of Array.isArray(piece['surfaces']) ? piece['surfaces'] : []) {
+    if (!isRecord(surface)) continue
+    const name = surface['name']
+    if (typeof name !== 'string') continue
+    const inset = Number(surface['inset'])
+    const orientation = surface['orientation'] === 'vertical' ? 'vertical' : 'horizontal'
+
+    // A horizontal surface runs the width and depth of its piece. A vertical one
+    // runs the width and a fixed reach up and down the face. Both match what
+    // furniture.ts registers.
+    const across = orientation === 'vertical' ? 0.6 : Math.max(depth - inset * 2, 0.05)
+
+    surfaceExtents.set(name, {
+      orientation,
+      halfAlong: Math.max(width - inset * 2, 0.05) / 2,
+      halfAcross: across / 2,
+    })
+  }
+}
+
+// The surfaces every room gets without anyone writing them down.
+for (const [id, rect] of rects) {
+  const width = rect.maxX - rect.minX
+  const depth = rect.maxZ - rect.minZ
+
+  surfaceExtents.set(`${id}_floor`, {
+    orientation: 'horizontal',
+    halfAlong: Math.max(width - 0.6, 0.2) / 2,
+    halfAcross: Math.max(depth - 0.6, 0.2) / 2,
+  })
+
+  for (const side of WALL_SIDES) {
+    const along = side === 'north' || side === 'south' ? width : depth
+    surfaceExtents.set(`${id}_wall_${side}`, {
+      orientation: 'vertical',
+      halfAlong: Math.max(along - 0.4, 0.2) / 2,
+      halfAcross: Math.max(wallHeight - 0.4, 0.2) / 2,
+    })
+  }
+}
+
+if (Array.isArray(planWindows)) {
+  for (const w of planWindows) {
+    if (!isRecord(w)) continue
+    surfaceExtents.set(`${String(w['room'])}_${String(w['wall'])}_sill`, {
+      orientation: 'horizontal',
+      halfAlong: Math.max(Number(w['width']) - 0.1, 0.1) / 2,
+      halfAcross: 0.06,
+    })
+  }
+}
+
+const placements = loadJson('data/placement.json') as Record<string, unknown>[]
+const placed = new Map<string, string>()
+
+for (const placement of placements) {
+  const rawId = placement['id']
+  const id = typeof rawId === 'string' ? rawId : '(no id)'
+  const where = `placement ${id}`
+
+  if (typeof rawId !== 'string' || !objectIds.has(rawId)) {
+    fail('placement', where, `${JSON.stringify(rawId)} is not an object id`)
+    continue
+  }
+
+  const existing = placed.get(id)
+  if (existing !== undefined) {
+    fail('placement', where, 'placed more than once')
+  }
+  placed.set(id, 'placement.json')
+
+  const shape = placement['shape']
+  if (typeof shape !== 'string' || !PROP_SHAPE_SET.has(shape)) {
+    fail('placement', where, `unknown shape ${JSON.stringify(shape)}`)
+  }
+
+  const pose = placement['pose']
+  if (pose !== undefined && (typeof pose !== 'string' || !PROP_POSE_SET.has(pose))) {
+    fail('placement', where, `unknown pose ${JSON.stringify(pose)}`)
+  }
+
+  const tint = placement['tint']
+  if (tint !== undefined && (typeof tint !== 'string' || !PALETTE_KEY_SET.has(tint))) {
+    fail('placement', where, `unknown tint ${JSON.stringify(tint)}`)
+  }
+
+  const scale = placement['scale']
+  if (scale !== undefined && (typeof scale !== 'number' || scale <= 0)) {
+    fail('placement', where, 'scale must be a positive number')
+  }
+
+  const surfaceName = placement['surface']
+  if (typeof surfaceName !== 'string') {
+    fail('placement', where, 'surface must be a string')
+    continue
+  }
+
+  const extent = surfaceExtents.get(surfaceName)
+  if (extent === undefined) {
+    fail('placement', where, `surface "${surfaceName}" does not exist`)
+    continue
+  }
+
+  const offset = placement['offset']
+  if (offset === undefined) continue
+
+  if (!Array.isArray(offset) || offset.length !== 3) {
+    fail('placement', where, 'offset must be [x, y, z]')
+    continue
+  }
+
+  const alongOffset = Math.abs(Number(offset[0]))
+  const acrossOffset = Math.abs(Number(extent.orientation === 'vertical' ? offset[1] : offset[2]))
+
+  if (alongOffset > extent.halfAlong) {
+    fail(
+      'placement',
+      where,
+      `sits ${(alongOffset - extent.halfAlong).toFixed(2)}m off the end of "${surfaceName}"`,
+    )
+  }
+  if (acrossOffset > extent.halfAcross) {
+    fail(
+      'placement',
+      where,
+      `sits ${(acrossOffset - extent.halfAcross).toFixed(2)}m off the side of "${surfaceName}"`,
+    )
+  }
+}
+
+// Furniture that is itself an object counts as placed.
+for (const piece of furniture) {
+  const objectRef = piece['object']
+  if (typeof objectRef !== 'string') continue
+  if (placed.has(objectRef)) {
+    fail('placement', `object ${objectRef}`, 'is both a furniture piece and a placement')
+  }
+  placed.set(objectRef, 'furniture.json')
+}
+
+for (const id of objectIds) {
+  if (!placed.has(id)) fail('placement', `object ${id}`, 'is never placed in the flat')
 }
 
 // ---------------------------------------------------------------------------

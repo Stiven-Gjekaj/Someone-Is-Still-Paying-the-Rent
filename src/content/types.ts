@@ -430,7 +430,7 @@ export interface Placement {
   /** Radians about Y, on top of the pose. */
   yaw?: number
   /** Separates objects that share a shape, such as the two mugs. */
-  tint?: string
+  tint?: PaletteKey
   scale?: number
 }
 

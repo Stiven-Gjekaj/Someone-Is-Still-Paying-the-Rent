@@ -17,6 +17,7 @@ import { createOverlay } from './ui/overlay.ts'
 import { createInitialState } from './content/flags.ts'
 import { markExamined, resolveExamine } from './rules/secondlook.ts'
 import { renderDocument } from './ui/document.ts'
+import { createAudio } from './audio/audio.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -103,6 +104,8 @@ function enterFlat(mount: HTMLElement): void {
   const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
   const highlight = createHighlight()
   const overlay = createOverlay(mount)
+  const audio = createAudio(plan)
+  void audio.start()
   const state = createInitialState()
   state.act = currentAct()
 
@@ -117,6 +120,10 @@ function enterFlat(mount: HTMLElement): void {
 
     const reading = resolveExamine(target.object, state)
     markExamined(state, target.id, reading.secondLook)
+
+    // Section 5. He wedged a folded towel under the front left corner and it
+    // worked. You just never noticed the quiet until you looked at it.
+    if (target.id === 'fridge_towel') audio.setFridgeMuffled(true)
 
     hud.setVisible(false)
     player.unlock()
@@ -139,6 +146,7 @@ function enterFlat(mount: HTMLElement): void {
   engine.start((delta) => {
     if (player.isLocked()) player.update(delta)
     weather.update(delta)
+    audio.update(delta, engine.camera)
 
     const target = targeting.update()
     highlight.set(target === null ? null : target.owner)

@@ -11,14 +11,25 @@
  * that is easier to honour when there is only one way out to remember.
  */
 
-export type OverlayMode = 'examine' | 'document'
+export type OverlayMode = 'examine' | 'document' | 'choose'
+
+export interface Choice {
+  label: string
+  onSelect(): void
+}
 
 export interface Overlay {
   showExamine(text: string, secondLook: boolean): void
   /** `body` is filled in by the caller, which owns how a document looks. */
   showDocument(title: string, body: HTMLElement): void
+  /**
+   * Section 4.1. Three destinations, no scoring, and no default: nothing is
+   * pre-selected, because the game does not have an opinion about which box.
+   */
+  showChoice(lead: string, choices: Choice[]): void
   close(): void
   isOpen(): boolean
+  mode(): OverlayMode | null
   onClose(listener: () => void): void
   dispose(): void
 }
@@ -33,17 +44,41 @@ export function createOverlay(mount: HTMLElement): Overlay {
 
   const listeners: (() => void)[] = []
   let open = false
+  let current: OverlayMode | null = null
+  let choices: Choice[] = []
 
   function close(): void {
     if (!open) return
     open = false
-    element.classList.remove('is-open', 'is-examine', 'is-document')
+    current = null
+    choices = []
+    element.classList.remove('is-open', 'is-examine', 'is-document', 'is-choose')
     panel.replaceChildren()
     for (const listener of listeners) listener()
   }
 
   function onKeyDown(event: KeyboardEvent): void {
     if (!open) return
+
+    // A chooser is a question, so a number answers it. Escape backs out without
+    // choosing, which leaves the object in your hands rather than in a box: there
+    // is no undo in section 4.1, so there has to be a way not to decide yet.
+    if (current === 'choose') {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        close()
+        return
+      }
+
+      const picked = choices[Number(event.key) - 1]
+      if (picked !== undefined) {
+        event.preventDefault()
+        close()
+        picked.onSelect()
+      }
+      return
+    }
+
     if (event.key === 'Escape' || event.key === 'e' || event.key === 'E') {
       event.preventDefault()
       close()
@@ -51,14 +86,22 @@ export function createOverlay(mount: HTMLElement): Overlay {
   }
 
   window.addEventListener('keydown', onKeyDown)
-  element.addEventListener('click', close)
+  // Clicking the backdrop dismisses, but not while choosing: a stray click at the
+  // moment the chooser appears would look like it had eaten the object.
+  element.addEventListener('click', (event) => {
+    if (current === 'choose' && event.target !== element) return
+    if (current === 'choose') return
+    close()
+  })
   mount.append(element)
 
   function openWith(mode: OverlayMode): void {
     open = true
+    current = mode
     element.classList.add('is-open')
     element.classList.toggle('is-examine', mode === 'examine')
     element.classList.toggle('is-document', mode === 'document')
+    element.classList.toggle('is-choose', mode === 'choose')
   }
 
   return {
@@ -90,10 +133,59 @@ export function createOverlay(mount: HTMLElement): Overlay {
       openWith('document')
     },
 
+    showChoice(lead: string, options: Choice[]): void {
+      panel.replaceChildren()
+      choices = options
+
+      const heading = document.createElement('p')
+      heading.className = 'choose-lead'
+      heading.textContent = lead
+      panel.append(heading)
+
+      const list = document.createElement('div')
+      list.className = 'choose-options'
+
+      options.forEach((choice, index) => {
+        const node = document.createElement('button')
+        node.type = 'button'
+        node.className = 'choose-option'
+
+        const key = document.createElement('span')
+        key.className = 'choose-key'
+        key.textContent = String(index + 1)
+        node.append(key)
+
+        const label = document.createElement('span')
+        label.className = 'choose-label'
+        label.textContent = choice.label
+        node.append(label)
+
+        node.addEventListener('click', () => {
+          close()
+          choice.onSelect()
+        })
+
+        list.append(node)
+      })
+
+      panel.append(list)
+
+      const hint = document.createElement('p')
+      hint.className = 'choose-hint'
+      hint.textContent = 'Escape to keep holding it'
+      panel.append(hint)
+
+      openWith('choose')
+    },
+
     close,
 
     isOpen(): boolean {
       return open
+    },
+
+    mode(): OverlayMode | null {
+      return current
     },
 
     onClose(listener: () => void): void {

@@ -33,9 +33,10 @@ import { createHighlight } from '../interaction/highlight.ts'
 import { createAudio } from '../audio/audio.ts'
 import { markExamined, resolveExamine } from '../rules/secondlook.ts'
 import { documentReadable, verbFor } from '../rules/verbs.ts'
+import { sortDestinations, sortLabel } from '../rules/sorting.ts'
 import { createCarry } from './carry.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
-import type { ActNumber, FloorPlan, RoomId } from '../content/types.ts'
+import type { ActNumber, FloorPlan, RoomId, SortDestination } from '../content/types.ts'
 
 export interface SessionConfig {
   plan: FloorPlan
@@ -207,6 +208,42 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     hud.setCarrying(null)
   }
 
+  /**
+   * The object goes in the box and does not come out. Section 4.1 has no undo,
+   * because the whole point of the mechanic is that the decision costs something.
+   */
+  function sortHeld(destination: SortDestination): void {
+    const held = carry.release()
+    if (held === null) return
+
+    hud.setCarrying(null)
+    console.info(`sorted ${held.id} to ${destination}`)
+  }
+
+  /**
+   * Section 4.1. Three destinations, and the game holds no opinion about which.
+   *
+   * The choice is made here rather than by aiming at one of the three cartons,
+   * so that nothing depends on how steady the player's hand is at the moment
+   * they decide what to do with his coat.
+   */
+  function chooseDestination(): void {
+    const held = carry.held()
+    if (held === null) return
+
+    hud.setVisible(false)
+    goalLine.setVisible(false)
+    player.unlock()
+
+    overlay.showChoice(
+      `${held.object.name}. Where does it go?`,
+      sortDestinations().map((destination) => ({
+        label: sortLabel(destination),
+        onSelect: (): void => sortHeld(destination),
+      })),
+    )
+  }
+
   function interact(): void {
     if (overlay.isOpen()) return
 
@@ -216,7 +253,8 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     // exactly where it was standing. Section 4.1 has no wrong answers, so it must
     // not be possible to lose one down the back of the mechanic.
     if (carry.held() !== null) {
-      if (target === null || target.object.sort_target !== true) putBack()
+      if (target !== null && target.object.sort_target === true) chooseDestination()
+      else putBack()
       return
     }
 

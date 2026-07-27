@@ -319,9 +319,78 @@ main {
   background: rgba(6, 7, 9, 0.92);
 }
 
+/* The chooser sits low, like an examine, because you are still standing in the
+   room with the thing in your hands. It is not a menu. */
+.overlay.is-choose {
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 1.5rem 3.5rem;
+  background: linear-gradient(to top, rgba(8, 9, 11, 0.9) 0%, rgba(8, 9, 11, 0) 55%);
+}
+
 .overlay-panel {
   max-width: 34rem;
   width: 100%;
+}
+
+.choose-lead {
+  margin: 0 0 1.4rem;
+  text-align: center;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--ink);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.9);
+}
+
+.choose-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.choose-option {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: rgba(24, 26, 30, 0.72);
+  border: 1px solid rgba(216, 212, 205, 0.14);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.choose-option:hover,
+.choose-option:focus-visible {
+  background: rgba(38, 40, 45, 0.86);
+  border-color: rgba(216, 212, 205, 0.34);
+  outline: none;
+}
+
+.choose-key {
+  flex: 0 0 1.4rem;
+  text-align: center;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--bulb);
+}
+
+.choose-label {
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+}
+
+.choose-hint {
+  margin: 1.1rem 0 0;
+  text-align: center;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(216, 212, 205, 0.4);
 }
 
 .overlay.is-document .overlay-panel {

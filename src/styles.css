@@ -133,6 +133,64 @@ main {
   height: 100%;
 }
 
+/* The heads-up layer. Never takes the pointer: the flat is underneath it. */
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hud.is-hidden {
+  display: none;
+}
+
+.reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: rgba(216, 212, 205, 0.5);
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.reticle.is-active {
+  background: var(--bulb);
+  transform: scale(1.5);
+}
+
+.prompt {
+  position: absolute;
+  top: calc(50% + 2.2rem);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.9375rem;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transition: opacity 140ms ease;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
+
+.prompt.is-visible {
+  opacity: 1;
+}
+
+.prompt-verb {
+  color: var(--bulb);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  margin-right: 0.6rem;
+}
+
+.prompt-name {
+  color: var(--ink);
+}
+
 .footnote {
   margin-top: 4rem;
   color: var(--ink-faint);

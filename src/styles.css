@@ -621,3 +621,68 @@ main {
 .goal.is-hidden {
   display: none;
 }
+
+/* Section 4.3. The memory. Above the overlays, because it is not one of them. */
+.fragment {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 900ms ease, visibility 0s linear 900ms;
+  z-index: 30;
+}
+
+.fragment.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 900ms ease, visibility 0s;
+}
+
+/* The flat is still faintly there at the edges. It never goes fully black. */
+.fragment-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(6, 7, 9, 0.72) 0%,
+    rgba(6, 7, 9, 0.93) 42%,
+    rgba(4, 4, 6, 0.985) 78%
+  );
+}
+
+.fragment-lines {
+  position: relative;
+  max-width: 32rem;
+  width: 100%;
+  text-align: center;
+}
+
+.fragment-line {
+  margin: 0 0 1.35rem;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: #d6d2cb;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.95);
+  opacity: 0;
+  transform: translateY(0.4rem);
+  transition: opacity 800ms ease, transform 800ms ease;
+}
+
+.fragment-line:last-child {
+  margin-bottom: 0;
+}
+
+.fragment-line.is-shown {
+  opacity: 1;
+  transform: none;
+}
+
+/* Everything before the newest line settles back a shade. */
+.fragment-line.is-past {
+  opacity: 0.42;
+}

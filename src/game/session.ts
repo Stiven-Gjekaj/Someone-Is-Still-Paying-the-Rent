@@ -11,7 +11,7 @@
  * and its GPU buffers makes that unusable after the second try.
  */
 
-import { content, getFurniture, getPlacements, getScenes, getText } from '../content/index.ts'
+import { content, getFragment, getFurniture, getPlacements, getScenes, getText } from '../content/index.ts'
 import { createInitialState } from '../content/flags.ts'
 import { createEngine } from '../core/engine.ts'
 import { createMaterials } from '../world/materials.ts'
@@ -26,6 +26,7 @@ import { createCollider } from '../player/collision.ts'
 import { createHud } from '../ui/hud.ts'
 import { createGoalLine } from '../ui/goal.ts'
 import { createOverlay } from '../ui/overlay.ts'
+import { createFragmentPlayer } from '../ui/fragment.ts'
 import { createMenu } from '../ui/menu.ts'
 import { renderDocument } from '../ui/document.ts'
 import { createTargeting } from '../interaction/targeting.ts'
@@ -36,7 +37,14 @@ import { documentReadable, verbFor } from '../rules/verbs.ts'
 import { recordSort, sortDestinations, sortLabel } from '../rules/sorting.ts'
 import { createCarry } from './carry.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
-import type { ActNumber, FloorPlan, RoomId, SortDestination } from '../content/types.ts'
+import type {
+  ActNumber,
+  FloorPlan,
+  Fragment,
+  GameObject,
+  RoomId,
+  SortDestination,
+} from '../content/types.ts'
 
 export interface SessionConfig {
   plan: FloorPlan
@@ -95,6 +103,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   const hud = createHud(mount)
   const goalLine = createGoalLine(mount, getScenes().goals)
   const overlay = createOverlay(mount)
+  const memories = createFragmentPlayer(mount)
   const menu = createMenu(mount)
   const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
   const highlight = createHighlight()
@@ -105,6 +114,9 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   const state = createInitialState()
   state.act = act
+
+  // Owed by the object currently being looked at, and paid when its thought closes.
+  let pendingFragment: Fragment | null = null
   goalLine.refresh(state)
 
   // Dev camera placement, applied after the player has taken its spawn.
@@ -172,16 +184,47 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       return
     }
     goalLine.setVisible(false)
-    // The overlay unlocks on purpose when a document opens. That is not a pause.
-    if (overlay.isOpen()) return
+    // The overlay unlocks on purpose when a document opens, and so does a memory.
+    // Neither is a pause.
+    if (overlay.isOpen() || memories.isPlaying()) return
     showPause()
   })
 
   overlay.onClose(() => {
+    // Section 4.3. Object, then thought, then memory: closing the thought is what
+    // lets the memory in, and only the first time.
+    const owed = pendingFragment
+    pendingFragment = null
+
+    if (owed !== null) {
+      memories.play(owed, () => {
+        hud.setVisible(true)
+        goalLine.setVisible(true)
+        if (!player.isLocked()) player.lock()
+      })
+      return
+    }
+
     hud.setVisible(true)
     goalLine.setVisible(true)
     if (!player.isLocked()) player.lock()
   })
+
+  /**
+   * The memory an object owes, if it owes one and this act has reached it.
+   *
+   * Three of the twelve are not reachable yet: F-08 and F-10 hang off objects
+   * that appear in act 2 and F-12 off one that appears in act 3, so they are
+   * built and simply never fire in act 1.
+   */
+  function fragmentFor(object: GameObject): Fragment | null {
+    if (object.fragment === undefined) return null
+
+    const fragment = getFragment(object.fragment)
+    if (fragment === undefined || fragment.act > state.act) return null
+
+    return fragment
+  }
 
   function verbContext(id: string): { act: ActNumber; examined: boolean; carrying: boolean } {
     return {
@@ -266,8 +309,16 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       return
     }
 
+    // Read before markExamined, because "first look" is a fact about the state
+    // just before this one.
+    const firstLook = state.objects[target.id]?.examined !== true
+
     const reading = resolveExamine(target.object, state)
     markExamined(state, target.id, reading.secondLook)
+
+    // Section 4.3. The memory is owed once, on the first look, and it is paid out
+    // when the thought closes rather than on top of it.
+    pendingFragment = firstLook ? fragmentFor(target.object) : null
 
     // Section 4.5. Finding the phone is what sets the goal for the rest of the
     // night, and finding it is just examining it.
@@ -306,7 +357,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, interact },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, interact },
     })
   }
 
@@ -342,6 +393,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       // Before the props are disposed: a held object is parented to the camera,
       // and putting it back is what returns it to the group that owns it.
       carry.dispose()
+      memories.dispose()
 
       highlight.dispose()
       overlay.dispose()

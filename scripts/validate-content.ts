@@ -1068,6 +1068,26 @@ for (const piece of furniture) {
         if (!(surfaceHeight >= 0)) fail('furniture', where, `surface "${name}" needs a height`)
 
         const orientation = surface['orientation']
+
+        // `height` is measured from the piece's own base, and furniture.ts adds
+        // the elevation on top. Authoring it as a height above the floor instead
+        // puts the surface at roughly twice its intended height, which is how the
+        // spare towel ended up at 2.54m with nothing in the game complaining.
+        //
+        // A horizontal surface has to be low enough to see the top of from
+        // standing, or the objects on it exist and are unreachable.
+        if (orientation !== 'vertical') {
+          const top = elevation + surfaceHeight
+          const highest = eyeHeight - 0.15
+          if (top > highest + EPSILON) {
+            fail(
+              'furniture',
+              where,
+              `surface "${name}" sits at ${top.toFixed(2)}m, above the ${highest.toFixed(2)}m a standing player can see the top of. Surface height is measured from the base of the piece, not from the floor.`,
+            )
+          }
+        }
+
         if (orientation !== undefined && (typeof orientation !== 'string' || !SURFACE_ORIENTATION_SET.has(orientation))) {
           fail('furniture', where, `surface "${name}" has an unknown orientation`)
         }

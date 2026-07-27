@@ -13,6 +13,9 @@ import { createCollider } from './player/collision.ts'
 import { createHud } from './ui/hud.ts'
 import { createTargeting, verbFor } from './interaction/targeting.ts'
 import { createHighlight } from './interaction/highlight.ts'
+import { createOverlay } from './ui/overlay.ts'
+import { createInitialState } from './content/flags.ts'
+import { markExamined, resolveExamine } from './rules/secondlook.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -61,7 +64,8 @@ function enterFlat(mount: HTMLElement): void {
   // Clicking the flat takes the pointer. Escape gives it back, which the browser
   // handles for us and which Hard Rule 9 requires to always work.
   engine.renderer.domElement.addEventListener('click', () => {
-    if (!player.isLocked()) player.lock()
+    if (player.isLocked()) interact()
+    else player.lock()
   })
 
   const room = requestedRoom()
@@ -97,6 +101,30 @@ function enterFlat(mount: HTMLElement): void {
   const hud = createHud(mount)
   const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
   const highlight = createHighlight()
+  const overlay = createOverlay(mount)
+  const state = createInitialState()
+  state.act = currentAct()
+
+  overlay.onClose(() => {
+    hud.setVisible(true)
+    if (!player.isLocked()) player.lock()
+  })
+
+  function interact(): void {
+    const target = targeting.current()
+    if (target === null || overlay.isOpen()) return
+
+    const reading = resolveExamine(target.object, state)
+    markExamined(state, target.id, reading.secondLook)
+
+    hud.setVisible(false)
+    player.unlock()
+    overlay.showExamine(reading.text, reading.secondLook)
+  }
+
+  window.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyE' && !overlay.isOpen()) interact()
+  })
 
   engine.start((delta) => {
     if (player.isLocked()) player.update(delta)

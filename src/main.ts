@@ -1,6 +1,6 @@
 import './styles.css'
 import { renderAdvisory } from './advisory.ts'
-import { content, getFloorPlan, getFurniture, getPlacements } from './content/index.ts'
+import { content, getFloorPlan, getFurniture, getPlacements, getText } from './content/index.ts'
 import { createEngine } from './core/engine.ts'
 import { createMaterials } from './world/materials.ts'
 import { buildFlat } from './world/flat.ts'
@@ -16,6 +16,7 @@ import { createHighlight } from './interaction/highlight.ts'
 import { createOverlay } from './ui/overlay.ts'
 import { createInitialState } from './content/flags.ts'
 import { markExamined, resolveExamine } from './rules/secondlook.ts'
+import { renderDocument } from './ui/document.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -119,7 +120,16 @@ function enterFlat(mount: HTMLElement): void {
 
     hud.setVisible(false)
     player.unlock()
-    overlay.showExamine(reading.text, reading.secondLook)
+
+    // A readable opens its document. Everything else is a thought you have while
+    // standing in front of it.
+    const keystone = target.object.text === undefined ? undefined : getText(target.object.text)
+
+    if (keystone === undefined) {
+      overlay.showExamine(reading.text, reading.secondLook)
+    } else {
+      overlay.showDocument(keystone.title, renderDocument(keystone))
+    }
   }
 
   window.addEventListener('keydown', (event) => {

@@ -11,9 +11,13 @@
 import './styles.css'
 import { renderAdvisory } from './advisory.ts'
 import { createMenu } from './ui/menu.ts'
-import { getFloorPlan } from './content/index.ts'
+import { content, getFloorPlan } from './content/index.ts'
 import { startSession, type SessionConfig } from './game/session.ts'
+import { clearCheckpoint, readCheckpoint } from './game/save.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
+
+/** Everything the flat currently contains, for dropping stale saved ids. */
+const knownObjects = new Set(content.objects.map((object) => object.id))
 
 /**
  * Dev aids, all documented in the README. `?room=` places the camera in the
@@ -65,11 +69,30 @@ function showTitle(mount: HTMLElement): void {
   mount.replaceChildren()
 
   const menu = createMenu(mount)
-  menu.showTitle([
+  const saved = readCheckpoint(knownObjects)
+
+  const items = [
+    // Section 12. Continue comes first when there is something to continue, and
+    // it says which act, because "Continue" alone tells a player nothing about
+    // how much of a night they are about to walk back into.
+    ...(saved === null
+      ? []
+      : [
+          {
+            label: `Continue from act ${saved.state.act}`,
+            onSelect: (): void => {
+              menu.dispose()
+              startSession(mount, { ...readConfig(), resume: saved.state })
+            },
+          },
+        ]),
     {
-      label: 'Begin',
+      label: saved === null ? 'Begin' : 'Start again',
       onSelect: (): void => {
         menu.dispose()
+        // Starting again means starting again. Leaving the old checkpoint in
+        // place would offer to undo the decision on the next title screen.
+        if (saved !== null) clearCheckpoint()
         startSession(mount, readConfig())
       },
     },
@@ -80,7 +103,9 @@ function showTitle(mount: HTMLElement): void {
         showAdvisory(mount)
       },
     },
-  ])
+  ]
+
+  menu.showTitle(items)
 }
 
 const app = document.getElementById('app')

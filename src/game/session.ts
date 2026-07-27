@@ -33,7 +33,7 @@ import { createHighlight } from '../interaction/highlight.ts'
 import { createAudio } from '../audio/audio.ts'
 import { markExamined, resolveExamine } from '../rules/secondlook.ts'
 import { documentReadable, verbFor } from '../rules/verbs.ts'
-import { sortDestinations, sortLabel } from '../rules/sorting.ts'
+import { recordSort, sortDestinations, sortLabel } from '../rules/sorting.ts'
 import { createCarry } from './carry.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
 import type { ActNumber, FloorPlan, RoomId, SortDestination } from '../content/types.ts'
@@ -217,7 +217,8 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     if (held === null) return
 
     hud.setCarrying(null)
-    console.info(`sorted ${held.id} to ${destination}`)
+    recordSort(state, held.id, destination)
+    goalLine.refresh(state)
   }
 
   /**

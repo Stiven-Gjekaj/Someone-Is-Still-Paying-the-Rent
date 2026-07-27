@@ -392,6 +392,7 @@ export interface Placement {
 /** Everything under `data/`, loaded and cross-referenced. */
 export interface ContentBundle {
   rooms: Room[]
+  plan: FloorPlan
   lighting: LightingStage[]
   objects: GameObject[]
   fragments: Fragment[]

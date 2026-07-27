@@ -12,6 +12,7 @@
  */
 
 import roomsRaw from '../../data/rooms.json'
+import floorPlanRaw from '../../data/floorplan.json'
 import objectsRaw from '../../data/objects.json'
 import fragmentsRaw from '../../data/fragments.json'
 import textsRaw from '../../data/texts.json'
@@ -22,6 +23,7 @@ import type {
   ActNumber,
   Advisory,
   ContentBundle,
+  FloorPlan,
   Fragment,
   GameObject,
   KeystoneText,
@@ -33,6 +35,7 @@ import type {
 } from './types.ts'
 
 const roomData = roomsRaw as unknown as RoomData
+const floorPlan = floorPlanRaw as unknown as FloorPlan
 const objects = objectsRaw as unknown as GameObject[]
 const fragments = fragmentsRaw as unknown as Fragment[]
 const texts = textsRaw as unknown as KeystoneText[]
@@ -41,6 +44,7 @@ const resources = resourcesRaw as unknown as ResourceData
 
 export const content: ContentBundle = {
   rooms: roomData.rooms,
+  plan: floorPlan,
   lighting: roomData.lighting_progression,
   objects,
   fragments,
@@ -68,6 +72,10 @@ export function getText(id: string): KeystoneText | undefined {
 
 export function objectsInRoom(room: RoomId): GameObject[] {
   return objects.filter((o) => o.room === room)
+}
+
+export function getFloorPlan(): FloorPlan {
+  return floorPlan
 }
 
 /** Everything the player could interact with by this act. Section 4.5. */

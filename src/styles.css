@@ -108,6 +108,23 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
+.begin {
+  margin-top: 3rem;
+  padding: 0.7rem 2rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  letter-spacing: 0.08em;
+  color: var(--ground);
+  background: var(--bulb);
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.begin:hover {
+  filter: brightness(1.1);
+}
+
 .world-canvas {
   position: fixed;
   inset: 0;

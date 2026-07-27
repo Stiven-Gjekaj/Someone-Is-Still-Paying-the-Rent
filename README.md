@@ -46,6 +46,13 @@ this repository has to be erasable: union types and `const` objects instead of `
 enforces this at typecheck time, so a change that would break the validator fails the build
 first.
 
+## Dev parameters
+
+`?room=<id>` starts the camera in the middle of that room rather than at the front door, using the
+room ids in `data/rooms.json`. It exists so the rooms can be screenshotted in a headless browser
+without needing pointer lock, and it is how the verification pass checks that each room reads the
+way `data/rooms.json` says it should.
+
 ## Layout
 
 ```

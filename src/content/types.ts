@@ -214,6 +214,181 @@ export interface ResourceData {
   regions: Record<string, ResourceRegion>
 }
 
+// ---------------------------------------------------------------------------
+// Geometry
+// ---------------------------------------------------------------------------
+
+export type Vec2 = [number, number]
+export type Vec3 = [number, number, number]
+
+export const FLOOR_MATERIALS = ['wood', 'tile_kitchen', 'tile_bathroom', 'concrete'] as const
+
+export type FloorMaterial = (typeof FLOOR_MATERIALS)[number]
+
+export const WALL_SIDES = ['north', 'south', 'east', 'west'] as const
+
+export type WallSide = (typeof WALL_SIDES)[number]
+
+export const OPENING_KINDS = ['doorway', 'balcony_door', 'front_door'] as const
+
+export type OpeningKind = (typeof OPENING_KINDS)[number]
+
+/**
+ * Hard Rule 10. A solid parapet, not a railing: the balcony is a place of warm
+ * memory and the drop is never part of the composition.
+ */
+export interface Parapet {
+  height: number
+  thickness: number
+  sides: WallSide[]
+}
+
+/** Rooms are axis-aligned rectangles. `min` and `max` are [x, z] on the plan. */
+export interface RoomRect {
+  id: RoomId
+  min: Vec2
+  max: Vec2
+  floor: FloorMaterial
+  ceiling: boolean
+  outdoor?: boolean
+  parapet?: Parapet
+}
+
+/**
+ * A gap in a shared wall. `wall` names the axis the wall runs perpendicular to,
+ * `at` is that axis's coordinate, and `centre` is the position along the wall.
+ * The second entry in `between` may be "outside" for the front door.
+ */
+export interface Opening {
+  between: [string, string]
+  wall: 'x' | 'z'
+  at: number
+  centre: number
+  width: number
+  height: number
+  kind: OpeningKind
+}
+
+export interface WindowOpening {
+  room: RoomId
+  wall: WallSide
+  centre: number
+  width: number
+  height: number
+  sill: number
+}
+
+export interface Spawn {
+  room: RoomId
+  position: Vec2
+  /** Radians about Y. Zero looks along negative Z, which is north on the plan. */
+  facing: number
+}
+
+export interface FloorPlan {
+  units: string
+  wall_height: number
+  wall_thickness: number
+  eye_height: number
+  spawn: Spawn
+  rooms: RoomRect[]
+  openings: Opening[]
+  windows: WindowOpening[]
+}
+
+// ---------------------------------------------------------------------------
+// Furniture and placement
+// ---------------------------------------------------------------------------
+
+export const FURNITURE_SHAPES = [
+  'table',
+  'counter',
+  'cabinet',
+  'shelf',
+  'sofa',
+  'bed',
+  'wardrobe',
+  'appliance',
+  'sink',
+  'desk',
+  'seat',
+  'plinth',
+  'panel',
+] as const
+
+export type FurnitureShape = (typeof FURNITURE_SHAPES)[number]
+
+export const SURFACE_ORIENTATIONS = ['horizontal', 'vertical'] as const
+
+export type SurfaceOrientation = (typeof SURFACE_ORIENTATIONS)[number]
+
+/**
+ * Where objects come to rest. Horizontal surfaces are table tops and floors and
+ * `height` is the resting height. Vertical surfaces are walls, fridge doors, and
+ * mirror frames, where `height` is the centre and `facing` is the way objects
+ * turn to meet the room.
+ */
+export interface SurfaceSpec {
+  name: string
+  height: number
+  inset: number
+  orientation?: SurfaceOrientation
+  facing?: WallSide
+}
+
+export interface FurniturePiece {
+  id: string
+  room: RoomId
+  shape: FurnitureShape
+  /** Centre of the footprint, [x, z]. */
+  position: Vec2
+  /** Width, height, depth. */
+  size: Vec3
+  /** Radians about Y. */
+  rotation?: number
+  material?: string
+  surface?: SurfaceSpec
+}
+
+export const PROP_SHAPES = [
+  'paper',
+  'book',
+  'mug',
+  'bowl',
+  'jar',
+  'bottle',
+  'phone',
+  'frame',
+  'carton',
+  'plant',
+  'cloth',
+  'footwear',
+  'folding_seat',
+  'case',
+  'disc',
+] as const
+
+export type PropShape = (typeof PROP_SHAPES)[number]
+
+export const PROP_POSES = ['flat', 'face_down', 'upright', 'leaning'] as const
+
+export type PropPose = (typeof PROP_POSES)[number]
+
+/** One entry per object that appears in the flat. */
+export interface Placement {
+  id: string
+  surface: string
+  shape: PropShape
+  /** Displacement from the surface anchor, in surface-local metres. */
+  offset?: Vec3
+  pose?: PropPose
+  /** Radians about Y, on top of the pose. */
+  yaw?: number
+  /** Separates objects that share a shape, such as the two mugs. */
+  tint?: string
+  scale?: number
+}
+
 /** Everything under `data/`, loaded and cross-referenced. */
 export interface ContentBundle {
   rooms: Room[]

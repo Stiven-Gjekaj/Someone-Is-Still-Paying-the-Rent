@@ -14,7 +14,14 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { OBJECT_TYPES, ROOM_IDS, TEXT_BLOCK_KINDS } from '../src/content/types.ts'
+import {
+  FLOOR_MATERIALS,
+  OBJECT_TYPES,
+  OPENING_KINDS,
+  ROOM_IDS,
+  TEXT_BLOCK_KINDS,
+  WALL_SIDES,
+} from '../src/content/types.ts'
 import { BOOLEAN_FLAGS, parseFlagReference } from '../src/content/flags.ts'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -69,6 +76,7 @@ const texts = loadJson('data/texts.json') as Record<string, unknown>[]
 const roomData = loadJson('data/rooms.json') as Record<string, unknown>
 const sceneData = loadJson('data/scenes.json') as Record<string, unknown>
 const resources = loadJson('data/resources.json') as Record<string, unknown>
+const floorPlan = loadJson('data/floorplan.json') as Record<string, unknown>
 
 const objectIds = new Set(objects.map((o) => String(o['id'])))
 const fragmentIds = new Set(fragments.map((f) => String(f['id'])))
@@ -504,6 +512,297 @@ if (!isRecord(regions) || Object.keys(regions).length === 0) {
         fail('resources', at, 'every entry must record where it was verified, in "source"')
       }
     })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Floor plan geometry
+// ---------------------------------------------------------------------------
+
+/**
+ * The plan is a set of axis-aligned rectangles, which makes every one of these
+ * checks arithmetic rather than guesswork. A doorway placed on a wall two rooms
+ * do not actually share produces a hole into nothing, and it is invisible until
+ * you walk into it.
+ */
+interface Rect {
+  id: string
+  minX: number
+  minZ: number
+  maxX: number
+  maxZ: number
+}
+
+const FLOOR_MATERIAL_SET: ReadonlySet<string> = new Set(FLOOR_MATERIALS)
+const WALL_SIDE_SET: ReadonlySet<string> = new Set(WALL_SIDES)
+const OPENING_KIND_SET: ReadonlySet<string> = new Set(OPENING_KINDS)
+
+const EPSILON = 1e-6
+
+const wallHeight = typeof floorPlan['wall_height'] === 'number' ? floorPlan['wall_height'] : 0
+if (wallHeight <= 0) fail('floor plan', 'data/floorplan.json', 'wall_height must be positive')
+
+const eyeHeight = typeof floorPlan['eye_height'] === 'number' ? floorPlan['eye_height'] : 0
+if (eyeHeight <= 0 || eyeHeight >= wallHeight) {
+  fail('floor plan', 'data/floorplan.json', 'eye_height must be above the floor and below the ceiling')
+}
+
+const rects = new Map<string, Rect>()
+const planRooms = floorPlan['rooms']
+
+if (!Array.isArray(planRooms)) {
+  fail('floor plan', 'data/floorplan.json', 'rooms must be an array')
+} else {
+  for (const room of planRooms) {
+    if (!isRecord(room)) {
+      fail('floor plan', 'data/floorplan.json', 'room must be an object')
+      continue
+    }
+
+    const id = room['id']
+    const where = `plan room ${String(id)}`
+
+    if (typeof id !== 'string' || !ROOM_ID_SET.has(id)) {
+      fail('floor plan', where, 'unknown room id')
+      continue
+    }
+    if (rects.has(id)) fail('floor plan', where, 'duplicate room')
+
+    const min = room['min']
+    const max = room['max']
+    if (!Array.isArray(min) || min.length !== 2 || !Array.isArray(max) || max.length !== 2) {
+      fail('floor plan', where, 'min and max must each be [x, z]')
+      continue
+    }
+
+    const rect: Rect = {
+      id,
+      minX: Number(min[0]),
+      minZ: Number(min[1]),
+      maxX: Number(max[0]),
+      maxZ: Number(max[1]),
+    }
+
+    if (rect.maxX <= rect.minX || rect.maxZ <= rect.minZ) {
+      fail('floor plan', where, 'max must be greater than min on both axes')
+      continue
+    }
+
+    if (typeof room['floor'] !== 'string' || !FLOOR_MATERIAL_SET.has(room['floor'])) {
+      fail('floor plan', where, `unknown floor material ${JSON.stringify(room['floor'])}`)
+    }
+    if (typeof room['ceiling'] !== 'boolean') fail('floor plan', where, 'ceiling must be a boolean')
+
+    const parapet = room['parapet']
+    if (parapet !== undefined) {
+      if (!isRecord(parapet)) {
+        fail('floor plan', where, 'parapet must be an object')
+      } else {
+        const height = parapet['height']
+        // Hard Rule 10: chest height and solid. A low parapet turns the balcony
+        // into a place you look down from, which is exactly what it must not be.
+        if (typeof height !== 'number' || height < 1.0) {
+          fail('floor plan', where, 'Hard Rule 10: a balcony parapet must be at least 1.0m and solid')
+        }
+        if (!Array.isArray(parapet['sides']) || parapet['sides'].length === 0) {
+          fail('floor plan', where, 'parapet must name the sides it runs along')
+        }
+      }
+    }
+
+    rects.set(id, rect)
+  }
+
+  for (const id of ROOM_IDS) {
+    if (!rects.has(id)) fail('floor plan', `plan room ${id}`, 'named in rooms.json but has no rectangle')
+  }
+
+  const all = [...rects.values()]
+  for (let i = 0; i < all.length; i += 1) {
+    for (let j = i + 1; j < all.length; j += 1) {
+      const a = all[i]
+      const b = all[j]
+      if (a === undefined || b === undefined) continue
+      const overlapX = Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX)
+      const overlapZ = Math.min(a.maxZ, b.maxZ) - Math.max(a.minZ, b.minZ)
+      if (overlapX > EPSILON && overlapZ > EPSILON) {
+        fail('floor plan', `${a.id} and ${b.id}`, 'rectangles overlap')
+      }
+    }
+  }
+}
+
+const adjacency = new Map<string, string[]>()
+for (const id of rects.keys()) adjacency.set(id, [])
+
+const planOpenings = floorPlan['openings']
+if (!Array.isArray(planOpenings)) {
+  fail('floor plan', 'data/floorplan.json', 'openings must be an array')
+} else {
+  for (const opening of planOpenings) {
+    if (!isRecord(opening)) {
+      fail('floor plan', 'data/floorplan.json', 'opening must be an object')
+      continue
+    }
+
+    const between = opening['between']
+    if (!Array.isArray(between) || between.length !== 2) {
+      fail('floor plan', 'data/floorplan.json', 'opening.between must name two rooms')
+      continue
+    }
+
+    const [aId, bId] = [String(between[0]), String(between[1])]
+    const where = `opening ${aId} to ${bId}`
+
+    if (typeof opening['kind'] !== 'string' || !OPENING_KIND_SET.has(opening['kind'])) {
+      fail('floor plan', where, `unknown opening kind ${JSON.stringify(opening['kind'])}`)
+    }
+
+    const axis = opening['wall']
+    const at = Number(opening['at'])
+    const centre = Number(opening['centre'])
+    const width = Number(opening['width'])
+    const height = Number(opening['height'])
+
+    if (axis !== 'x' && axis !== 'z') {
+      fail('floor plan', where, 'wall must be "x" or "z"')
+      continue
+    }
+    if (!(width > 0) || !(height > 0)) {
+      fail('floor plan', where, 'width and height must be positive')
+      continue
+    }
+    if (height > wallHeight + EPSILON) fail('floor plan', where, 'opening is taller than the wall')
+
+    const a = rects.get(aId)
+    if (a === undefined) {
+      fail('floor plan', where, `${aId} has no rectangle`)
+      continue
+    }
+
+    const low = centre - width / 2
+    const high = centre + width / 2
+
+    const touches = (rect: Rect): boolean =>
+      axis === 'z'
+        ? Math.abs(rect.minZ - at) < EPSILON || Math.abs(rect.maxZ - at) < EPSILON
+        : Math.abs(rect.minX - at) < EPSILON || Math.abs(rect.maxX - at) < EPSILON
+
+    if (bId === 'outside') {
+      if (!touches(a)) fail('floor plan', where, 'the front door is not on a wall of its room')
+      const span = axis === 'z' ? [a.minX, a.maxX] : [a.minZ, a.maxZ]
+      const spanLow = span[0] ?? 0
+      const spanHigh = span[1] ?? 0
+      if (low < spanLow - EPSILON || high > spanHigh + EPSILON) {
+        fail('floor plan', where, 'the front door runs past the end of its wall')
+      }
+      continue
+    }
+
+    const b = rects.get(bId)
+    if (b === undefined) {
+      fail('floor plan', where, `${bId} has no rectangle`)
+      continue
+    }
+
+    if (!touches(a) || !touches(b)) {
+      fail('floor plan', where, `these rooms do not share the wall ${axis}=${at}`)
+      continue
+    }
+
+    const sharedLow = axis === 'z' ? Math.max(a.minX, b.minX) : Math.max(a.minZ, b.minZ)
+    const sharedHigh = axis === 'z' ? Math.min(a.maxX, b.maxX) : Math.min(a.maxZ, b.maxZ)
+
+    if (low < sharedLow - EPSILON || high > sharedHigh + EPSILON) {
+      fail(
+        'floor plan',
+        where,
+        `opening spans ${low.toFixed(2)} to ${high.toFixed(2)}, outside the shared wall ${sharedLow.toFixed(2)} to ${sharedHigh.toFixed(2)}`,
+      )
+    }
+
+    adjacency.get(aId)?.push(bId)
+    adjacency.get(bId)?.push(aId)
+  }
+}
+
+const planWindows = floorPlan['windows']
+if (!Array.isArray(planWindows)) {
+  fail('floor plan', 'data/floorplan.json', 'windows must be an array')
+} else {
+  for (const window of planWindows) {
+    if (!isRecord(window)) {
+      fail('floor plan', 'data/floorplan.json', 'window must be an object')
+      continue
+    }
+
+    const roomId = String(window['room'])
+    const side = window['wall']
+    const where = `window in ${roomId} on the ${String(side)} wall`
+
+    const rect = rects.get(roomId)
+    if (rect === undefined) {
+      fail('floor plan', where, 'unknown room')
+      continue
+    }
+    if (typeof side !== 'string' || !WALL_SIDE_SET.has(side)) {
+      fail('floor plan', where, 'wall must be north, south, east, or west')
+      continue
+    }
+
+    const centre = Number(window['centre'])
+    const width = Number(window['width'])
+    const height = Number(window['height'])
+    const sill = Number(window['sill'])
+
+    const alongX = side === 'north' || side === 'south'
+    const spanLow = alongX ? rect.minX : rect.minZ
+    const spanHigh = alongX ? rect.maxX : rect.maxZ
+
+    if (centre - width / 2 < spanLow - EPSILON || centre + width / 2 > spanHigh + EPSILON) {
+      fail('floor plan', where, 'the window runs past the end of its wall')
+    }
+    if (sill < 0) fail('floor plan', where, 'the sill is below the floor')
+    if (sill + height > wallHeight + EPSILON) fail('floor plan', where, 'the window reaches the ceiling')
+  }
+}
+
+// Every room has to be walkable from where the player starts.
+const spawn = floorPlan['spawn']
+if (!isRecord(spawn)) {
+  fail('floor plan', 'data/floorplan.json', 'spawn is missing')
+} else {
+  const spawnRoom = String(spawn['room'])
+  const rect = rects.get(spawnRoom)
+  const position = spawn['position']
+
+  if (rect === undefined) {
+    fail('floor plan', 'spawn', `unknown room ${spawnRoom}`)
+  } else if (!Array.isArray(position) || position.length !== 2) {
+    fail('floor plan', 'spawn', 'position must be [x, z]')
+  } else {
+    const x = Number(position[0])
+    const z = Number(position[1])
+    if (x < rect.minX || x > rect.maxX || z < rect.minZ || z > rect.maxZ) {
+      fail('floor plan', 'spawn', `position ${x}, ${z} is outside ${spawnRoom}`)
+    }
+
+    const reached = new Set([spawnRoom])
+    const queue = [spawnRoom]
+    while (queue.length > 0) {
+      const current = queue.shift()
+      if (current === undefined) break
+      for (const neighbour of adjacency.get(current) ?? []) {
+        if (!reached.has(neighbour)) {
+          reached.add(neighbour)
+          queue.push(neighbour)
+        }
+      }
+    }
+
+    for (const id of rects.keys()) {
+      if (!reached.has(id)) fail('floor plan', `plan room ${id}`, `unreachable on foot from ${spawnRoom}`)
+    }
   }
 }
 

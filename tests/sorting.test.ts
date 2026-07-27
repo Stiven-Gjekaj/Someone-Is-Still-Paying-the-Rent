@@ -90,6 +90,23 @@ describe('documentReadable', () => {
     assert.equal(note.text_from_act, undefined)
     assert.equal(documentReadable(note, note.act_min), true)
   })
+
+  it('lets a sortable document be read once and packed afterwards', () => {
+    // Four of act 1's sortable objects carry a document. If Read won outright
+    // they could be read all night and never put in a box.
+    const note = object('lena_note')
+    assert.equal(note.sortable, true)
+
+    assert.equal(verbFor(note, { act: 1, examined: false, carrying: false }), 'Read')
+    assert.equal(verbFor(note, { act: 1, examined: true, carrying: false }), 'Take')
+  })
+
+  it('keeps a document you cannot pack readable for good', () => {
+    const bag = object('pc_bag')
+    assert.equal(bag.sortable, false)
+
+    assert.equal(verbFor(bag, { act: 3, examined: true, carrying: false }), 'Read')
+  })
 })
 
 describe('recordSort', () => {

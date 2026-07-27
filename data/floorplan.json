@@ -1,0 +1,163 @@
+{
+  "units": "meters",
+  "wall_height": 2.6,
+  "wall_thickness": 0.12,
+  "eye_height": 1.66,
+
+  "spawn": {
+    "room": "entry_hall",
+    "position": [4.0, 6.9],
+    "facing": 0
+  },
+
+  "rooms": [
+    {
+      "id": "entry_hall",
+      "min": [2.6, 5.2],
+      "max": [5.4, 7.4],
+      "floor": "wood",
+      "ceiling": true
+    },
+    {
+      "id": "living_room",
+      "min": [2.6, 0.4],
+      "max": [7.6, 5.2],
+      "floor": "wood",
+      "ceiling": true
+    },
+    {
+      "id": "kitchen",
+      "min": [0.0, 0.4],
+      "max": [2.6, 3.4],
+      "floor": "tile_kitchen",
+      "ceiling": true
+    },
+    {
+      "id": "bathroom",
+      "min": [0.0, 3.4],
+      "max": [2.6, 5.2],
+      "floor": "tile_bathroom",
+      "ceiling": true
+    },
+    {
+      "id": "bedroom",
+      "min": [0.0, 5.2],
+      "max": [2.6, 8.6],
+      "floor": "wood",
+      "ceiling": true
+    },
+    {
+      "id": "balcony",
+      "min": [4.8, -1.4],
+      "max": [7.6, 0.4],
+      "floor": "concrete",
+      "ceiling": false,
+      "outdoor": true,
+      "parapet": {
+        "height": 1.15,
+        "thickness": 0.18,
+        "sides": ["north", "west", "east"]
+      }
+    }
+  ],
+
+  "openings": [
+    {
+      "between": ["entry_hall", "living_room"],
+      "wall": "z",
+      "at": 5.2,
+      "centre": 3.8,
+      "width": 1.1,
+      "height": 2.05,
+      "kind": "doorway"
+    },
+    {
+      "between": ["entry_hall", "bedroom"],
+      "wall": "x",
+      "at": 2.6,
+      "centre": 6.3,
+      "width": 0.85,
+      "height": 2.02,
+      "kind": "doorway"
+    },
+    {
+      "between": ["living_room", "kitchen"],
+      "wall": "x",
+      "at": 2.6,
+      "centre": 2.0,
+      "width": 1.1,
+      "height": 2.05,
+      "kind": "doorway"
+    },
+    {
+      "between": ["bedroom", "bathroom"],
+      "wall": "z",
+      "at": 5.2,
+      "centre": 1.0,
+      "width": 0.75,
+      "height": 2.0,
+      "kind": "doorway"
+    },
+    {
+      "between": ["living_room", "balcony"],
+      "wall": "z",
+      "at": 0.4,
+      "centre": 6.0,
+      "width": 0.9,
+      "height": 2.1,
+      "kind": "balcony_door"
+    },
+    {
+      "between": ["entry_hall", "outside"],
+      "wall": "z",
+      "at": 7.4,
+      "centre": 4.0,
+      "width": 0.9,
+      "height": 2.05,
+      "kind": "front_door"
+    }
+  ],
+
+  "windows": [
+    {
+      "room": "living_room",
+      "wall": "north",
+      "centre": 3.6,
+      "width": 1.5,
+      "height": 1.4,
+      "sill": 0.9
+    },
+    {
+      "room": "living_room",
+      "wall": "east",
+      "centre": 2.4,
+      "width": 1.3,
+      "height": 1.4,
+      "sill": 0.9
+    },
+    {
+      "room": "kitchen",
+      "wall": "north",
+      "centre": 1.3,
+      "width": 1.2,
+      "height": 1.05,
+      "sill": 1.05
+    },
+    {
+      "room": "bedroom",
+      "wall": "west",
+      "centre": 6.6,
+      "width": 1.3,
+      "height": 1.25,
+      "sill": 0.95
+    },
+    {
+      "room": "bathroom",
+      "wall": "west",
+      "centre": 4.3,
+      "width": 0.6,
+      "height": 0.55,
+      "sill": 1.55
+    }
+  ]
+}

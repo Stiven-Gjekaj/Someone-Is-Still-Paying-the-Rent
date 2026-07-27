@@ -1287,6 +1287,34 @@ if (isRecord(regions)) {
   }
 }
 
+/**
+ * Hard Rule 1 says no object in the flat relates to means in any way, and that
+ * is a statement about what is in the room, not only about what is written about
+ * it. Furniture and placement carry no prose, but they do decide what exists: a
+ * piece called `knife_block` or a prop shaped `rope` puts the thing in the flat
+ * whether or not any string ever mentions it.
+ *
+ * So the ids and shapes get scanned too, against the same lexicons.
+ */
+const geometryNames: Strand[] = []
+
+for (const piece of furniture) {
+  const id = String(piece['id'])
+  const room = typeof piece['room'] === 'string' ? piece['room'] : undefined
+  geometryNames.push({ where: `furniture ${id} id`, text: id.replace(/_/g, ' '), ...(room === undefined ? {} : { room }) })
+  if (typeof piece['shape'] === 'string') {
+    geometryNames.push({ where: `furniture ${id} shape`, text: piece['shape'], ...(room === undefined ? {} : { room }) })
+  }
+}
+
+for (const placement of placements) {
+  const id = String(placement['id'])
+  const room = roomOf.get(id)
+  if (typeof placement['shape'] === 'string') {
+    geometryNames.push({ where: `placement ${id} shape`, text: placement['shape'], ...(room === undefined ? {} : { room }) })
+  }
+}
+
 interface Lexicon {
   rule: string
   terms: readonly string[]
@@ -1346,7 +1374,7 @@ function containsTerm(text: string, term: string): boolean {
 }
 
 for (const lexicon of LEXICONS) {
-  for (const strand of playerFacing) {
+  for (const strand of [...playerFacing, ...geometryNames]) {
     if (lexicon.only !== undefined && !lexicon.only(strand)) continue
     for (const term of lexicon.terms) {
       if (containsTerm(strand.text, term)) {
@@ -1466,7 +1494,10 @@ function report(): void {
       `${Array.isArray(rooms) ? rooms.length : 0} rooms`,
   )
 
-  console.log(`  ${playerFacing.length} player-facing strings scanned against the section 0 lexicons`)
+  console.log(
+    `  ${playerFacing.length} player-facing strings and ${geometryNames.length} geometry names ` +
+      'scanned against the section 0 lexicons',
+  )
   console.log(`  ${scannedFiles.length} files scanned for em-dashes and emoji`)
 
   if (problems.length === 0) {

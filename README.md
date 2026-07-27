@@ -7,7 +7,7 @@ packing his life into boxes before the lease ends.
 
 ## Status
 
-Foundation only. There is no runtime game yet.
+The flat is built and walkable. There is no game in it yet.
 
 What exists today:
 
@@ -43,6 +43,7 @@ npm install
 | `npm run build` | Production build into `dist/` |
 | `npm run typecheck` | `tsc --noEmit` in strict mode |
 | `npm run validate` | Content validator: schema, references, hard rules, writing style |
+| `npm test` | Node's test runner over the pure logic. No dependencies |
 
 `npm run validate` runs the validator directly through Node, with no loader and no
 dependencies. Node 24 strips TypeScript types natively, which is why every type annotation in

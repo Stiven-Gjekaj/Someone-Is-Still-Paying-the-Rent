@@ -29,6 +29,11 @@ jobs:
         # Schema, cross-references, the section 0 hard rules, and writing style.
         run: npm run validate
 
+      - name: Test
+        # Pure logic only: flag resolution, second look gating, and whether every
+        # room in the flat can actually be walked to.
+        run: npm test
+
       - name: Build
         run: npm run build
 

@@ -13,7 +13,16 @@
 import * as THREE from 'three'
 
 import type { FloorPlan, RoomId } from '../content/types.ts'
-import { createFridgeHum, createRain, createRoomTone, noiseBuffer, tick, type Hum, type Source } from './synth.ts'
+import {
+  createFridgeHum,
+  createRain,
+  createRoomTone,
+  keyInLock,
+  noiseBuffer,
+  tick,
+  type Hum,
+  type Source,
+} from './synth.ts'
 
 const RAIN_LEVEL = 0.075
 const ROOM_TONE_LEVEL = 0.03
@@ -44,6 +53,11 @@ export interface Audio {
   setMuted(muted: boolean): void
   /** Section 4.3. Pulls the room back while a memory has the screen. */
   setDucked(ducked: boolean): void
+  /**
+   * Section 8.1. The key in the lock, over the black. Returns how long it runs,
+   * or 0 if the context is not up yet, so the opening can wait for it.
+   */
+  playKeyInLock(): number
   dispose(): void
 }
 
@@ -63,6 +77,7 @@ export function createAudio(plan: FloorPlan): Audio {
   let untilNextTick = TICK_MIN_GAP
   let muted = false
   let ducked = false
+  let noise: AudioBuffer | null = null
 
   const forward = new THREE.Vector3()
   const up = new THREE.Vector3()
@@ -93,7 +108,7 @@ export function createAudio(plan: FloorPlan): Audio {
       out.connect(ctx.destination)
       master = out
 
-      const noise = noiseBuffer(ctx)
+      noise = noiseBuffer(ctx)
 
       const rain = createRain(ctx, noise, RAIN_LEVEL)
       rain.output.connect(out)
@@ -160,6 +175,13 @@ export function createAudio(plan: FloorPlan): Audio {
       }
     },
 
+    playKeyInLock(): number {
+      if (context === null || master === null || noise === null) return 0
+      // Louder than the ambience it plays over: the flat is silent, the screen is
+      // black, and this is the only thing happening.
+      return keyInLock(context, noise, master, 0.32)
+    },
+
     setFridgeMuffled(value: boolean): void {
       fridge?.setMuffled(value)
     },
@@ -187,6 +209,7 @@ export function createAudio(plan: FloorPlan): Audio {
       void context?.close()
       context = null
       master = null
+      noise = null
       ducked = false
       fridge = null
       radiators = null

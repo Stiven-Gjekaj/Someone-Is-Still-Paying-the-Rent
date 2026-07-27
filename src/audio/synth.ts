@@ -163,3 +163,77 @@ export function tick(context: AudioContext, destination: AudioNode, level: numbe
   oscillator.start(now)
   oscillator.stop(now + 0.2)
 }
+
+/**
+ * Section 8.1. A key going into a loose cylinder, turning, and the door coming
+ * open.
+ *
+ * Three parts, because that is what the sound is: the scrape of the key finding
+ * the pins, two dull clacks as the cylinder turns past a worn detent, and the
+ * latch letting go. The looseness is the point. It is a door he opened a
+ * thousand times and it never got fixed.
+ *
+ * Returns how long the whole thing lasts, so the opening can wait for it.
+ */
+export function keyInLock(context: AudioContext, buffer: AudioBuffer, destination: AudioNode, level: number): number {
+  const start = context.currentTime + 0.05
+
+  // The key going in. Filtered noise, brief and scratchy.
+  const scrape = context.createBufferSource()
+  scrape.buffer = buffer
+
+  const scrapeFilter = context.createBiquadFilter()
+  scrapeFilter.type = 'bandpass'
+  scrapeFilter.frequency.value = 2600
+  scrapeFilter.Q.value = 1.2
+
+  const scrapeGain = context.createGain()
+  scrapeGain.gain.setValueAtTime(0, start)
+  scrapeGain.gain.linearRampToValueAtTime(level * 0.5, start + 0.03)
+  scrapeGain.gain.linearRampToValueAtTime(level * 0.22, start + 0.16)
+  scrapeGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.3)
+
+  scrape.connect(scrapeFilter).connect(scrapeGain).connect(destination)
+  scrape.start(start)
+  scrape.stop(start + 0.35)
+
+  // The cylinder. Two clacks, the second heavier, because it is worn.
+  for (const [at, pitch, weight] of [[0.42, 240, 0.8], [0.62, 175, 1]] as const) {
+    const clack = context.createOscillator()
+    clack.type = 'square'
+    clack.frequency.setValueAtTime(pitch, start + at)
+    clack.frequency.exponentialRampToValueAtTime(pitch * 0.55, start + at + 0.04)
+
+    const shape = context.createGain()
+    shape.gain.setValueAtTime(0, start + at)
+    shape.gain.linearRampToValueAtTime(level * weight, start + at + 0.004)
+    shape.gain.exponentialRampToValueAtTime(0.0001, start + at + 0.11)
+
+    const soften = context.createBiquadFilter()
+    soften.type = 'lowpass'
+    soften.frequency.value = 900
+
+    clack.connect(shape).connect(soften).connect(destination)
+    clack.start(start + at)
+    clack.stop(start + at + 0.16)
+  }
+
+  // The latch letting go, and the door.
+  const latch = context.createBufferSource()
+  latch.buffer = buffer
+
+  const latchFilter = context.createBiquadFilter()
+  latchFilter.type = 'lowpass'
+  latchFilter.frequency.value = 520
+
+  const latchGain = context.createGain()
+  latchGain.gain.setValueAtTime(0, start + 0.86)
+  latchGain.gain.linearRampToValueAtTime(level * 0.85, start + 0.9)
+  latchGain.gain.exponentialRampToValueAtTime(0.0001, start + 1.5)
+
+  latch.connect(latchFilter).connect(latchGain).connect(destination)
+  latch.start(start + 0.86)
+  latch.stop(start + 1.6)
+
+  return 1.7
+}

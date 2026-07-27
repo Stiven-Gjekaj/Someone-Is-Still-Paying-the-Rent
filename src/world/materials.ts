@@ -14,6 +14,7 @@
 
 import * as THREE from 'three'
 
+import type { PaletteKey } from '../content/types.ts'
 import {
   concreteTexture,
   fabricTexture,
@@ -70,6 +71,16 @@ export interface Materials {
   rubber: THREE.MeshStandardMaterial
 
   dispose(): void
+}
+
+/**
+ * Looks a material up by the name the data uses. Indexing `Materials` with
+ * `PaletteKey` is what ties the two together: a key listed in PALETTE_KEYS that
+ * the palette does not actually define is a typecheck error here, so the data
+ * can never name a material that does not exist.
+ */
+export function materialByKey(materials: Materials, key: PaletteKey): THREE.Material {
+  return materials[key]
 }
 
 export function createMaterials(): Materials {

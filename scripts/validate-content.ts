@@ -16,9 +16,12 @@ import { fileURLToPath } from 'node:url'
 
 import {
   FLOOR_MATERIALS,
+  FURNITURE_SHAPES,
   OBJECT_TYPES,
   OPENING_KINDS,
+  PALETTE_KEYS,
   ROOM_IDS,
+  SURFACE_ORIENTATIONS,
   TEXT_BLOCK_KINDS,
   WALL_SIDES,
 } from '../src/content/types.ts'
@@ -802,6 +805,200 @@ if (!isRecord(spawn)) {
 
     for (const id of rects.keys()) {
       if (!reached.has(id)) fail('floor plan', `plan room ${id}`, `unreachable on foot from ${spawnRoom}`)
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Furniture
+// ---------------------------------------------------------------------------
+
+/**
+ * Furniture is checked against the plan rather than against a screenshot. A
+ * wardrobe standing in a doorway or a counter half inside a wall is arithmetic,
+ * and finding it here costs nothing compared with finding it by walking into it.
+ */
+const FURNITURE_SHAPE_SET: ReadonlySet<string> = new Set(FURNITURE_SHAPES)
+const PALETTE_KEY_SET: ReadonlySet<string> = new Set(PALETTE_KEYS)
+const SURFACE_ORIENTATION_SET: ReadonlySet<string> = new Set(SURFACE_ORIENTATIONS)
+
+interface Footprint {
+  id: string
+  room: string
+  minX: number
+  minZ: number
+  maxX: number
+  maxZ: number
+}
+
+/** How far in front of an opening must stay clear for the player to get through. */
+const DOORWAY_CLEARANCE = 0.4
+
+const furniture = loadJson('data/furniture.json') as Record<string, unknown>[]
+const footprints: Footprint[] = []
+const surfaceNames = new Map<string, string>()
+const seenFurnitureIds = new Set<string>()
+
+for (const piece of furniture) {
+  const rawId = piece['id']
+  const id = typeof rawId === 'string' ? rawId : '(no id)'
+  const where = `furniture ${id}`
+
+  if (typeof rawId !== 'string' || !ID_PATTERN.test(rawId)) fail('furniture', where, 'id must be snake_case')
+  if (seenFurnitureIds.has(id)) fail('furniture', where, 'duplicate id')
+  seenFurnitureIds.add(id)
+
+  const roomId = piece['room']
+  if (typeof roomId !== 'string' || !ROOM_ID_SET.has(roomId)) {
+    fail('furniture', where, `unknown room ${JSON.stringify(roomId)}`)
+    continue
+  }
+
+  if (typeof piece['shape'] !== 'string' || !FURNITURE_SHAPE_SET.has(piece['shape'])) {
+    fail('furniture', where, `unknown shape ${JSON.stringify(piece['shape'])}`)
+  }
+
+  const material = piece['material']
+  if (material !== undefined && (typeof material !== 'string' || !PALETTE_KEY_SET.has(material))) {
+    fail('furniture', where, `unknown material ${JSON.stringify(material)}`)
+  }
+
+  const objectRef = piece['object']
+  if (objectRef !== undefined) {
+    if (typeof objectRef !== 'string' || !objectIds.has(objectRef)) {
+      fail('furniture', where, `object ${JSON.stringify(objectRef)} does not exist`)
+    }
+  }
+
+  const position = piece['position']
+  const size = piece['size']
+  if (!Array.isArray(position) || position.length !== 2 || !Array.isArray(size) || size.length !== 3) {
+    fail('furniture', where, 'position must be [x, z] and size must be [width, height, depth]')
+    continue
+  }
+
+  const x = Number(position[0])
+  const z = Number(position[1])
+  const width = Number(size[0])
+  const tall = Number(size[1])
+  const depth = Number(size[2])
+
+  if (!(width > 0) || !(tall > 0) || !(depth > 0)) {
+    fail('furniture', where, 'every dimension must be positive')
+    continue
+  }
+
+  const elevation = piece['elevation'] === undefined ? 0 : Number(piece['elevation'])
+  if (elevation + tall > wallHeight + EPSILON) fail('furniture', where, 'reaches through the ceiling')
+
+  // Conservative axis-aligned bounds for the rotated rectangle.
+  const angle = piece['rotation'] === undefined ? 0 : Number(piece['rotation'])
+  const cos = Math.abs(Math.cos(angle))
+  const sin = Math.abs(Math.sin(angle))
+  const extentX = (width / 2) * cos + (depth / 2) * sin
+  const extentZ = (width / 2) * sin + (depth / 2) * cos
+
+  const footprint: Footprint = {
+    id,
+    room: roomId,
+    minX: x - extentX,
+    minZ: z - extentZ,
+    maxX: x + extentX,
+    maxZ: z + extentZ,
+  }
+
+  const rect = rects.get(roomId)
+  if (rect !== undefined) {
+    const slack = 0.02
+    if (
+      footprint.minX < rect.minX - slack ||
+      footprint.maxX > rect.maxX + slack ||
+      footprint.minZ < rect.minZ - slack ||
+      footprint.maxZ > rect.maxZ + slack
+    ) {
+      fail('furniture', where, `sticks out of ${roomId}`)
+    }
+  }
+
+  // A millimetre, not an epsilon. Pieces are placed by hand and meant to touch,
+  // and a rotation written as 1.5708 rather than exactly a quarter turn leaves
+  // micron-scale overlaps that are not worth anybody's attention.
+  const TOUCHING = 0.001
+
+  for (const other of footprints) {
+    if (other.room !== roomId) continue
+    const overlapX = Math.min(footprint.maxX, other.maxX) - Math.max(footprint.minX, other.minX)
+    const overlapZ = Math.min(footprint.maxZ, other.maxZ) - Math.max(footprint.minZ, other.minZ)
+    if (overlapX > TOUCHING && overlapZ > TOUCHING) {
+      fail('furniture', where, `overlaps ${other.id} by ${(Math.min(overlapX, overlapZ) * 100).toFixed(1)}cm`)
+    }
+  }
+
+  // Nothing may stand in a doorway, or close enough in front of one to block it.
+  if (Array.isArray(planOpenings)) {
+    for (const opening of planOpenings) {
+      if (!isRecord(opening)) continue
+      const between = opening['between']
+      if (!Array.isArray(between) || !between.includes(roomId)) continue
+
+      const axis = opening['wall']
+      const at = Number(opening['at'])
+      const centre = Number(opening['centre'])
+      const half = Number(opening['width']) / 2
+
+      const zoneMinX = axis === 'z' ? centre - half : at - DOORWAY_CLEARANCE
+      const zoneMaxX = axis === 'z' ? centre + half : at + DOORWAY_CLEARANCE
+      const zoneMinZ = axis === 'z' ? at - DOORWAY_CLEARANCE : centre - half
+      const zoneMaxZ = axis === 'z' ? at + DOORWAY_CLEARANCE : centre + half
+
+      const overlapX = Math.min(footprint.maxX, zoneMaxX) - Math.max(footprint.minX, zoneMinX)
+      const overlapZ = Math.min(footprint.maxZ, zoneMaxZ) - Math.max(footprint.minZ, zoneMinZ)
+
+      if (overlapX > EPSILON && overlapZ > EPSILON) {
+        fail('furniture', where, `blocks the ${String(between[0])} to ${String(between[1])} doorway`)
+      }
+    }
+  }
+
+  footprints.push(footprint)
+
+  const surfaces = piece['surfaces']
+  if (surfaces !== undefined) {
+    if (!Array.isArray(surfaces)) {
+      fail('furniture', where, 'surfaces must be an array')
+    } else {
+      for (const surface of surfaces) {
+        if (!isRecord(surface)) {
+          fail('furniture', where, 'surface must be an object')
+          continue
+        }
+
+        const name = surface['name']
+        if (typeof name !== 'string' || !ID_PATTERN.test(name)) {
+          fail('furniture', where, `surface name ${JSON.stringify(name)} must be snake_case`)
+          continue
+        }
+
+        const owner = surfaceNames.get(name)
+        if (owner !== undefined) {
+          fail('furniture', where, `surface "${name}" is already provided by ${owner}`)
+        }
+        surfaceNames.set(name, id)
+
+        const surfaceHeight = Number(surface['height'])
+        if (!(surfaceHeight >= 0)) fail('furniture', where, `surface "${name}" needs a height`)
+
+        const orientation = surface['orientation']
+        if (orientation !== undefined && (typeof orientation !== 'string' || !SURFACE_ORIENTATION_SET.has(orientation))) {
+          fail('furniture', where, `surface "${name}" has an unknown orientation`)
+        }
+        if (orientation === 'vertical') {
+          const facing = surface['facing']
+          if (typeof facing !== 'string' || !WALL_SIDE_SET.has(facing)) {
+            fail('furniture', where, `vertical surface "${name}" must say which way it faces`)
+          }
+        }
+      }
     }
   }
 }

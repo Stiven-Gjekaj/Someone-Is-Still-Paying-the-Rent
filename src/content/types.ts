@@ -318,6 +318,41 @@ export const FURNITURE_SHAPES = [
 
 export type FurnitureShape = (typeof FURNITURE_SHAPES)[number]
 
+/**
+ * Every material name the data may ask for. `materialByKey` in materials.ts
+ * indexes the palette with these, so a key here that the palette does not
+ * provide fails the typecheck rather than falling back silently at runtime.
+ */
+export const PALETTE_KEYS = [
+  'wall',
+  'ceiling',
+  'skirting',
+  'floorWood',
+  'floorTileKitchen',
+  'floorTileBathroom',
+  'concrete',
+  'woodDark',
+  'woodMid',
+  'woodPale',
+  'metalDull',
+  'metalBrass',
+  'metalWhite',
+  'fabricGrey',
+  'fabricWarm',
+  'paper',
+  'card',
+  'ceramicWhite',
+  'ceramicBlue',
+  'terracotta',
+  'glass',
+  'leaf',
+  'soil',
+  'plasticDark',
+  'rubber',
+] as const
+
+export type PaletteKey = (typeof PALETTE_KEYS)[number]
+
 export const SURFACE_ORIENTATIONS = ['horizontal', 'vertical'] as const
 
 export type SurfaceOrientation = (typeof SURFACE_ORIENTATIONS)[number]
@@ -344,10 +379,19 @@ export interface FurniturePiece {
   position: Vec2
   /** Width, height, depth. */
   size: Vec3
+  /** Height of the underside. Zero means standing on the floor. */
+  elevation?: number
   /** Radians about Y. */
   rotation?: number
   material?: string
-  surface?: SurfaceSpec
+  /**
+   * Some furniture is itself an object the player can examine: the desk, the
+   * wardrobe, the vinyl shelf, the jammed junk drawer. Naming the object id here
+   * makes the furniture mesh the interactable, rather than standing a duplicate
+   * prop inside it.
+   */
+  object?: string
+  surfaces?: SurfaceSpec[]
 }
 
 export const PROP_SHAPES = [
@@ -366,6 +410,7 @@ export const PROP_SHAPES = [
   'folding_seat',
   'case',
   'disc',
+  'string_lights',
 ] as const
 
 export type PropShape = (typeof PROP_SHAPES)[number]

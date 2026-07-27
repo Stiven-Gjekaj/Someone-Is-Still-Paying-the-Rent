@@ -438,6 +438,37 @@ if (!Array.isArray(acts)) {
             }
           }
         }
+
+        // Section 4.1 and 4.5. A threshold higher than the number of objects the
+        // flat actually contains by this act is an act that cannot be finished,
+        // and nothing else in the pipeline would notice: the game would simply
+        // never move on, and it would look like the player had missed something.
+        const needed = gate['sorted_count_min']
+        if (needed !== undefined) {
+          if (typeof needed !== 'number' || !Number.isInteger(needed) || needed < 0) {
+            fail('scenes', where, 'gate_to_next.sorted_count_min must be a whole number')
+          } else {
+            const available = objects.filter(
+              (object) =>
+                object['sortable'] === true &&
+                typeof object['act_min'] === 'number' &&
+                object['act_min'] <= number,
+            ).length
+
+            if (needed > available) {
+              fail(
+                'scenes',
+                where,
+                `gate wants ${needed} objects sorted, but only ${available} can be sorted by act ${number}`,
+              )
+            }
+          }
+        }
+
+        const charge = gate['charge_seconds']
+        if (charge !== undefined && (typeof charge !== 'number' || !(charge > 0))) {
+          fail('scenes', where, 'gate_to_next.charge_seconds must be a positive number of seconds')
+        }
       }
     }
   }

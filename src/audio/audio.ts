@@ -23,6 +23,18 @@ const TICK_LEVEL = 0.035
 const TICK_MIN_GAP = 5
 const TICK_MAX_GAP = 16
 
+/**
+ * How far the flat recedes under a memory. Not silence: section 4.3 has you
+ * standing in the room the whole time, and a hard cut to nothing would say
+ * otherwise.
+ */
+const DUCK_LEVEL = 0.22
+
+/** Ducking is slower than muting, and coming back is slower still. */
+const MUTE_RAMP = 0.1
+const DUCK_DOWN_RAMP = 0.35
+const DUCK_UP_RAMP = 0.7
+
 export interface Audio {
   /** Must be called from a user gesture. Safe to call more than once. */
   start(): Promise<void>
@@ -30,6 +42,8 @@ export interface Audio {
   /** Section 5. The towel wins, posthumously. */
   setFridgeMuffled(muffled: boolean): void
   setMuted(muted: boolean): void
+  /** Section 4.3. Pulls the room back while a memory has the screen. */
+  setDucked(ducked: boolean): void
   dispose(): void
 }
 
@@ -48,9 +62,21 @@ export function createAudio(plan: FloorPlan): Audio {
 
   let untilNextTick = TICK_MIN_GAP
   let muted = false
+  let ducked = false
 
   const forward = new THREE.Vector3()
   const up = new THREE.Vector3()
+
+  /** Mute wins over duck, so pausing inside a memory still goes quiet. */
+  function level(): number {
+    if (muted) return 0
+    return ducked ? DUCK_LEVEL : 1
+  }
+
+  function rampTo(seconds: number): void {
+    if (master === null || context === null) return
+    master.gain.setTargetAtTime(level(), context.currentTime, seconds)
+  }
 
   return {
     async start(): Promise<void> {
@@ -63,7 +89,7 @@ export function createAudio(plan: FloorPlan): Audio {
       context = ctx
 
       const out = ctx.createGain()
-      out.gain.value = muted ? 0 : 1
+      out.gain.value = level()
       out.connect(ctx.destination)
       master = out
 
@@ -140,9 +166,13 @@ export function createAudio(plan: FloorPlan): Audio {
 
     setMuted(value: boolean): void {
       muted = value
-      if (master !== null && context !== null) {
-        master.gain.setTargetAtTime(value ? 0 : 1, context.currentTime, 0.1)
-      }
+      rampTo(MUTE_RAMP)
+    },
+
+    setDucked(value: boolean): void {
+      if (ducked === value) return
+      ducked = value
+      rampTo(value ? DUCK_DOWN_RAMP : DUCK_UP_RAMP)
     },
 
     dispose(): void {
@@ -157,6 +187,7 @@ export function createAudio(plan: FloorPlan): Audio {
       void context?.close()
       context = null
       master = null
+      ducked = false
       fridge = null
       radiators = null
     },

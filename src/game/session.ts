@@ -197,7 +197,9 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     pendingFragment = null
 
     if (owed !== null) {
+      audio.setDucked(true)
       memories.play(owed, () => {
+        audio.setDucked(false)
         hud.setVisible(true)
         goalLine.setVisible(true)
         if (!player.isLocked()) player.lock()
@@ -357,7 +359,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, interact },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, interact },
     })
   }
 

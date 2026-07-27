@@ -15,13 +15,25 @@
 
 import * as THREE from 'three'
 
-import type { FloorPlan } from '../content/types.ts'
+import type { ActNumber, FloorPlan } from '../content/types.ts'
 import { cityTexture, rainStreakTexture } from './textures.ts'
 
 export interface Weather {
   group: THREE.Group
   update(delta: number): void
+  /**
+   * Section 4.6. The rain gets heavier as the night goes on. Act 1 is the rain
+   * you walked in through; by act 3 it is the reason nobody is outside.
+   */
+  applyAct(act: ActNumber): void
   dispose(): void
+}
+
+/** Fall speed, drop opacity, and how fast the glass runs, per act. */
+const ACT_WEATHER: Record<ActNumber, { speed: number; opacity: number; run: number }> = {
+  1: { speed: 1, opacity: 0.5, run: 0.55 },
+  2: { speed: 1.35, opacity: 0.66, run: 0.82 },
+  3: { speed: 1.7, opacity: 0.78, run: 1.1 },
 }
 
 const DROP_COUNT = 2600
@@ -159,21 +171,31 @@ export function buildWeather(plan: FloorPlan): Weather {
 
   const attribute = dropGeometry.getAttribute('position') as THREE.BufferAttribute
 
+  let weather = ACT_WEATHER[1]
+
+  function applyAct(act: ActNumber): void {
+    weather = ACT_WEATHER[act] ?? ACT_WEATHER[1]
+    dropMaterial.opacity = weather.opacity
+    streakMaterial.opacity = Math.min(1, 0.85 + (weather.opacity - 0.5) * 0.3)
+  }
+
   return {
     group,
+
+    applyAct,
 
     update(delta: number): void {
       const array = attribute.array as Float32Array
       for (let i = 0; i < DROP_COUNT; i += 1) {
         const index = i * 3 + 1
-        const fallen = (array[index] ?? 0) - FALL_SPEED * (spans[i] ?? 1) * delta
+        const fallen = (array[index] ?? 0) - FALL_SPEED * weather.speed * (spans[i] ?? 1) * delta
         array[index] = fallen < VOLUME_BOTTOM ? VOLUME_TOP : fallen
       }
       attribute.needsUpdate = true
 
       // The sheet on the glass runs faster than the drops behind it, which is
       // what selling "this is on the near surface" takes.
-      streaks.offset.y -= delta * 0.55
+      streaks.offset.y -= delta * weather.run
       streaks.offset.x = Math.sin(streaks.offset.y * 0.7) * 0.01
     },
 

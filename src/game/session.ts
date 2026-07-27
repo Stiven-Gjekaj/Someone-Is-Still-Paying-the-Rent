@@ -96,6 +96,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   engine.scene.add(lighting.group)
 
   const weather = buildWeather(plan)
+  weather.applyAct(act)
   engine.scene.add(weather.group)
 
   const collider = createCollider(plan, getFurniture())
@@ -127,6 +128,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       // Section 4.6. The night gets later. The flat does not get fuller: see the
       // note in src/game/acts.ts for why nothing respawns here.
       lighting.applyAct(next)
+      weather.applyAct(next)
       goalLine.refresh(state)
       console.info(`act ${next}`)
     },
@@ -377,7 +379,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, placed, interact },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, placed, weather, lighting, interact },
     })
   }
 

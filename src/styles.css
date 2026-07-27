@@ -254,6 +254,127 @@ main {
   color: #8a8272;
 }
 
+/* Documents. Paper first, interface second. */
+.doc {
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: #23201b;
+}
+
+.doc-line {
+  margin: 0 0 1.1rem;
+}
+
+.doc-line:last-child {
+  margin-bottom: 0;
+}
+
+/* The 4 a.m. notebook. Times, never dates. */
+.doc-entry {
+  margin: 0 0 1.6rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid rgba(35, 32, 27, 0.18);
+}
+
+.doc-entry-time {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  color: #6d6555;
+  margin-bottom: 0.25rem;
+}
+
+.doc-entry-text {
+  margin: 0;
+}
+
+/* Red pen, and the different ink underneath the last entry. */
+.doc-annotation {
+  margin: 0.35rem 0 1.2rem;
+  color: #9c3b2e;
+  font-size: 0.9375rem;
+}
+
+.doc-annotation-where {
+  font-style: italic;
+  opacity: 0.75;
+  margin-right: 0.5rem;
+}
+
+.doc-annotation-where::after {
+  content: ":";
+}
+
+/* The phone thread. */
+.doc-message {
+  margin: 0 0 0.9rem;
+  padding: 0.6rem 0.85rem;
+  max-width: 82%;
+  background: #ddd6c6;
+  border-radius: 10px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.doc-message.is-mine {
+  margin-left: auto;
+  background: #cbd4d8;
+}
+
+.doc-message.is-draft {
+  background: transparent;
+  border: 1px dashed rgba(35, 32, 27, 0.35);
+  margin-left: auto;
+  opacity: 0.85;
+}
+
+.doc-message-meta {
+  display: block;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  color: #6d6555;
+  margin-bottom: 0.2rem;
+}
+
+.doc-message-text {
+  margin: 0;
+}
+
+/* The backs of the hike photographs. */
+.doc-caption {
+  margin: 0 0 1.4rem;
+}
+
+.doc-caption-label {
+  display: block;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8a8272;
+  margin-bottom: 0.3rem;
+}
+
+.doc-caption-text {
+  margin: 0;
+  font-style: italic;
+}
+
+.doc-signature {
+  margin: 1.6rem 0 0;
+  font-style: italic;
+}
+
+/* Parentheticals the player sees but nobody wrote down. */
+.doc-stage {
+  margin: 1.2rem 0 0;
+  font-size: 0.9375rem;
+  font-style: italic;
+  color: #6d6555;
+}
+
 .document-hint {
   margin: 2.25rem 0 0;
   font-size: 0.75rem;

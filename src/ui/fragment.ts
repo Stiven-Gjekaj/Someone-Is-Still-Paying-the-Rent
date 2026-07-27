@@ -11,6 +11,7 @@
  */
 
 import type { Fragment } from '../content/types.ts'
+import { lineSchedule, sequenceDuration } from '../rules/pacing.ts'
 
 export interface FragmentPlayer {
   /** Runs the fragment and calls back once it has released. */
@@ -93,18 +94,28 @@ export function createFragmentPlayer(mount: HTMLElement): FragmentPlayer {
       finish = onDone
       clearTimers()
 
-      lines.replaceChildren(
-        ...fragment.lines.map((text) => {
-          const line = document.createElement('p')
-          line.className = 'fragment-line is-shown'
-          line.textContent = text
-          return line
-        }),
-      )
+      // Every line is in the document from the start, invisible, so the block
+      // does not jump around underneath the player as each one arrives.
+      const nodes = fragment.lines.map((text) => {
+        const line = document.createElement('p')
+        line.className = 'fragment-line'
+        line.textContent = text
+        return line
+      })
 
+      lines.replaceChildren(...nodes)
       element.classList.add('is-open')
 
-      after(FADE_MS + HOLD_MS, end)
+      // Section 4.3. One at a time, each held long enough to be read, and the
+      // ones before it settling back so the newest is where the eye goes.
+      lineSchedule(fragment.lines).forEach((at, index) => {
+        after(FADE_MS + at, () => {
+          for (let i = 0; i < index; i += 1) nodes[i]?.classList.add('is-past')
+          nodes[index]?.classList.add('is-shown')
+        })
+      })
+
+      after(FADE_MS + sequenceDuration(fragment.lines) + HOLD_MS, end)
     },
 
     isPlaying(): boolean {

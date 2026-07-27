@@ -9,6 +9,7 @@ import { createPropFactory } from './world/props.ts'
 import { buildLighting } from './world/lighting.ts'
 import { buildWeather } from './world/rain.ts'
 import { createPlayer } from './player/controller.ts'
+import { createCollider } from './player/collision.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -51,7 +52,8 @@ function enterFlat(mount: HTMLElement): void {
   const placed = placeObjects(getPlacements(), furnishings.surfaces, props, content.objects, currentAct())
   engine.scene.add(placed.group)
 
-  const player = createPlayer(engine.camera, engine.renderer.domElement, plan)
+  const collider = createCollider(plan, getFurniture())
+  const player = createPlayer(engine.camera, engine.renderer.domElement, plan, { collider })
 
   // Clicking the flat takes the pointer. Escape gives it back, which the browser
   // handles for us and which Hard Rule 9 requires to always work.

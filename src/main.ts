@@ -1,5 +1,6 @@
 import './styles.css'
 import { renderAdvisory } from './advisory.ts'
+import { createMenu } from './ui/menu.ts'
 import { content, getFloorPlan, getFurniture, getPlacements, getText } from './content/index.ts'
 import { createEngine } from './core/engine.ts'
 import { createMaterials } from './world/materials.ts'
@@ -156,15 +157,42 @@ function enterFlat(mount: HTMLElement): void {
   })
 }
 
+/**
+ * Section 11 puts the advisory before the main menu, so the order is advisory,
+ * then title, then the flat. Nobody reaches the front door without being told
+ * what the game is first.
+ */
 function showAdvisory(mount: HTMLElement): void {
   renderAdvisory(mount)
 
-  const begin = document.createElement('button')
-  begin.className = 'begin'
-  begin.type = 'button'
-  begin.textContent = 'Begin'
-  begin.addEventListener('click', () => enterFlat(mount))
-  mount.append(begin)
+  const onward = document.createElement('button')
+  onward.className = 'begin'
+  onward.type = 'button'
+  onward.textContent = 'Continue'
+  onward.addEventListener('click', () => showTitle(mount))
+  mount.append(onward)
+}
+
+function showTitle(mount: HTMLElement): void {
+  mount.replaceChildren()
+
+  const menu = createMenu(mount)
+  menu.showTitle([
+    {
+      label: 'Begin',
+      onSelect: (): void => {
+        menu.dispose()
+        enterFlat(mount)
+      },
+    },
+    {
+      label: 'Read the advisory again',
+      onSelect: (): void => {
+        menu.dispose()
+        showAdvisory(mount)
+      },
+    },
+  ])
 }
 
 const app = document.getElementById('app')

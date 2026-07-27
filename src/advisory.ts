@@ -2,21 +2,22 @@
  * Section 11. The content advisory and the support resources.
  *
  * Hard Rule 9 requires this before the main menu and reachable from the pause
- * menu at all times, which is why it is the first screen built and the only one
- * in this foundation build.
+ * menu at all times, which is why it is the first screen built and why the
+ * resource list is exported on its own: the pause menu renders the same list
+ * from the same data rather than keeping a second copy that can drift.
  *
- * Every string comes from `data/resources.json`. Nothing here is hardcoded, so
- * adding a region is a data change and never a code change. The nodes are built
- * with the DOM API rather than a template string: the resource list is the last
- * thing in this project that should ever be assembled by string concatenation.
+ * Every string comes from `data/resources.json`. Adding a region is a data change
+ * and never a code change. The nodes are built with the DOM API rather than a
+ * template string: the resource list is the last thing in this project that
+ * should ever be assembled by string concatenation.
  */
 
 import { getAdvisory, getResources } from './content/index.ts'
 import type { ResourceEntry } from './content/types.ts'
 
-const GAME_TITLE = 'Someone Is Still Paying the Rent'
+export const GAME_TITLE = 'Someone Is Still Paying the Rent'
 
-function element(tag: string, className: string, text?: string): HTMLElement {
+export function element(tag: string, className: string, text?: string): HTMLElement {
   const node = document.createElement(tag)
   node.className = className
   if (text !== undefined) node.textContent = text
@@ -46,15 +47,25 @@ function resourceItem(entry: ResourceEntry): HTMLLIElement {
   return item
 }
 
+/** The support entries on their own, for the advisory and the pause menu alike. */
+export function renderResourceList(region?: string): HTMLElement {
+  const resources = getResources(region)
+  const list = document.createElement('ul')
+  list.className = 'support-list'
+
+  for (const entry of resources.entries) {
+    list.append(resourceItem(entry))
+  }
+
+  return list
+}
+
 export function renderAdvisory(mount: HTMLElement, region?: string): void {
   const advisory = getAdvisory()
-  const resources = getResources(region)
 
   mount.replaceChildren()
   mount.append(element('p', 'title', GAME_TITLE))
-
-  const heading = element('h1', 'advisory-heading', advisory.title)
-  mount.append(heading)
+  mount.append(element('h1', 'advisory-heading', advisory.title))
 
   for (const line of advisory.lines) {
     mount.append(element('p', 'advisory-line', line))
@@ -62,20 +73,6 @@ export function renderAdvisory(mount: HTMLElement, region?: string): void {
 
   const support = element('section', 'support')
   support.append(element('p', 'support-lead', advisory.lead_in))
-
-  const list = document.createElement('ul')
-  list.className = 'support-list'
-  for (const entry of resources.entries) {
-    list.append(resourceItem(entry))
-  }
-  support.append(list)
+  support.append(renderResourceList(region))
   mount.append(support)
-
-  mount.append(
-    element(
-      'p',
-      'footnote',
-      'Foundation build. The flat is not built yet, so there is nothing past this screen.',
-    ),
-  )
 }

@@ -20,7 +20,10 @@ const REACH = 2.4
 export interface Target {
   id: string
   object: GameObject
+  /** The exact mesh the ray hit. */
   node: THREE.Object3D
+  /** The whole object it belongs to, which is what gets outlined. */
+  owner: THREE.Object3D
   distance: number
 }
 
@@ -38,6 +41,23 @@ function objectIdOf(node: THREE.Object3D): string | null {
     current = current.parent
   }
   return null
+}
+
+/**
+ * The outermost ancestor still carrying the same id. Placement tags every mesh
+ * in a prop, so this walks up to the prop itself: hovering one drawer front
+ * should outline the desk, not the drawer.
+ */
+function ownerOf(node: THREE.Object3D, id: string): THREE.Object3D {
+  let owner = node
+  let current: THREE.Object3D | null = node.parent
+
+  while (current !== null) {
+    if (current.userData['objectId'] === id) owner = current
+    current = current.parent
+  }
+
+  return owner
 }
 
 export function createTargeting(
@@ -70,7 +90,7 @@ export function createTargeting(
         // and let the missing prompt be the symptom.
         if (object === undefined) continue
 
-        target = { id, object, node: hit.object, distance: hit.distance }
+        target = { id, object, node: hit.object, owner: ownerOf(hit.object, id), distance: hit.distance }
         break
       }
 

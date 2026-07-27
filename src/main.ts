@@ -12,6 +12,7 @@ import { createPlayer } from './player/controller.ts'
 import { createCollider } from './player/collision.ts'
 import { createHud } from './ui/hud.ts'
 import { createTargeting, verbFor } from './interaction/targeting.ts'
+import { createHighlight } from './interaction/highlight.ts'
 import { placeObjects } from './world/placement.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -95,12 +96,15 @@ function enterFlat(mount: HTMLElement): void {
 
   const hud = createHud(mount)
   const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
+  const highlight = createHighlight()
 
   engine.start((delta) => {
     if (player.isLocked()) player.update(delta)
     weather.update(delta)
 
     const target = targeting.update()
+    highlight.set(target === null ? null : target.owner)
+
     if (target === null) hud.setPrompt(null)
     else hud.setPrompt(verbFor(target.object), target.object.name)
   })

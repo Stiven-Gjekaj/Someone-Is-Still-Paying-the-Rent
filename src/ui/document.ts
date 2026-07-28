@@ -20,7 +20,14 @@ function element(tag: string, className: string, text?: string): HTMLElement {
   return node
 }
 
-function renderBlock(block: TextBlock): HTMLElement {
+/**
+ * One block of a document.
+ *
+ * Exported because the desk scene and the voicemail render the same block kinds
+ * out of `data/scenes.json` rather than out of a keystone text, and a stage
+ * direction should read the same wherever it appears.
+ */
+export function renderBlock(block: TextBlock): HTMLElement {
   if (block.kind === 'line') {
     return element('p', 'doc-line', block.text)
   }

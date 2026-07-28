@@ -40,6 +40,7 @@ import { isRevealed, newlyRevealed } from '../rules/reveal.ts'
 import { applyFlagEffects, examineEffects } from '../rules/effects.ts'
 import { createCarry } from './carry.ts'
 import { createActs } from './acts.ts'
+import { createCharge } from './charge.ts'
 import { writeCheckpoint } from './save.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
 import type {
@@ -164,6 +165,8 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   const acts = createActs({
     acts: content.acts,
     state,
+    // Act 2 is the last act this build plays. See src/game/acts.ts.
+    stop_after: 2,
     onEnter: (next): void => {
       // Section 4.6. The night gets later, and the flat gets deeper: act 2's
       // middle layer arrives here, minus whatever is still inside something.
@@ -176,6 +179,24 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       // decisions inside an act are supposed to stand.
       writeCheckpoint(state)
       console.info(`act ${next}`)
+    },
+  })
+
+  /**
+   * Section 8.2. The chime, and the end of what this build has.
+   *
+   * `phone_on` is the last thing act 2 was waiting for, so the gate is open the
+   * moment this fires. The bound in `createActs` is what keeps the night here.
+   */
+  const charge = createCharge({
+    acts: content.acts,
+    state,
+    onDone: (): void => {
+      state.phone_on = true
+      audio.playChime('bedroom')
+      goalLine.refresh(state)
+      writeCheckpoint(state)
+      console.info('the chime')
     },
   })
 
@@ -458,7 +479,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, placed, weather, lighting, opening, interact },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, placed, weather, lighting, opening, interact },
     })
   }
 
@@ -485,6 +506,10 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     if (player.isLocked()) player.update(delta)
     weather.update(delta)
     audio.update(delta, engine.camera)
+
+    // Section 4.5. The only thing in the game that happens without the player
+    // doing anything, which is exactly why it has to be watched from here.
+    charge.update()
 
     const target = targeting.update()
     highlight.set(target === null ? null : target.owner)

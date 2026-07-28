@@ -9,10 +9,10 @@
  */
 
 import './styles.css'
-import { renderAdvisory } from './advisory.ts'
+import { GAME_TITLE, element, renderAdvisory, renderResourceList } from './advisory.ts'
 import { createMenu } from './ui/menu.ts'
-import { content, getFloorPlan } from './content/index.ts'
-import { startSession, type SessionConfig } from './game/session.ts'
+import { content, getAdvisory, getFloorPlan } from './content/index.ts'
+import { startSession, type Session, type SessionConfig } from './game/session.ts'
 import { clearCheckpoint, readCheckpoint } from './game/save.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
@@ -54,6 +54,32 @@ function readConfig(): SessionConfig {
   }
 }
 
+/**
+ * Section 11. Where the night lets go of the player.
+ *
+ * Not the pause menu's version of the resources, which sits over a flat that is
+ * still there and offers a way back into it. This is a page, and the only thing
+ * on it besides the support entries is the way back to the title.
+ */
+function showResources(mount: HTMLElement): void {
+  const advisory = getAdvisory()
+
+  mount.replaceChildren()
+  mount.append(element('p', 'title', GAME_TITLE))
+
+  const support = element('section', 'support is-ending')
+  support.append(element('p', 'support-lead', advisory.lead_in))
+  support.append(renderResourceList())
+  mount.append(support)
+
+  const onward = document.createElement('button')
+  onward.className = 'begin'
+  onward.type = 'button'
+  onward.textContent = 'Back to the title'
+  onward.addEventListener('click', () => showTitle(mount))
+  mount.append(onward)
+}
+
 function showAdvisory(mount: HTMLElement): void {
   renderAdvisory(mount)
 
@@ -63,6 +89,27 @@ function showAdvisory(mount: HTMLElement): void {
   onward.textContent = 'Continue'
   onward.addEventListener('click', () => showTitle(mount))
   mount.append(onward)
+}
+
+/**
+ * Starts a night and makes sure it is taken down when it finishes.
+ *
+ * The session owns a renderer, an audio context, and a handful of window
+ * listeners. The ending replaces the whole page, so without this the flat would
+ * carry on rendering into a canvas nobody can see, with the rain still running
+ * underneath the support resources.
+ */
+function begin(mount: HTMLElement, extra: Partial<SessionConfig> = {}): void {
+  let session: Session | null = null
+
+  session = startSession(mount, {
+    ...readConfig(),
+    ...extra,
+    onEnd: (): void => {
+      session?.dispose()
+      showResources(mount)
+    },
+  })
 }
 
 function showTitle(mount: HTMLElement): void {
@@ -82,7 +129,7 @@ function showTitle(mount: HTMLElement): void {
             label: `Continue from act ${saved.state.act}`,
             onSelect: (): void => {
               menu.dispose()
-              startSession(mount, { ...readConfig(), resume: saved.state })
+              begin(mount, { resume: saved.state })
             },
           },
         ]),
@@ -93,7 +140,7 @@ function showTitle(mount: HTMLElement): void {
         // Starting again means starting again. Leaving the old checkpoint in
         // place would offer to undo the decision on the next title screen.
         if (saved !== null) clearCheckpoint()
-        startSession(mount, readConfig())
+        begin(mount)
       },
     },
     {

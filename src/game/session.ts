@@ -29,6 +29,7 @@ import { createOverlay } from '../ui/overlay.ts'
 import { createFragmentPlayer } from '../ui/fragment.ts'
 import { createOpening } from '../ui/opening.ts'
 import { createDeskScene } from '../ui/desk.ts'
+import { createEndingPlayer } from '../ui/ending.ts'
 import { createMenu } from '../ui/menu.ts'
 import { renderDocument } from '../ui/document.ts'
 import { createTargeting } from '../interaction/targeting.ts'
@@ -36,7 +37,7 @@ import { createHighlight } from '../interaction/highlight.ts'
 import { createAudio } from '../audio/audio.ts'
 import { markExamined, resolveExamine } from '../rules/secondlook.ts'
 import { documentReadable, verbFor } from '../rules/verbs.ts'
-import { recordSort, sortDestinations, sortLabel } from '../rules/sorting.ts'
+import { recordSort, sortDestinations, sortLabel, sortedTo } from '../rules/sorting.ts'
 import { isRevealed, newlyRevealed } from '../rules/reveal.ts'
 import { applyFlagEffects, examineEffects } from '../rules/effects.ts'
 import { createCarry } from './carry.ts'
@@ -44,7 +45,7 @@ import { createActs } from './acts.ts'
 import { createCharge } from './charge.ts'
 import { createEnding } from './ending.ts'
 import { createScreens } from './screens.ts'
-import { writeCheckpoint } from './save.ts'
+import { clearCheckpoint, writeCheckpoint } from './save.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
 import type {
   ActNumber,
@@ -58,6 +59,11 @@ import type {
 export interface SessionConfig {
   plan: FloorPlan
   act: ActNumber
+  /**
+   * Section 8.4 and 11. The night is over and the player is being handed to the
+   * support resources. Called once, and the session is finished when it fires.
+   */
+  onEnd?(): void
   /**
    * A restored checkpoint. The act comes from the state rather than from `act`,
    * and anything already put in a box is taken back out of the flat.
@@ -144,6 +150,22 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   // broken by document order, so a beat appended after the menu would draw on top
   // of the pause screen the player reached out of it.
   const desk = createDeskScene(mount, () => void audio.playDrawer())
+
+  const endingPlayer = createEndingPlayer(mount, {
+    overlay,
+    audio: () => audio,
+    props,
+    state,
+    keeping: () => sortedTo(state, content.objects, 'lena'),
+    setView: (view) => engine.setView(view),
+    onResources: (): void => {
+      // Section 12. The night is over, so there is nothing to continue into. A
+      // title screen still offering act 3 would offer to walk back into it.
+      clearCheckpoint()
+      config.onEnd?.()
+    },
+  })
+
   const menu = createMenu(mount)
   const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
   const highlight = createHighlight()
@@ -215,6 +237,17 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     acts: content.acts,
     state,
     onEnd: (): void => {
+      const scenes = getScenes().scenes
+      const voicemail = scenes.find((scene) => scene.id === 'voicemail')
+      const card = scenes.find((scene) => scene.id === 'final_card')
+
+      // The validator requires both, so this is the data having moved under us.
+      // Leaving the player standing in the flat is the safe direction: the night
+      // simply does not end, which is visible, rather than ending into nothing.
+      if (voicemail === undefined || card === undefined) return
+
+      screens.hold()
+      endingPlayer.play(voicemail, card)
       console.info('the night ends')
     },
   })
@@ -252,9 +285,15 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   applySettings(settings)
 
-  /** Everything that holds the screen. The voicemail joins them at the ending. */
+  /** Everything that holds the screen, so nothing pauses the game underneath it. */
   function busy(): boolean {
-    return overlay.isOpen() || memories.isPlaying() || opening.isPlaying() || desk.isPlaying()
+    return (
+      overlay.isOpen() ||
+      memories.isPlaying() ||
+      opening.isPlaying() ||
+      desk.isPlaying() ||
+      endingPlayer.isPlaying()
+    )
   }
 
   const screens = createScreens({
@@ -477,13 +516,14 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     // one lands on the canvas underneath. Taking the pointer back here would put
     // the HUD up in the middle of the desk scene.
     if (opening.isPlaying() || memories.isPlaying() || desk.isPlaying()) return
+    if (endingPlayer.isPlaying()) return
     if (player.isLocked()) interact()
     else player.lock()
   }
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, ending, placed, props, weather, lighting, opening, desk, interact, revealPending },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, ending, endingPlayer, placed, props, weather, lighting, opening, desk, interact, revealPending },
     })
   }
 
@@ -548,6 +588,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       memories.dispose()
       opening.dispose()
       desk.dispose()
+      endingPlayer.dispose()
 
       highlight.dispose()
       overlay.dispose()

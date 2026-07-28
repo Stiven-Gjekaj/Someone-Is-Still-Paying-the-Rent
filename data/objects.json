@@ -354,6 +354,10 @@
     "sortable": false,
     "section": "5",
     "examine": "Stuck. Everything in it is a monument to 'later.'",
+    "second_look": {
+      "requires_flag": "act:2",
+      "text": "It gives on the third pull, the way it always did. Batteries, takeaway chopsticks, forty pen caps, and his charger, coiled the way he coiled things."
+    },
     "design_note": "Jammed until act 2. Then it gives up batteries, takeaway chopsticks, forty pen caps, and the phone charger."
   },
   {
@@ -484,6 +488,10 @@
     "text": "phone_thread",
     "text_from_act": 3,
     "examine": "Face-down on the bedside table, where they put it back. Dead. The charger wasn't with it.",
+    "second_look": {
+      "requires_flag": "charger_found",
+      "text": "You plug it in behind the table, where the socket has always been. Nothing happens for a while, the way nothing happens for a while."
+    },
     "design_note": "The act 1 discovery that creates the game's engine. Read in act 3, after it has charged in real time. Section 4.5."
   },
   {

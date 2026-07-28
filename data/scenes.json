@@ -111,6 +111,14 @@
         "Door. Stairwell. Grey-gold morning. The rain has stopped.",
         "Final card in small type, then the resources screen."
       ],
+      "design_note": "The steps are the order of the sequence. The words are in two scenes rather than one because they are two screens in two registers: the voicemail is him, and the final card is the game speaking to the player."
+    },
+    {
+      "id": "voicemail",
+      "section": "8.4",
+      "act": 3,
+      "title": "Saved voicemails, one entry",
+      "summary": "The player's own phone, over a black screen. Not a call. The last time the player hears him, and it is about nothing at all, which is the point.",
       "blocks": [
         {
           "kind": "stage",
@@ -133,13 +141,23 @@
         {
           "kind": "stage",
           "text": "(click)"
-        },
+        }
+      ],
+      "design_note": "Two years old, and about a football result and where to meet. Nothing in it is a sign of anything, and nothing in it may be made into one. Hard Rule 5: he was funny, and this is where that is load-bearing."
+    },
+    {
+      "id": "final_card",
+      "section": "8.4",
+      "act": 3,
+      "title": "The final card",
+      "summary": "Small type, over the exterior. One sentence, and then the support resources.",
+      "blocks": [
         {
           "kind": "line",
           "text": "If you're carrying something like this, you don't have to sort it alone."
         }
       ],
-      "design_note": "The last line is the final card, and it leads to the resources screen. The voicemail is the last time the player hears him, and it is about nothing at all, which is the point."
+      "design_note": "The one place the game addresses the player rather than the flat. Section 11: it leads to the resources screen and does not ask anything of them first."
     }
   ],
   "goals": [

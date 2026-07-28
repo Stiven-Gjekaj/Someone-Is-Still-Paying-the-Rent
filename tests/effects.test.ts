@@ -248,7 +248,11 @@ describe('every gate flag has something that sets it', () => {
       for (const showedSecondLook of [false, true]) {
         const state = createInitialState()
         state.act = 3
+        // The two flags that unlock other flags. Without them the phone is a
+        // brick and the desk is furniture, and this check would pass by never
+        // reaching the half of the table that act 3 is made of.
         state.charger_found = true
+        state.thread_read = true
 
         for (const effect of examineEffects(target, state, showedSecondLook)) {
           if (effect.kind === 'flag') set.add(effect.flag)
@@ -263,6 +267,7 @@ describe('every gate flag has something that sets it', () => {
       'referral_read',
       'mira_read',
       'thread_read',
+      'desk_done',
       'receipts_found',
     ]) {
       assert.ok(set.has(flag), `nothing in the flat sets ${flag}`)

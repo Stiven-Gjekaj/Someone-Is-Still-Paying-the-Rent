@@ -7,7 +7,7 @@ packing his life into boxes before the lease ends.
 
 ## Status
 
-Act 1 is playable, start to finish. It ends where act 2 begins.
+Acts 1 and 2 are playable, start to finish. The build ends on the chime.
 
 What exists today:
 
@@ -24,28 +24,48 @@ What exists today:
 - The opening beat from section 8.1: black, the key in the lock, the title card, and a fade up.
 - Sorting, per section 4.1. Carry one thing at a time to the three boxes and choose SHIP TO
   LENA, DONATE, or LET GO. No scoring, and no undo.
-- All twelve memory fragments from section 6, nine of which are reachable in act 1. Object, then
+- All twelve memory fragments from section 6, eleven of which are now reachable. Object, then
   thought, then memory, with the room ducking underneath.
-- The act 1 gate: ten objects sorted and the phone found. The light steps down and the rain gets
-  heavier when it opens.
+- Both act gates. Act 1 wants ten objects sorted and the phone found; act 2 wants the charger, the
+  phone plugged in, and four real minutes.
+- Act 2's middle layer: the junk drawer gives up the charger, the under-bed box opens onto the
+  Mira thread, and the vinyl shelf gives up the demo.
+- The Low Orbit demo, playable on his record player. Unmixed, drums too loud, alive.
 - An auto-checkpoint written when an act begins, offered from the title screen as
   "Continue from act 2".
 
-What does not exist yet: act 2's unlocks, the phone charging, the desk scene, and the ending.
+What does not exist yet: act 3. The phone thread, the desk scene, `pc_bag`, and the ending.
 
-### The act boundary, on purpose
+### Where the build stops, on purpose
 
-When act 1 ends, the flat does not repopulate. It keeps act 1's objects.
+The chime is the end. It plays, `phone_on` is set, a checkpoint is written, and **the act stays
+at 2**, held there by `stop_after` in `src/game/acts.ts`.
 
-All four things the under-bed box is supposed to reveal are placed on the `under_bed` surface at
-`act_min` 2. Spawning act 2's object set at the boundary would lay them out under the bed with the
-box still shut, which gives away the Mira thread that section 5 spends the whole act building
-toward. Act 2's contents arrive with act 2's systems.
+Advancing would be worse than stopping. `phone_dead` carries `text_from_act: 3`, so entering act 3
+makes the phone thread readable, and behind the thread are the desk scene that Hard Rule 3 is built
+around and the ending. Reading the last thing Niko sent and then finding nothing after it is the one
+failure this content cannot absorb. The gate itself is proven open by `tests/charge.test.ts`; only
+the bound holds the night here.
 
-So v0.2 ends with the flat gone darker, the rain heavier, and the goal line still reading that the
-charger was not with the phone.
+### Nothing appears before it has been found
 
-### Two decisions the bible does not make
+An object needs two things to be in the flat: `act_min`, the act it belongs to, and `hidden_until`,
+what has to have happened inside that act first.
+
+| Objects | Appear when |
+|---|---|
+| Most of them | Their act |
+| `hoodie_mira`, `photobooth_strip`, `mira_draft`, `dad_lighter` | The under-bed box is opened |
+| `demo_cdr` | The vinyl shelf gives up its second look |
+
+`hidden_until` is a flag reference in the same namespace second looks use, so the validator resolves
+it for free and refuses anything unreachable: a condition that cannot be met, an object hidden
+behind something that appears later than it does, or a second look the named object does not have.
+
+The rule lives in `src/rules/reveal.ts` and is pure. `src/world/placement.ts` holds back what it says
+to hold back and reveals it later on request.
+
+### Three decisions the bible does not make
 
 Section 4.2 lists three verbs and does not say which wins. This build resolves it as: **Take beats
 Read, once the thing has been read.** Nine of the eleven keystone objects are sortable, and with
@@ -53,9 +73,15 @@ Read winning outright they could be read all night and never packed. The cost is
 document is read once. You can stand there and look at it as long as you like, and once you have,
 you have to decide what happens to it.
 
-The wardrobe is still modelled as a closed box while `wardrobe_shelf` holds the invoice folder.
-That is an act 2 object, so it does not bite yet, but the wardrobe has to be modelled open before
-act 2 ships.
+**The record player is not sortable**, which departs from section 4.1's "every portable object can
+be sorted". Examining it is what puts the demo on and takes it off again, and a sortable object
+stops offering Examine the moment it has been examined once. It is plugged in, and it is the only
+thing in the flat that makes a sound he made.
+
+**The junk drawer uses a second look to open.** Section 4.4's second looks are reframes, and a
+drawer coming unstuck is not a reframe, but it is mechanically the same thing: one object, two
+readings, gated on a condition. The flag namespace gained `act:2` to say so rather than growing a
+parallel system for it.
 
 ## Requirements
 
@@ -89,10 +115,9 @@ first.
 room ids in `data/rooms.json`. `?yaw=<degrees>` turns it clockwise from north and
 `?pitch=<degrees>` tilts it, negative looking down.
 
-`?act=2` or `?act=3` starts in that act, with its lighting and its rain, and spawns the objects
-belonging to it as well. That last part is the only thing in the build that does so: playing
-through to act 2 deliberately does not repopulate the flat, so this is the only way to look at
-the later objects for content review.
+`?act=2` or `?act=3` starts in that act, with its lighting, its rain, and its objects. What it does
+not do is reveal anything hidden behind a discovery, because that is the whole point of hiding it.
+To look at the Mira thread for content review, set the flag it waits on through the dev handle.
 
 Any of these also sets the session to dev mode, which skips the opening beat. A headless pass
 inspecting the flat should not have to sit through the front door.

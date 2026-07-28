@@ -119,6 +119,31 @@ past their target. Corrected in the normalized copy:
 | §5, `desk` | §9.3 | §8.3 |
 | §6, footer | §10 | §9 |
 
+### Two objects use a second look for something that is not a reframe
+
+Section 4.4's second looks reframe an object once a condition is met, and the rule is reframe,
+never confirm. Two objects use the same field for a different job, because it is mechanically the
+same thing: one object, two readings, gated on a condition.
+
+- **`junk_drawer`**, gated on `act:2`. The drawer is jammed shut in act 1 and gives up the charger
+  in act 2. This is what the `act:` prefix in `src/content/flags.ts` exists for.
+- **`phone_dead`**, gated on `charger_found`. The second reading is plugging it in, which starts
+  the four-minute wait.
+- **`record_player`**, gated on `record_playing`. The second reading is lifting the needle off.
+
+None of these reframes anything and none of them is at risk of confirming a pattern. The
+alternative was a parallel field that meant the same thing.
+
+### The record player is not sortable
+
+Section 4.1 says every portable object can be sorted. The record player is not, and it is the only
+exception in the flat.
+
+Examining it is what puts the demo on and takes it off again, and section 4.2's verb table stops
+offering Examine on a sortable object the moment it has been examined once. A sortable record player
+can be looked at exactly one time and then only packed, which means the demo can never be played by
+anybody who looked at the stereo before finding the CD behind the record.
+
 ### What act_min means
 
 `act_min` is the earliest act in which the player can interact with the object at all, which is
@@ -130,6 +155,11 @@ earlier text itself:
 |---|---|---|---|
 | `desk` | Act 3 | 1 | Section 5 supplies act 1 examine text for it: "His desk. Paper everywhere. Later." The scripted scene still waits for act 3. |
 | `junk_drawer` | Act 2 | 1 | Section 5 supplies the jammed-shut examine text for before act 2. The charger still waits for act 2. |
+
+`hidden_until` is the other half of this. `act_min` says which act an object belongs to;
+`hidden_until` says what has to have happened inside that act before it is in the room. Five objects
+use it: the four in the under-bed box, and the demo behind the record. It takes the same flag
+references second looks do, and the validator refuses a condition nothing can satisfy.
 
 `phone_dead` and `pc_bag` look like the same case and are not. The phone is listed "Act 1 (found)
 / Act 3 (read)" and its `act_min` is 1. The bag is listed "Act 3 (locked before)" and its

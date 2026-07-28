@@ -235,9 +235,12 @@ export function createOverlay(mount: HTMLElement): Overlay {
         label.textContent = choice.label
         node.append(label)
 
-        // Hovering moves the highlight so the two ways of choosing agree about
-        // where the player is, rather than showing two selections at once.
-        node.addEventListener('mouseenter', () => highlight(index))
+        // Deliberately no hover handler. `is-highlighted` is where the keyboard
+        // is and nothing else: a chooser opens under wherever the pointer
+        // happens to be sitting, Chromium fires a boundary event at whatever
+        // lands under it, and Enter would then answer a question the player had
+        // not read yet. The mouse gets `:hover` in the stylesheet and a click,
+        // which is all it has ever needed.
         node.addEventListener('click', () => pick(index))
 
         list.append(node)

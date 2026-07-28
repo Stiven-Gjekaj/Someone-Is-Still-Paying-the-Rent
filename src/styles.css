@@ -740,3 +740,69 @@ main {
 .opening.is-hinting .opening-hint {
   opacity: 1;
 }
+
+/* Section 8.3. The desk scene. Black, because for a minute the room is not the
+   point, and left-aligned rather than centred: this is somebody going through
+   drawers, not a memory arriving. */
+.desk-scene {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: rgba(4, 4, 6, 0.97);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1100ms ease, visibility 0s linear 1100ms;
+  z-index: 30;
+}
+
+.desk-scene.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1100ms ease, visibility 0s;
+}
+
+.desk-scene-body {
+  max-width: 34rem;
+  width: 100%;
+}
+
+.desk-line {
+  margin: 0 0 1.5rem;
+  opacity: 0;
+  transform: translateY(0.3rem);
+  transition: opacity 700ms ease, transform 700ms ease;
+}
+
+.desk-line:last-child {
+  margin-bottom: 0;
+}
+
+.desk-line.is-shown {
+  opacity: 1;
+  transform: none;
+}
+
+.desk-line.is-past {
+  opacity: 0.34;
+}
+
+/* The blocks come through the document renderer, so they arrive dressed as
+   paper. In here they are neither paper nor a phone. */
+.desk-scene .doc-line {
+  font-family: inherit;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: #d6d2cb;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.95);
+}
+
+.desk-scene .doc-stage {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: rgba(214, 210, 203, 0.5);
+}

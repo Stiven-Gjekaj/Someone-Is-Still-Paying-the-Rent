@@ -23,11 +23,10 @@ export interface ActsConfig {
    * The last act this build knows how to play. The gate past it may open, and
    * the act will not move.
    *
-   * This exists to be deleted. `phone_dead` carries `text_from_act: 3`, so
-   * entering act 3 makes the phone thread readable, and behind the thread are the
-   * desk scene and the ending. Reading the last thing Niko sent and then finding
-   * nothing after it is the one failure this content cannot absorb, so the build
-   * stops one step short of it until there is something there.
+   * Nothing sets it now that act 3 exists. It stays because it is the right tool
+   * for the next time a gate is finished before what is behind it: in v0.3 it
+   * held the night at the chime, because reading the last thing Niko sent and
+   * then finding nothing after it is the one failure this content cannot absorb.
    */
   stop_after?: ActNumber
   /** Called once, after the state has moved, with the act now being played. */

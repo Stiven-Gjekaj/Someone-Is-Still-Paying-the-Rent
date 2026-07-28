@@ -237,3 +237,51 @@ export function keyInLock(context: AudioContext, buffer: AudioBuffer, destinatio
 
   return 1.7
 }
+
+/**
+ * Section 8.2. The phone finishing its charge.
+ *
+ * Two notes a fifth apart on a soft sine, with a little glass on top, and a long
+ * tail. Quiet on purpose: the bible asks for a sound the player stops for on
+ * their own rather than one that stops them. It is the smallest possible event,
+ * and everything in the flat has been building toward it for four minutes.
+ *
+ * Returns how long it rings.
+ */
+export function chime(context: AudioContext, destination: AudioNode, level: number): number {
+  const start = context.currentTime + 0.02
+
+  // A phone's notification tone, not a bell. Two pitches, the second arriving
+  // before the first has finished.
+  for (const [at, hz, weight] of [[0, 987.77, 1], [0.16, 1318.51, 0.72]] as const) {
+    const tone = context.createOscillator()
+    tone.type = 'sine'
+    tone.frequency.setValueAtTime(hz, start + at)
+
+    const shape = context.createGain()
+    shape.gain.setValueAtTime(0, start + at)
+    shape.gain.linearRampToValueAtTime(level * weight, start + at + 0.012)
+    shape.gain.exponentialRampToValueAtTime(0.0001, start + at + 1.1)
+
+    // A touch of the octave above, at a tenth of the level. It is what makes a
+    // sine read as a small speaker rather than a test tone.
+    const glass = context.createOscillator()
+    glass.type = 'sine'
+    glass.frequency.setValueAtTime(hz * 2, start + at)
+
+    const glassGain = context.createGain()
+    glassGain.gain.setValueAtTime(0, start + at)
+    glassGain.gain.linearRampToValueAtTime(level * weight * 0.11, start + at + 0.008)
+    glassGain.gain.exponentialRampToValueAtTime(0.0001, start + at + 0.4)
+
+    tone.connect(shape).connect(destination)
+    glass.connect(glassGain).connect(destination)
+
+    tone.start(start + at)
+    tone.stop(start + at + 1.3)
+    glass.start(start + at)
+    glass.stop(start + at + 0.5)
+  }
+
+  return 1.5
+}

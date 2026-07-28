@@ -17,6 +17,7 @@ import {
   createFridgeHum,
   createRain,
   createRoomTone,
+  chime,
   keyInLock,
   noiseBuffer,
   tick,
@@ -28,6 +29,8 @@ const RAIN_LEVEL = 0.075
 const ROOM_TONE_LEVEL = 0.03
 const FRIDGE_LEVEL = 0.055
 const TICK_LEVEL = 0.035
+// Quiet. Section 8.2 wants a sound the player stops for, not one that stops them.
+const CHIME_LEVEL = 0.09
 
 const TICK_MIN_GAP = 5
 const TICK_MAX_GAP = 16
@@ -58,6 +61,11 @@ export interface Audio {
    * or 0 if the context is not up yet, so the opening can wait for it.
    */
   playKeyInLock(): number
+  /**
+   * Section 8.2. The charge finishing, from wherever the phone is rather than
+   * from everywhere. The player should have to notice which room it came from.
+   */
+  playChime(room: RoomId): number
   dispose(): void
 }
 
@@ -180,6 +188,25 @@ export function createAudio(plan: FloorPlan): Audio {
       // Louder than the ambience it plays over: the flat is silent, the screen is
       // black, and this is the only thing happening.
       return keyInLock(context, noise, master, 0.32)
+    },
+
+    playChime(room: RoomId): number {
+      if (context === null || master === null) return 0
+
+      const panner = context.createPanner()
+      panner.panningModel = 'HRTF'
+      panner.distanceModel = 'inverse'
+      panner.refDistance = 1.5
+      panner.maxDistance = 16
+      panner.rolloffFactor = 1.1
+
+      const at = centreOf(plan, room)
+      panner.positionX.value = at.x
+      panner.positionY.value = at.y
+      panner.positionZ.value = at.z
+      panner.connect(master)
+
+      return chime(context, panner, CHIME_LEVEL)
     },
 
     setFridgeMuffled(value: boolean): void {

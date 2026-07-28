@@ -259,7 +259,16 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   // hangs off the unlock rather than off a key handler that could be missed.
   player.onLockChange((locked) => {
     if (locked) {
-      menu.close()
+      // Hard Rule 9. A lock that arrives while the menu is up is a request made
+      // just before the player paused, resolving just after: closing an overlay
+      // asks for the pointer back, and pressing Escape in the moment before the
+      // browser answers used to take the pause menu away again. Honour the pause
+      // rather than the stale request.
+      if (menu.isOpen()) {
+        player.unlock()
+        return
+      }
+
       hud.setVisible(true)
       goalLine.setVisible(true)
       return

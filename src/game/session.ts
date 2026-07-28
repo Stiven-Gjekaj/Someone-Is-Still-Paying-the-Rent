@@ -28,6 +28,7 @@ import { createGoalLine } from '../ui/goal.ts'
 import { createOverlay } from '../ui/overlay.ts'
 import { createFragmentPlayer } from '../ui/fragment.ts'
 import { createOpening } from '../ui/opening.ts'
+import { createDeskScene } from '../ui/desk.ts'
 import { createMenu } from '../ui/menu.ts'
 import { renderDocument } from '../ui/document.ts'
 import { createTargeting } from '../interaction/targeting.ts'
@@ -138,6 +139,10 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   const overlay = createOverlay(mount)
   const memories = createFragmentPlayer(mount)
   const opening = createOpening(mount, () => void audio.playKeyInLock())
+  // Before the menu, and it matters: both sit at the same z-index and the tie is
+  // broken by document order, so a beat appended after the menu would draw on top
+  // of the pause screen the player reached out of it.
+  const desk = createDeskScene(mount, () => void audio.playDrawer())
   const menu = createMenu(mount)
   const targeting = createTargeting(engine.camera, [placed.group, furnishings.group], content.objects)
   const highlight = createHighlight()
@@ -239,8 +244,9 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     menu,
     settings: () => settings,
     applySettings,
-    // The three things that hold the screen today. Two more join them in act 3.
-    isBusy: () => overlay.isOpen() || memories.isPlaying() || opening.isPlaying(),
+    // Everything that holds the screen. The voicemail joins them at the ending.
+    isBusy: () =>
+      overlay.isOpen() || memories.isPlaying() || opening.isPlaying() || desk.isPlaying(),
   })
 
   overlay.onClose(() => {
@@ -338,6 +344,9 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     )
   }
 
+  /** Section 8.3. Authored once, looked up once, and played at most once. */
+  const deskScene = getScenes().scenes.find((scene) => scene.id === 'desk_scene')
+
   function interact(): void {
     if (overlay.isOpen()) return
 
@@ -400,6 +409,14 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
     screens.hold()
 
+    // Section 8.3. The desk takes the screen instead of the overlay, and nothing
+    // is ducked underneath it: the last stage direction says the rain continues,
+    // and it has to be true or the scene is doing the opposite of what it says.
+    if (deskScene !== undefined && effects.some((effect) => effect.kind === 'desk_scene')) {
+      desk.play(deskScene, () => screens.release())
+      return
+    }
+
     // A readable opens its document, if this act is allowed to read it. The dead
     // phone is the reason for the second half of that sentence.
     const keystone = documentReadable(target.object, state.act) && target.object.text !== undefined
@@ -429,18 +446,26 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       return
     }
 
-    if (event.code === 'KeyE' && !overlay.isOpen()) interact()
+    // Same reasoning for E, which is the other key a beat consumes. A beat ends
+    // synchronously in its own handler, so by the time this one runs it is no
+    // longer playing and only the flag it left behind says the key was spoken
+    // for. Without this, skipping a memory also examines whatever the crosshair
+    // happened to be resting on.
+    if (event.code === 'KeyE' && !event.defaultPrevented && !overlay.isOpen()) interact()
   }
 
   function onCanvasClick(): void {
-    if (opening.isPlaying()) return
+    // A beat covers the screen but lets the pointer through, so a click during
+    // one lands on the canvas underneath. Taking the pointer back here would put
+    // the HUD up in the middle of the desk scene.
+    if (opening.isPlaying() || memories.isPlaying() || desk.isPlaying()) return
     if (player.isLocked()) interact()
     else player.lock()
   }
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, placed, weather, lighting, opening, interact, revealPending },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, placed, weather, lighting, opening, desk, interact, revealPending },
     })
   }
 
@@ -498,6 +523,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       carry.dispose()
       memories.dispose()
       opening.dispose()
+      desk.dispose()
 
       highlight.dispose()
       overlay.dispose()

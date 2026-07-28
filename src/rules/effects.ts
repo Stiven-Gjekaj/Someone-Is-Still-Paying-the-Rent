@@ -30,6 +30,8 @@ export type ExamineEffect =
   | { kind: 'toggle_demo' }
   /** Section 5 and 8.4. The string lights, and whether they burn in the last shot. */
   | { kind: 'toggle_lights' }
+  /** Section 8.3. The desk stops being a thing to look at and becomes the scene. */
+  | { kind: 'desk_scene' }
 
 export function examineEffects(
   object: GameObject,
@@ -60,6 +62,16 @@ export function examineEffects(
 
     case 'underbed_box':
       effects.push({ kind: 'flag', flag: 'underbed_found' })
+      break
+
+    case 'desk':
+      // Section 8.3. The act 1 and 2 examine text is a deferral, and the thread
+      // is what stops it being deferrable. Once, because the beat is a beat: on
+      // every look after it the second look says what the desk is now.
+      if (state.thread_read && !state.desk_done) {
+        effects.push({ kind: 'desk_scene' })
+        effects.push({ kind: 'flag', flag: 'desk_done' })
+      }
       break
 
     case 'pc_bag':

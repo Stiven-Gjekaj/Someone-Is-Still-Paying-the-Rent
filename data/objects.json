@@ -253,7 +253,11 @@
     "sortable": false,
     "section": "5",
     "examine": "His desk. Paper everywhere. Later.",
-    "design_note": "The act 1 and 2 examine text is a deferral. The scene at section 8.3 activates only after the thread is read. Hard Rule 3: the absence is the scene, and it must never be fixed."
+    "second_look": {
+      "requires_flag": "desk_done",
+      "text": "You went through all of it. The paper is back in roughly the wrong order, and it is a desk again."
+    },
+    "design_note": "The act 1 and 2 examine text is a deferral. The scene at section 8.3 activates only after the thread is read. Hard Rule 3: the absence is the scene, and it must never be fixed. The second look exists because the scene runs once and 'Later' stops being true afterwards. It reframes the deferral and says nothing whatever about what was not in the drawers."
   },
   {
     "id": "job_application",

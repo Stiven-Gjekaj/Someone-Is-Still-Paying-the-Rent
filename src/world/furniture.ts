@@ -121,9 +121,17 @@ export function buildFurniture(
       const board = 0.03
       slab(shape, board, h, d, material, -w / 2 + board / 2, h / 2, 0)
       slab(shape, board, h, d, material, w / 2 - board / 2, h / 2, 0)
-      const shelves = Math.max(2, Math.round(h / 0.34))
-      for (let i = 0; i <= shelves; i += 1) {
-        slab(shape, w - board * 2, board, d, material, 0, (h / shelves) * i, 0)
+      // The top face is the surface, so nothing may reach above `h`. The loop
+      // used to centre a board on each division including the last, which put
+      // fifteen millimetres of shelf above the shelf. Anything flat placed on top
+      // then sat inside solid wood: visible, in the right place, and impossible
+      // to look at from any angle, because the raycast hit the board first.
+      //
+      // A unit too shallow to divide, like the one in the bathroom, is a board on
+      // two brackets and gets no internal shelves at all.
+      const shelves = h > board * 4 ? Math.max(2, Math.round(h / 0.34)) : 1
+      for (let i = 0; i < shelves; i += 1) {
+        slab(shape, w - board * 2, board, d, material, 0, (h / shelves) * i + board / 2, 0)
       }
       slab(shape, w, board, d, material, 0, h - board / 2, 0)
       return shape

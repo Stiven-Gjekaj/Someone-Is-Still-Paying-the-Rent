@@ -38,6 +38,22 @@ non-empty.
 Lexicons catch the obvious. They do not catch implication, which is the actual risk. A sentence
 can violate rule 1 without containing a single banned word.
 
+It also checks two shapes rather than two vocabularies, because both of these can be broken
+without using a forbidden word at all:
+
+- **The desk scene**, section 8.3. Its last `line` block must be the payoff sentence verbatim, and
+  exactly one stage direction may follow it. A sixth block is a hard failure. This is Hard Rule 3
+  as a structure: a reveal appended after the absence needs no banned vocabulary, and the absence
+  is the entire point of the scene.
+- **The end of the game**, section 8.4. Act 3 must carry `ends_when`, no other act may, no act may
+  gate past act 3, and the ending may not depend on a flag nothing in the flat sets. An ending
+  condition naming a dead flag is a game that is complete and unfinishable at once.
+
+Hard Rule 10 has a third surface the validator cannot see at all: the composition of the last
+shot. See `src/world/exterior.ts`, which explains at length why the height between the street and
+the balcony is not legible in it, and read the shot by eye against the rule rather than trusting
+that the strings passed.
+
 ## The ambiguity ledger
 
 Seven questions the game must never answer. Each is listed with the content that touches it, so
@@ -119,10 +135,10 @@ past their target. Corrected in the normalized copy:
 | §5, `desk` | §9.3 | §8.3 |
 | §6, footer | §10 | §9 |
 
-### Two objects use a second look for something that is not a reframe
+### Four objects use a second look for something that is not a reframe
 
 Section 4.4's second looks reframe an object once a condition is met, and the rule is reframe,
-never confirm. Two objects use the same field for a different job, because it is mechanically the
+never confirm. Four objects use the same field for a different job, because it is mechanically the
 same thing: one object, two readings, gated on a condition.
 
 - **`junk_drawer`**, gated on `act:2`. The drawer is jammed shut in act 1 and gives up the charger
@@ -130,6 +146,11 @@ same thing: one object, two readings, gated on a condition.
 - **`phone_dead`**, gated on `charger_found`. The second reading is plugging it in, which starts
   the four-minute wait.
 - **`record_player`**, gated on `record_playing`. The second reading is lifting the needle off.
+- **`desk`**, gated on `desk_done`. The first reading is the deferral section 5 authors, "Later",
+  and the scene at section 8.3 is what stops it being deferrable. The second reading exists only
+  because "Later" is no longer true once the scene has run, and it is written to say nothing at all
+  about what was or was not in the drawers. Hard Rule 3 governs this line as much as it governs the
+  scene: it may describe a desk that has been gone through and nothing beyond that.
 
 None of these reframes anything and none of them is at risk of confirming a pattern. The
 alternative was a parallel field that meant the same thing.
@@ -170,6 +191,27 @@ references second looks do, and the validator refuses a condition nothing can sa
 Section 12 documents `second_look.requires_flag` as a single string naming a state flag, but most
 of the pairs in section 5 gate on having examined another object instead. The field keeps its
 documented shape and the flag namespace grew to cover the other cases. See `src/content/flags.ts`.
+
+### The ending scene split into three
+
+Section 8.4 gave the ending one `blocks` array running the voicemail and the final card together
+with nothing marking the boundary. They are two screens in two registers: the first five blocks are
+Niko on a saved voicemail, and the sixth is the game speaking to the player on its way to the
+support resources.
+
+So `ending` keeps the six steps, which are directions to a builder, and the words moved into
+`voicemail` and `final_card`. Nothing was rewritten and nothing was added. The one thing to hold on
+to is that the steps are not player-facing: "Tape sound, printed label with her address" is an
+instruction, and the beat it describes has no words in it at all.
+
+### Lena's address is not legible, and must not be made legible
+
+Step one of the ending asks for a printed label with her address on the sealed box. The bible says
+she lives abroad and never says where, and section 9 keeps a list of things the game must never
+answer. So `shippingLabelTexture` in `src/world/textures.ts` prints her name and draws the address
+as ruled lines: the shape of a courier label is what sells it, not the words in it.
+
+Do not fill those lines in later.
 
 ### Resources split across two files
 

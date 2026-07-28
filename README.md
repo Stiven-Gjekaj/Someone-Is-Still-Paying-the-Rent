@@ -7,7 +7,8 @@ packing his life into boxes before the lease ends.
 
 ## Status
 
-Acts 1 and 2 are playable, start to finish. The build ends on the chime.
+The game is finishable. Advisory, title, front door, three acts, the ending, the support
+resources. Around forty minutes if you look at everything.
 
 What exists today:
 
@@ -24,28 +25,69 @@ What exists today:
 - The opening beat from section 8.1: black, the key in the lock, the title card, and a fade up.
 - Sorting, per section 4.1. Carry one thing at a time to the three boxes and choose SHIP TO
   LENA, DONATE, or LET GO. No scoring, and no undo.
-- All twelve memory fragments from section 6, eleven of which are now reachable. Object, then
-  thought, then memory, with the room ducking underneath.
+- All twelve memory fragments from section 6, every one of them reachable. Object, then thought,
+  then memory, with the room ducking underneath.
 - Both act gates. Act 1 wants ten objects sorted and the phone found; act 2 wants the charger, the
   phone plugged in, and four real minutes.
 - Act 2's middle layer: the junk drawer gives up the charger, the under-bed box opens onto the
   Mira thread, and the vinyl shelf gives up the demo.
 - The Low Orbit demo, playable on his record player. Unmixed, drums too loud, alive.
+- Act 3's chain: the phone thread, the desk scene at section 8.3, your bag by the door, and the
+  string lights on the balcony, which are the one thing in the flat you can leave better than you
+  found it.
+- The ending at section 8.4: the box seals, you take one thing out of it, the voicemail plays, the
+  key goes down, the door shuts, and the building is there in the morning.
 - An auto-checkpoint written when an act begins, offered from the title screen as
-  "Continue from act 2".
+  "Continue from act 3", and cleared when the night is over.
 
-What does not exist yet: act 3. The phone thread, the desk scene, `pc_bag`, and the ending.
+### Act 3 is a chain, not a sandbox
 
-### Where the build stops, on purpose
+Section 4.5 says so directly, and each link is what unlocks the next.
 
-The chime is the end. It plays, `phone_on` is set, a checkpoint is written, and **the act stays
-at 2**, held there by `stop_after` in `src/game/acts.ts`.
+| Beat | Opens when | Sets |
+|---|---|---|
+| The phone thread | Act 3 begins. `phone_dead` carries `text_from_act: 3` | `thread_read` |
+| The desk scene | The thread has been read | `desk_done` |
+| Your bag | Act 3 begins. `pc_bag` carries `act_min: 3` | `receipts_found` |
+| The ending | `desk_done` and `receipts_found` both hold | Nothing. It is the end |
 
-Advancing would be worse than stopping. `phone_dead` carries `text_from_act: 3`, so entering act 3
-makes the phone thread readable, and behind the thread are the desk scene that Hard Rule 3 is built
-around and the ending. Reading the last thing Niko sent and then finding nothing after it is the one
-failure this content cannot absorb. The gate itself is proven open by `tests/charge.test.ts`; only
-the bound holds the night here.
+The flat stays walkable and sortable underneath all of it. The desk and the bag can be reached in
+either order, which is why neither of them starts the ending: `src/game/ending.ts` watches for the
+condition instead, the way `src/game/charge.ts` watches the four minutes.
+
+### What ends the game
+
+Act 3 has no `gate_to_next`, because there is no act 4, and the validator fails if one is added.
+What it has is `ends_when`, the same shape evaluated by the same `evaluateGate`, required on act 3
+and forbidden anywhere else.
+
+There is no sorting quota on it. Whatever is still in the flat at that point is what the player
+decided to leave, and the game holds no opinion about it.
+
+### Hard Rule 3 is a scene
+
+The desk scene is the one place in this game where an absence is the payoff. Five blocks, authored
+in `data/scenes.json`, ending on one sentence, and nothing follows it but a stage direction saying
+that nothing follows it.
+
+The lexicons in the validator already refuse the words. The shape is checked separately, because a
+reveal appended after the payoff needs no forbidden vocabulary at all: the validator requires that
+last line verbatim, allows exactly one stage direction after it, and fails on a sixth block. There
+is no note in this game and none may ever be added, as content or as cut content.
+
+### The last shot, and Hard Rule 10
+
+`src/world/exterior.ts` builds its own scene, its own camera, and its own dawn lighting, because
+the flat's lighting is authored in candela for a dark room and its `applyAct` is typed `1 | 2 | 3`.
+
+The framing is the content. The rule is that nothing on any elevated point may carry dark
+connotation, and a shot looking up at a balcony from a pavement breaks it however carefully the
+words are chosen. So the height is not legible: a 17 degree lens level with the balcony, a camera
+that only translates so no vertical leans, under two storeys in frame with the wall running off the
+top and the bottom, no roofline, no ground, and the sky beside the building rather than above it.
+
+His window is dark. If the player left the string lights on they are burning, and that is the only
+thing in the picture anybody decided.
 
 ### Nothing appears before it has been found
 
@@ -57,6 +99,7 @@ what has to have happened inside that act first.
 | Most of them | Their act |
 | `hoodie_mira`, `photobooth_strip`, `mira_draft`, `dad_lighter` | The under-bed box is opened |
 | `demo_cdr` | The vinyl shelf gives up its second look |
+| `pc_bag` | Act 3 begins |
 
 `hidden_until` is a flag reference in the same namespace second looks use, so the validator resolves
 it for free and refuses anything unreachable: a condition that cannot be met, an object hidden
@@ -82,6 +125,16 @@ thing in the flat that makes a sound he made.
 drawer coming unstuck is not a reframe, but it is mechanically the same thing: one object, two
 readings, gated on a condition. The flag namespace gained `act:2` to say so rather than growing a
 parallel system for it.
+
+**The desk gets a second look, and the scene runs once.** The authored examine text is a deferral,
+"Later", and after section 8.3 has played that is no longer true. So the scene fires once, on the
+first look after the thread is read, and every look after it gets a second-look line about a desk
+that has been gone through. The line says nothing whatever about what was not in the drawers.
+
+**The key beat reads the state rather than assuming a bowl.** `key_bowl` is sortable, so by the
+ending it may be taped inside a carton. There are two versions of the sound and no words in either:
+with the bowl, the bowl rings under the key; without it, the key goes down on something bare and
+nothing answers.
 
 ## Requirements
 
@@ -116,8 +169,11 @@ room ids in `data/rooms.json`. `?yaw=<degrees>` turns it clockwise from north an
 `?pitch=<degrees>` tilts it, negative looking down.
 
 `?act=2` or `?act=3` starts in that act, with its lighting, its rain, and its objects. What it does
-not do is reveal anything hidden behind a discovery, because that is the whole point of hiding it.
-To look at the Mira thread for content review, set the flag it waits on through the dev handle.
+not do is reveal anything hidden behind a discovery, or set a flag an earlier act was supposed to
+set, because that is the whole point of hiding it. Starting in act 3 puts you in a flat where the
+thread is readable and the desk still says "Later", which is exactly where the act begins. To look
+at the Mira thread or the desk scene for content review, set the flag it waits on through the dev
+handle.
 
 Any of these also sets the session to dev mode, which skips the opening beat. A headless pass
 inspecting the flat should not have to sit through the front door.
@@ -135,7 +191,11 @@ quietly gave it one would take the weight out of the only decision the game asks
 Reading it is deliberately unforgiving. A save whose version does not match the build is dropped
 whole, object ids that no longer exist in `data/objects.json` are discarded rather than restored,
 and `sorted_count` is recomputed from the objects rather than believed. A save that half-restores
-is worse than no save at all, because it looks like it worked.
+is worse than no save at all, because it looks like it worked. The version is at 2, so v0.3
+checkpoints are dropped on read: the state grew a field for the object taken at the end.
+
+The checkpoint is cleared when the night finishes. A title screen still offering "Continue from
+act 3" would be offering to walk back into an ending that is over.
 
 ## Layout
 
@@ -146,19 +206,30 @@ scripts/    the content validator
 src/
   content/  the loader, the schema, the state flags
   core/     renderer, scene, camera, render loop
-  world/    the flat, furniture, props, placement, lighting, rain, textures
+  world/    the flat, furniture, props, placement, lighting, rain, textures, the exterior
   player/   the controller and collision
   interaction/  raycast targeting and the outline
-  rules/    pure logic: gates, second looks, sorting, verbs, fragment pacing
-  game/     the session, carrying, acts, checkpoints
-  ui/       hud, overlays, the chooser, memories, the opening, menus
+  rules/    pure logic: gates, reveals, second looks, effects, sorting, verbs, pacing
+  game/     the session, screens, carrying, acts, the charge, the ending, checkpoints
+  ui/       hud, overlays, the chooser, and the four beats that take the screen
   audio/    synthesis and the mixer
-tests/      node --test over everything in rules/ and game/save.ts
+tests/      node --test over everything in rules/ and game/
 ```
 
 Anything in `src/rules/` is pure and takes its data as arguments, so it runs under `node --test`
 with no renderer and no browser. Anything that touches the DOM, the scene graph, or the clock
 lives outside it.
+
+Four things take the screen: the opening beat, a memory, the desk scene, and the ending. They look
+nothing like each other and are the same mechanism underneath, so the mechanism is
+`src/ui/sequence.ts` and each of them is a render function over it. It owns the timers, the fade,
+the release callback, and the rule that Escape always works.
+
+Who has the pointer and the HUD is `src/game/screens.ts`, in one place rather than four that have
+to agree. Its two calls are `hold`, meaning something other than the flat is on screen, and
+`release`, meaning give it back. `release` refuses while the pause menu is up or while something
+else has taken the screen, because every beat releases a second after it ends and the next one is
+routinely already running by then.
 
 Narrative lives in data, not in code. Section 12 of the bible asks for this directly, and it is
 what makes the validator possible: every player-facing string sits in a file the validator can

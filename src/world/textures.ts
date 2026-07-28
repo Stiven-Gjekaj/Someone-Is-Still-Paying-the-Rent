@@ -291,6 +291,132 @@ export function shippingLabelTexture(name: string, seed = 40): THREE.CanvasTextu
 }
 
 /**
+ * Section 8.4. The front of the building, for the last shot.
+ *
+ * Render over brick, sills, and a grid of windows: mostly dark, a handful warm,
+ * because it is early and some people are up. It is drawn as one large sheet
+ * rather than a tile so no two bays are identical, which is what stops a wall
+ * of windows reading as wallpaper.
+ *
+ * **Hard Rule 10 governs how this is used, not how it is drawn.** It carries no
+ * roofline and no ground on purpose: whatever is in frame must never let the
+ * height between the street and a balcony be counted. See `src/world/exterior.ts`,
+ * which owns the framing and says so at length.
+ */
+export function facadeTexture(seed = 50): THREE.CanvasTexture {
+  // Large, because the last shot puts about a third of it across the screen and
+  // it is the only texture in the game the player looks straight at.
+  const width = 2560
+  const height = 1920
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('2d canvas context unavailable')
+
+  const random = seeded(seed)
+
+  ctx.fillStyle = '#7b7871'
+  ctx.fillRect(0, 0, width, height)
+
+  // Render, patched more than once, the way the flat's own walls are.
+  for (let i = 0; i < 2600; i += 1) {
+    const shade = 104 + Math.floor(random() * 44)
+    ctx.fillStyle = `rgba(${shade},${shade - 4},${shade - 12},0.06)`
+    const w = 30 + random() * 150
+    ctx.fillRect(random() * width, random() * height, w, w * 0.5)
+  }
+
+  const columns = 10
+  const floors = 5
+  const bay = width / columns
+  const storey = height / floors
+
+  for (let floor = 0; floor < floors; floor += 1) {
+    const top = floor * storey
+
+    // The band between storeys. Older buildings have one and it is what gives a
+    // facade its horizontal rhythm.
+    ctx.fillStyle = 'rgba(122,113,101,0.55)'
+    ctx.fillRect(0, top + storey * 0.86, width, storey * 0.05)
+
+    for (let column = 0; column < columns; column += 1) {
+      const left = column * bay
+      const w = bay * 0.42
+      const h = storey * 0.5
+      const x = left + bay * 0.29
+      const y = top + storey * 0.24
+
+      // The reveal, so the window sits in the wall rather than on it.
+      ctx.fillStyle = 'rgba(48,44,40,0.55)'
+      ctx.fillRect(x - 5, y - 5, w + 10, h + 10)
+
+      // Most are dark, and dark is the sky in the glass rather than black.
+      const lit = random() > 0.78
+      if (lit) {
+        const warmth = 0.6 + random() * 0.4
+        const glass = ctx.createLinearGradient(x, y, x, y + h)
+        glass.addColorStop(0, `rgba(${Math.floor(255 * warmth)},${Math.floor(206 * warmth)},${Math.floor(146 * warmth)},1)`)
+        glass.addColorStop(1, `rgba(${Math.floor(214 * warmth)},${Math.floor(160 * warmth)},${Math.floor(96 * warmth)},1)`)
+        ctx.fillStyle = glass
+      } else {
+        const glass = ctx.createLinearGradient(x, y, x, y + h)
+        glass.addColorStop(0, '#5a626f')
+        glass.addColorStop(0.6, '#3b414c')
+        glass.addColorStop(1, '#2b3038')
+        ctx.fillStyle = glass
+      }
+      ctx.fillRect(x, y, w, h)
+
+      // Glazing bars, and the sill, which is where the staining starts.
+      ctx.fillStyle = 'rgba(40,38,36,0.7)'
+      ctx.fillRect(x + w / 2 - 2, y, 4, h)
+      ctx.fillRect(x, y + h * 0.42, w, 4)
+
+      ctx.fillStyle = 'rgba(140,131,118,0.8)'
+      ctx.fillRect(x - 9, y + h, w + 18, 9)
+
+      // Rain has been running off that sill for decades.
+      ctx.fillStyle = 'rgba(58,53,47,0.16)'
+      ctx.fillRect(x - 4, y + h + 9, w + 8, storey * 0.2 * (0.4 + random()))
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.anisotropy = 4
+  return texture
+}
+
+/**
+ * Section 8.4. The sky the morning after, as a vertical gradient.
+ *
+ * Grey-gold, and the gold is at the bottom because the sun is not up yet. The
+ * rain stopped at some point while the player was inside and nobody saw it.
+ */
+export function dawnTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas')
+  canvas.width = 8
+  canvas.height = 512
+
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('2d canvas context unavailable')
+
+  const sky = ctx.createLinearGradient(0, 0, 0, canvas.height)
+  sky.addColorStop(0, '#6d7c93')
+  sky.addColorStop(0.42, '#9aa3ac')
+  sky.addColorStop(0.72, '#c9b79b')
+  sky.addColorStop(1, '#e0c69c')
+  ctx.fillStyle = sky
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  return texture
+}
+
+/**
  * The city across the street, wrapped around the flat.
  *
  * Deliberately warm. It is the only thing outside the windows and the only thing

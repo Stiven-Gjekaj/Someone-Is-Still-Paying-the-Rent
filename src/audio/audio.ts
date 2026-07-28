@@ -17,12 +17,17 @@ import {
   createFridgeHum,
   createRain,
   createRoomTone,
+  buzz,
   chime,
   createDemo,
   drawer,
+  keyInBowl,
   keyInLock,
   noiseBuffer,
+  tape,
   tick,
+  voice,
+  voicemailLine,
   type Hum,
   type Source,
 } from './synth.ts'
@@ -37,6 +42,12 @@ const CHIME_LEVEL = 0.09
 const DEMO_LEVEL = 0.06
 // Close and dry. It is a desk in the room you are standing in.
 const DRAWER_LEVEL = 0.12
+// Section 8.4. The ending, in your hands rather than across the room.
+const TAPE_LEVEL = 0.1
+const BOWL_LEVEL = 0.075
+const BUZZ_LEVEL = 0.09
+/** Under everything. It is a small speaker held at arm's length, not a scene. */
+const VOICE_LEVEL = 0.055
 
 const TICK_MIN_GAP = 5
 const TICK_MAX_GAP = 16
@@ -79,6 +90,20 @@ export interface Audio {
   setDemoPlaying(playing: boolean, room: RoomId): boolean
   /** Section 8.3. One drawer. The scene fires these faster and then stops. */
   playDrawer(): number
+  /** Section 8.4. The Lena box being sealed. Returns how long it runs. */
+  playTape(): number
+  /** Section 8.4. The key going into the bowl, and the bowl answering. */
+  playKeyInBowl(): number
+  /** Section 8.4. Your own phone on a hard surface. Not a call. */
+  playBuzz(): number
+  /**
+   * Section 8.4. One line of the voicemail, through a phone speaker.
+   *
+   * Wordless on purpose: the words are on the screen, and the game has no
+   * recorded audio. `lift` ends it on a rise rather than a fall, which is the
+   * only difference between a sentence and the middle of one.
+   */
+  playVoice(seconds: number, lift: boolean, seed: number): void
   dispose(): void
 }
 
@@ -257,6 +282,31 @@ export function createAudio(plan: FloorPlan): Audio {
     playDrawer(): number {
       if (context === null || master === null || noise === null) return 0
       return drawer(context, noise, master, DRAWER_LEVEL)
+    },
+
+    playTape(): number {
+      if (context === null || master === null || noise === null) return 0
+      return tape(context, noise, master, TAPE_LEVEL)
+    },
+
+    playKeyInBowl(): number {
+      if (context === null || master === null) return 0
+      return keyInBowl(context, master, BOWL_LEVEL)
+    },
+
+    playBuzz(): number {
+      if (context === null || master === null || noise === null) return 0
+      return buzz(context, noise, master, BUZZ_LEVEL)
+    },
+
+    playVoice(seconds: number, lift: boolean, seed: number): void {
+      if (context === null || master === null) return
+
+      // Built per line rather than kept, because a filter chain that outlives
+      // the sound it shapes is a chain nothing disposes.
+      const line = voicemailLine(context)
+      line.output.connect(master)
+      voice(context, line.input, VOICE_LEVEL, seconds, lift, seed)
     },
 
     setFridgeMuffled(value: boolean): void {

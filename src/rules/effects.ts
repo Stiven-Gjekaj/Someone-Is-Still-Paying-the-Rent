@@ -18,6 +18,7 @@
 
 import type { GameObject } from '../content/types.ts'
 import type { BooleanFlag, GameState } from '../content/flags.ts'
+import { documentReadable } from './verbs.ts'
 
 export type ExamineEffect =
   | { kind: 'flag'; flag: BooleanFlag }
@@ -27,6 +28,8 @@ export type ExamineEffect =
   | { kind: 'muffle_fridge' }
   /** Section 5. The demo, on his stereo. Toggled, because a record can be taken off. */
   | { kind: 'toggle_demo' }
+  /** Section 5 and 8.4. The string lights, and whether they burn in the last shot. */
+  | { kind: 'toggle_lights' }
 
 export function examineEffects(
   object: GameObject,
@@ -43,6 +46,10 @@ export function examineEffects(
       if (state.charger_found && state.phone_charging_started_at === null) {
         effects.push({ kind: 'start_charging' })
       }
+      // And in act 3 it is a third thing: the thread. Reading it is what starts
+      // the last part of the night, so it is the only one of these three that
+      // waits on the document actually being open rather than on the flat.
+      if (documentReadable(object, state.act)) effects.push({ kind: 'flag', flag: 'thread_read' })
       break
 
     case 'junk_drawer':
@@ -53,6 +60,18 @@ export function examineEffects(
 
     case 'underbed_box':
       effects.push({ kind: 'flag', flag: 'underbed_found' })
+      break
+
+    case 'pc_bag':
+      // Section 7.8. Eight envelopes in your own handwriting, and the last
+      // fragment. It is only in the flat at all from act 3.
+      effects.push({ kind: 'flag', flag: 'receipts_found' })
+      break
+
+    case 'string_lights':
+      // Section 5. Optional, and the only thing in the flat the player can leave
+      // better than they found it. Toggled, because it can be turned off again.
+      effects.push({ kind: 'toggle_lights' })
       break
 
     case 'referral_letter':

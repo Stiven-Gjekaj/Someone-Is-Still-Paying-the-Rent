@@ -122,6 +122,53 @@ describe('the documents that flags hang off', () => {
   })
 })
 
+describe('act 3', () => {
+  it('sets thread_read when the phone is actually readable', () => {
+    const state = createInitialState()
+    state.act = 3
+
+    const { effects } = look('phone_dead', state)
+    assert.ok(effects.some((e) => e.kind === 'flag' && e.flag === 'thread_read'))
+    assert.equal(state.thread_read, true)
+  })
+
+  it('does not set thread_read in act 1, when the phone is dead', () => {
+    const { state, effects } = look('phone_dead')
+
+    assert.ok(!effects.some((e) => e.kind === 'flag' && e.flag === 'thread_read'))
+    assert.equal(state.thread_read, false)
+  })
+
+  it('does not set thread_read in act 2 either, while it is still charging', () => {
+    const state = createInitialState()
+    state.act = 2
+    state.charger_found = true
+
+    look('phone_dead', state)
+    assert.equal(state.thread_read, false)
+  })
+
+  it('sets receipts_found on the bag', () => {
+    const state = createInitialState()
+    state.act = 3
+
+    look('pc_bag', state)
+    assert.equal(state.receipts_found, true)
+  })
+})
+
+describe('the string lights', () => {
+  it('offers to toggle, in any act, because turning them on is optional', () => {
+    for (const act of [1, 2, 3] as const) {
+      const state = createInitialState()
+      state.act = act
+
+      const { effects } = look('string_lights', state)
+      assert.deepEqual(effects, [{ kind: 'toggle_lights' }])
+    }
+  })
+})
+
 describe('the record player', () => {
   it('does nothing until the demo has been found behind the record', () => {
     const state = createInitialState()
@@ -172,6 +219,8 @@ describe('everything else', () => {
       'mira_draft',
       'fridge_towel',
       'record_player',
+      'pc_bag',
+      'string_lights',
     ])
 
     for (const target of objects) {
@@ -207,7 +256,15 @@ describe('every gate flag has something that sets it', () => {
       }
     }
 
-    for (const flag of ['phone_found', 'charger_found', 'underbed_found', 'referral_read', 'mira_read']) {
+    for (const flag of [
+      'phone_found',
+      'charger_found',
+      'underbed_found',
+      'referral_read',
+      'mira_read',
+      'thread_read',
+      'receipts_found',
+    ]) {
       assert.ok(set.has(flag), `nothing in the flat sets ${flag}`)
     }
   })

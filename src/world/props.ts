@@ -15,12 +15,17 @@ import * as THREE from 'three'
 import type { PaletteKey, PropShape, SortDestination } from '../content/types.ts'
 import { sortDestinations, sortLabel } from '../rules/sorting.ts'
 import { materialByKey, type Materials } from './materials.ts'
-import { markerLabelTexture } from './textures.ts'
+import { markerLabelTexture, shippingLabelTexture } from './textures.ts'
 
 export interface PropFactory {
   build(shape: PropShape, tint?: PaletteKey): THREE.Group
   /** Section 5. The one thing in the flat the player can leave switched on. */
   setStringLights(on: boolean): void
+  /**
+   * Section 8.4. Flaps down, tape across, courier label. Only the Lena box: the
+   * other two stay open, and that contrast is the picture.
+   */
+  sealLenaBox(sealed: boolean): void
   dispose(): void
 }
 
@@ -99,6 +104,40 @@ export function createPropFactory(materials: Materials): PropFactory {
     roughness: 0.4,
   })
   owned.push(bulb)
+
+  /**
+   * The two states of the Lena carton, both built and one of them hidden.
+   *
+   * Built rather than rebuilt because the ending seals the box while the player
+   * is looking at it, and swapping a visibility flag is the only version of that
+   * which cannot flicker. Empty until the trio is built, and it is built once.
+   */
+  const lenaOpen: THREE.Object3D[] = []
+  const lenaSealed: THREE.Object3D[] = []
+
+  /**
+   * Packing tape. Its own material rather than paper, because the whole reason
+   * the seal reads across a dim room is that tape is the one shiny thing on a
+   * cardboard box.
+   */
+  const tape = new THREE.MeshStandardMaterial({
+    color: 0xbfa87f,
+    roughness: 0.22,
+    metalness: 0.02,
+  })
+  owned.push(tape)
+
+  let shippingLabel: THREE.MeshStandardMaterial | null = null
+
+  function shippingLabelMaterial(): THREE.MeshStandardMaterial {
+    if (shippingLabel !== null) return shippingLabel
+
+    const map = shippingLabelTexture('Lena Marku')
+    const material = new THREE.MeshStandardMaterial({ map, roughness: 0.75 })
+    owned.push(material, map)
+    shippingLabel = material
+    return material
+  }
 
   function labelMaterial(destination: SortDestination): THREE.MeshStandardMaterial {
     const existing = labels.get(destination)
@@ -213,8 +252,9 @@ export function createPropFactory(materials: Materials): PropFactory {
         box(carton, width, height, depth, card, 0, height / 2, 0)
         // Flaps open, waiting. The taped carton is a different shape.
         for (const side of [-1, 1]) {
-          box(carton, width, 0.004, 0.09, card, 0, height + 0.043, side * 0.155, 0)
-            .rotation.x = side * 0.55
+          const flap = box(carton, width, 0.004, 0.09, card, 0, height + 0.043, side * 0.155, 0)
+          flap.rotation.x = side * 0.55
+          if (destination === 'lena') lenaOpen.push(flap)
         }
 
         const label = new THREE.Mesh(
@@ -223,6 +263,38 @@ export function createPropFactory(materials: Materials): PropFactory {
         )
         label.position.set(0, height * 0.56, depth / 2 + 0.002)
         carton.add(label)
+
+        // Section 8.4. The same box, closed, waiting under the open one. Only
+        // this box gets it: the picture at the end is one carton going somewhere
+        // and two that are not.
+        if (destination === 'lena') {
+          for (const side of [-1, 1]) {
+            const shut = box(carton, width, 0.004, 0.115, card, 0, height + 0.002, side * 0.0605, 0)
+            shut.visible = false
+            lenaSealed.push(shut)
+          }
+
+          // Along the seam, and over both ends of it, the way anybody tapes a box.
+          const seam = box(carton, 0.06, 0.0025, depth + 0.02, tape, 0, height + 0.006, 0)
+          seam.visible = false
+          lenaSealed.push(seam)
+
+          for (const side of [-1, 1]) {
+            const end = box(carton, width + 0.02, 0.0025, 0.05, tape, 0, height + 0.005, side * (depth / 2 - 0.012))
+            end.visible = false
+            lenaSealed.push(end)
+          }
+
+          const courier = new THREE.Mesh(
+            keep(new THREE.PlaneGeometry(width * 0.5, width * 0.375)),
+            shippingLabelMaterial(),
+          )
+          courier.position.set(width * 0.16, height + 0.008, -0.03)
+          courier.rotation.x = -Math.PI / 2
+          courier.visible = false
+          carton.add(courier)
+          lenaSealed.push(courier)
+        }
 
         carton.position.set(x, 0, 0)
         carton.rotation.y = yaw
@@ -326,6 +398,11 @@ export function createPropFactory(materials: Materials): PropFactory {
 
     setStringLights(on: boolean): void {
       bulb.emissiveIntensity = on ? BULB_ON : BULB_OFF
+    },
+
+    sealLenaBox(sealed: boolean): void {
+      for (const part of lenaOpen) part.visible = !sealed
+      for (const part of lenaSealed) part.visible = sealed
     },
 
     dispose(): void {

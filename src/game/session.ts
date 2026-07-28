@@ -483,7 +483,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, ending, placed, weather, lighting, opening, desk, interact, revealPending },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, ending, placed, props, weather, lighting, opening, desk, interact, revealPending },
     })
   }
 

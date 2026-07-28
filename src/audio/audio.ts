@@ -92,8 +92,16 @@ export interface Audio {
   playDrawer(): number
   /** Section 8.4. The Lena box being sealed. Returns how long it runs. */
   playTape(): number
-  /** Section 8.4. The key going into the bowl, and the bowl answering. */
-  playKeyInBowl(): number
+  /**
+   * Section 8.4. The key going down. The bowl answers, if the bowl is still
+   * there: it is sortable, so by the ending it may be in one of the boxes.
+   */
+  playKeyDown(intoBowl: boolean): number
+  /**
+   * Section 8.4. The flat going quiet for good, because the rain has stopped
+   * and the door is shut. Not the same as muting: nothing brings this back.
+   */
+  leave(seconds: number): void
   /** Section 8.4. Your own phone on a hard surface. Not a call. */
   playBuzz(): number
   /**
@@ -123,6 +131,8 @@ export function createAudio(plan: FloorPlan): Audio {
   let untilNextTick = TICK_MIN_GAP
   let muted = false
   let ducked = false
+  /** Section 8.4. Once the door is shut the flat does not come back. */
+  let left = false
   let noise: AudioBuffer | null = null
   let demo: Source | null = null
 
@@ -131,7 +141,7 @@ export function createAudio(plan: FloorPlan): Audio {
 
   /** Mute wins over duck, so pausing inside a memory still goes quiet. */
   function level(): number {
-    if (muted) return 0
+    if (left || muted) return 0
     return ducked ? DUCK_LEVEL : 1
   }
 
@@ -289,9 +299,14 @@ export function createAudio(plan: FloorPlan): Audio {
       return tape(context, noise, master, TAPE_LEVEL)
     },
 
-    playKeyInBowl(): number {
+    playKeyDown(intoBowl: boolean): number {
       if (context === null || master === null) return 0
-      return keyInBowl(context, master, BOWL_LEVEL)
+      return keyInBowl(context, master, BOWL_LEVEL, intoBowl)
+    },
+
+    leave(seconds: number): void {
+      left = true
+      rampTo(seconds)
     },
 
     playBuzz(): number {
@@ -339,6 +354,7 @@ export function createAudio(plan: FloorPlan): Audio {
       noise = null
       demo = null
       ducked = false
+      left = false
       fridge = null
       radiators = null
     },

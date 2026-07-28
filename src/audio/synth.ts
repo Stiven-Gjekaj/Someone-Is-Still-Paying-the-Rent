@@ -536,13 +536,18 @@ export function tape(context: AudioContext, buffer: AudioBuffer, destination: Au
 }
 
 /**
- * Section 8.4. A key going into a ceramic bowl.
+ * Section 8.4. A key being set down at the end of the night.
  *
  * Metal on glaze: a bright short strike, a smaller one as it settles, and the
  * ring of the bowl underneath both. The bowl is the sound. It is the last thing
  * the player does in the flat and it should be almost nothing.
+ *
+ * `ring` is false when the bowl is not there any more, because the bowl is
+ * sortable and by the ending it may be taped inside a carton. Then the key goes
+ * down on a bare surface and there is nothing under it, which is true and is
+ * also the whole difference between the two versions of that moment.
  */
-export function keyInBowl(context: AudioContext, destination: AudioNode, level: number): number {
+export function keyInBowl(context: AudioContext, destination: AudioNode, level: number, ring = true): number {
   const start = context.currentTime + 0.02
 
   // The two strikes. Short, bright, and the second one much smaller.
@@ -562,19 +567,21 @@ export function keyInBowl(context: AudioContext, destination: AudioNode, level: 
     strike.stop(start + at + 0.12)
   }
 
+  if (!ring) return 0.4
+
   // The bowl, which keeps going after the key has stopped moving.
-  const ring = context.createOscillator()
-  ring.type = 'sine'
-  ring.frequency.setValueAtTime(1180, start)
+  const bowl = context.createOscillator()
+  bowl.type = 'sine'
+  bowl.frequency.setValueAtTime(1180, start)
 
   const body = context.createGain()
   body.gain.setValueAtTime(0, start)
   body.gain.linearRampToValueAtTime(level * 0.3, start + 0.01)
   body.gain.exponentialRampToValueAtTime(0.0001, start + 0.9)
 
-  ring.connect(body).connect(destination)
-  ring.start(start)
-  ring.stop(start + 1)
+  bowl.connect(body).connect(destination)
+  bowl.start(start)
+  bowl.stop(start + 1)
 
   return 1.1
 }

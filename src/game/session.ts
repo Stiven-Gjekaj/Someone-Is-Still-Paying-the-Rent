@@ -37,6 +37,7 @@ import { markExamined, resolveExamine } from '../rules/secondlook.ts'
 import { documentReadable, verbFor } from '../rules/verbs.ts'
 import { recordSort, sortDestinations, sortLabel } from '../rules/sorting.ts'
 import { isRevealed, newlyRevealed } from '../rules/reveal.ts'
+import { applyFlagEffects, examineEffects } from '../rules/effects.ts'
 import { createCarry } from './carry.ts'
 import { createActs } from './acts.ts'
 import { writeCheckpoint } from './save.ts'
@@ -393,14 +394,18 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     // when the thought closes rather than on top of it.
     pendingFragment = firstLook ? fragmentFor(target.object) : null
 
-    // Section 4.5. Finding the phone is what sets the goal for the rest of the
-    // night, and finding it is just examining it.
-    if (target.id === 'phone_dead') state.phone_found = true
-    goalLine.refresh(state)
+    // Section 4.5. Everything a look is allowed to change, decided in one place
+    // and read once: the effects are computed against the state as it was, so
+    // applying one of them cannot change which of the others apply.
+    const effects = examineEffects(target.object, state, reading.secondLook)
 
-    // Section 5. He wedged a folded towel under the front left corner and it
-    // worked. You just never noticed the quiet until you looked at it.
-    if (target.id === 'fridge_towel') audio.setFridgeMuffled(true)
+    for (const effect of effects) {
+      if (effect.kind === 'muffle_fridge') audio.setFridgeMuffled(true)
+      if (effect.kind === 'start_charging') state.phone_charging_started_at = Date.now()
+    }
+    applyFlagEffects(state, effects)
+
+    goalLine.refresh(state)
 
     // Section 4.5. Looking at something is the only thing that can open a gate
     // other than sorting, so this is the other place the act is checked.

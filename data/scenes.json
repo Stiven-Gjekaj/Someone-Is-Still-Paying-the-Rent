@@ -34,7 +34,14 @@
       "id": "the_phone",
       "title": "The Phone",
       "layer": "deep",
-      "lighting": "The stillest hour."
+      "lighting": "The stillest hour.",
+      "ends_when": {
+        "description": "The desk has been gone through and the bag by the door has been opened. Both are the end of a chain the thread starts, and neither can happen before it. There is no sorting quota here: what is still in the flat at this point is what the player has decided to leave, and the game holds no opinion about it.",
+        "requires_flags": [
+          "desk_done",
+          "receipts_found"
+        ]
+      }
     }
   ],
   "scenes": [

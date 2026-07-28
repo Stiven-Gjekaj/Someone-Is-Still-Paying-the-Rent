@@ -193,6 +193,15 @@ export interface Act {
   layer: string
   lighting: string
   gate_to_next?: ActGate
+  /**
+   * Section 8.4. What ends the night, on the one act that has no act after it.
+   *
+   * The same shape as a gate because it is the same question asked once more, and
+   * `evaluateGate` answers it unchanged. It is a separate field rather than a
+   * fourth act because there is no fourth act: a `gate_to_next` on act 3 would
+   * mean the game moves on, and it does not. It stops.
+   */
+  ends_when?: ActGate
 }
 
 /** Section 8. Scripted beats that are not attached to a single examinable object. */

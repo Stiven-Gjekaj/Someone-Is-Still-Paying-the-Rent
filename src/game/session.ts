@@ -42,6 +42,7 @@ import { applyFlagEffects, examineEffects } from '../rules/effects.ts'
 import { createCarry } from './carry.ts'
 import { createActs } from './acts.ts'
 import { createCharge } from './charge.ts'
+import { createEnding } from './ending.ts'
 import { createScreens } from './screens.ts'
 import { writeCheckpoint } from './save.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
@@ -204,6 +205,20 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     },
   })
 
+  /**
+   * Section 8.4. The end of the night, which nothing in particular causes.
+   *
+   * The desk and the bag can be reached in either order, so neither of them can
+   * be the thing that starts the ending. This notices instead.
+   */
+  const ending = createEnding({
+    acts: content.acts,
+    state,
+    onEnd: (): void => {
+      console.info('the night ends')
+    },
+  })
+
   // Dev camera placement, applied after the player has taken its spawn.
   const view = config.view
   const rect = view?.room === undefined ? undefined : plan.rooms.find((r) => r.id === view.room)
@@ -237,6 +252,11 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   applySettings(settings)
 
+  /** Everything that holds the screen. The voicemail joins them at the ending. */
+  function busy(): boolean {
+    return overlay.isOpen() || memories.isPlaying() || opening.isPlaying() || desk.isPlaying()
+  }
+
   const screens = createScreens({
     player,
     hud,
@@ -244,9 +264,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     menu,
     settings: () => settings,
     applySettings,
-    // Everything that holds the screen. The voicemail joins them at the ending.
-    isBusy: () =>
-      overlay.isOpen() || memories.isPlaying() || opening.isPlaying() || desk.isPlaying(),
+    isBusy: busy,
   })
 
   overlay.onClose(() => {
@@ -465,7 +483,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, placed, weather, lighting, opening, desk, interact, revealPending },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, ending, placed, weather, lighting, opening, desk, interact, revealPending },
     })
   }
 
@@ -496,6 +514,12 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     // Section 4.5. The only thing in the game that happens without the player
     // doing anything, which is exactly why it has to be watched from here.
     charge.update()
+
+    // Section 8.4. Not while something else has the screen. The desk sets the
+    // last flag at the moment the scene starts, and the bag's memory is still
+    // running when it sets its own, so the frame the condition comes true is
+    // routinely a frame the player is already in the middle of something.
+    if (!busy() && !screens.isPaused()) ending.check()
 
     const target = targeting.update()
     highlight.set(target === null ? null : target.owner)

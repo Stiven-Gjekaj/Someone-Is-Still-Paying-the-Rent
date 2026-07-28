@@ -53,6 +53,15 @@ export interface GameState {
   sorted_count: number
   /** Epoch milliseconds, or null while the phone is not charging. Section 4.5. */
   phone_charging_started_at: number | null
+  /**
+   * Section 8.4. The one object the player takes out of the Lena box at the end,
+   * or null before they have been asked.
+   *
+   * An object id rather than a flag, because the game has to know which one and
+   * must never have an opinion about it. Nothing reads this except the last shot,
+   * and nothing anywhere comments on it.
+   */
+  taken: string | null
 
   phone_found: boolean
   charger_found: boolean
@@ -125,6 +134,7 @@ export function createInitialState(): GameState {
     act: 1,
     sorted_count: 0,
     phone_charging_started_at: null,
+    taken: null,
 
     phone_found: false,
     charger_found: false,

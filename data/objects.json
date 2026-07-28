@@ -284,6 +284,7 @@
       "readable"
     ],
     "act_min": 2,
+    "hidden_until": "secondlook:vinyl_shelf",
     "sortable": true,
     "examine": "A paper sleeve, one line of Sharpie across it: we'll fix the mix later.",
     "design_note": "Placed in the living room rather than the bedroom, where the bible indexed it, because it is revealed behind a record on the vinyl shelf. See docs/CONTENT_RULES.md. Playing it on the old stereo gives one song, unmixed, drums too loud, alive."
@@ -532,6 +533,7 @@
       "ambient"
     ],
     "act_min": 2,
+    "hidden_until": "underbed_found",
     "sortable": true,
     "examine": "Not his size. Washed and folded before it went into the box, which is the part that gets you."
   },
@@ -543,6 +545,7 @@
       "ambient"
     ],
     "act_min": 2,
+    "hidden_until": "underbed_found",
     "sortable": true,
     "examine": "Four frames. They behave for the first two. By the third they are laughing, and after that neither of them looks at the camera again."
   },
@@ -555,6 +558,7 @@
       "readable"
     ],
     "act_min": 2,
+    "hidden_until": "underbed_found",
     "sortable": true,
     "text": "mira_draft",
     "examine": "Folded and refolded until the creases went soft. Never sent. Never thrown out either.",
@@ -568,6 +572,7 @@
       "memory"
     ],
     "act_min": 2,
+    "hidden_until": "underbed_found",
     "sortable": true,
     "fragment": "F-08",
     "examine": "Brass, worn smooth on one side from eight years in a pocket. It still has fuel in it."

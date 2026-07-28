@@ -167,6 +167,7 @@ if (!Array.isArray(roomData['lighting_progression']) || roomData['lighting_progr
 
 const seenObjectIds = new Set<string>()
 const sortTargets: string[] = []
+const hiddenObjects: { id: string; until: string }[] = []
 
 for (const object of objects) {
   const rawId = object['id']
@@ -260,6 +261,29 @@ for (const object of objects) {
     }
   }
 
+  // An object can be in the flat and still not be in the room: the Mira thread is
+  // in a shoebox and the demo is behind a record. What hides it has to be a
+  // condition something can actually satisfy, or the object is unfindable and
+  // nothing else in the pipeline would say so.
+  const hiddenUntil = object['hidden_until']
+  if (hiddenUntil !== undefined) {
+    if (typeof hiddenUntil !== 'string') {
+      fail('objects', where, 'hidden_until must be a flag reference string')
+    } else {
+      const ref = parseFlagReference(hiddenUntil)
+      if (ref === null) {
+        fail('objects', where, `hidden_until ${JSON.stringify(hiddenUntil)} names no known flag`)
+      } else if (ref.kind === 'derived') {
+        if (!objectIds.has(ref.object)) {
+          fail('objects', where, `hidden_until refers to object ${ref.object}, which does not exist`)
+        } else if (ref.object === id) {
+          fail('objects', where, 'hidden_until refers to the object itself, which can never be found')
+        }
+      }
+      hiddenObjects.push({ id, until: hiddenUntil })
+    }
+  }
+
   const secondLook = object['second_look']
   if (secondLook !== undefined) {
     if (!isRecord(secondLook)) {
@@ -281,6 +305,39 @@ for (const object of objects) {
         }
       }
     }
+  }
+}
+
+// Whatever hides an object has to be reachable before the object is. A shoebox
+// the player can only open in act 3 cannot be hiding an act 2 object, and an
+// object hidden behind another object's second look needs that second look to
+// exist. Either mistake leaves something in the data that no playthrough can
+// ever reach, and nothing else here would notice.
+for (const hidden of hiddenObjects) {
+  const object = objects.find((o) => o['id'] === hidden.id)
+  const ref = parseFlagReference(hidden.until)
+  if (object === undefined || ref === null || ref.kind !== 'derived') continue
+
+  const gate = objects.find((o) => o['id'] === ref.object)
+  if (gate === undefined) continue
+
+  const hiddenAct = object['act_min']
+  const gateAct = gate['act_min']
+
+  if (typeof hiddenAct === 'number' && typeof gateAct === 'number' && gateAct > hiddenAct) {
+    fail(
+      'objects',
+      `object ${hidden.id}`,
+      `hidden behind ${ref.object}, which does not appear until act ${gateAct}, but this appears in act ${hiddenAct}`,
+    )
+  }
+
+  if (ref.prefix === 'secondlook' && gate['second_look'] === undefined) {
+    fail('objects', `object ${hidden.id}`, `hidden behind a second look ${ref.object} does not have`)
+  }
+
+  if (gate['hidden_until'] === hidden.until) {
+    fail('objects', `object ${hidden.id}`, `hidden behind ${ref.object}, which is hidden behind the same thing`)
   }
 }
 

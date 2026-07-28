@@ -37,6 +37,9 @@ export interface PlacedObjects {
 const X_AXIS = new THREE.Vector3(1, 0, 0)
 const Y_AXIS = new THREE.Vector3(0, 1, 0)
 
+/** Half a millimetre, which is enough to win a raycast tie and too little to see. */
+const SURFACE_CLEARANCE = 0.0005
+
 /** How far each pose tips the prop back from lying flat. */
 const POSE_TILT: Record<string, number> = {
   flat: 0,
@@ -107,10 +110,15 @@ export function placeObjects(
 
       prop.position.copy(surface.position).add(offset)
 
-      // Settle it onto the surface rather than through it.
+      // Settle it onto the surface rather than through it, and then a hair above.
+      //
+      // Resting a two-millimetre paper sleeve exactly on a shelf leaves its
+      // underside coplanar with the shelf top, which is a raycast tie and a
+      // depth-buffer one. Neither has been seen to bite, so this is insurance
+      // rather than a fix: half a millimetre is invisible and settles both.
       prop.updateMatrixWorld(true)
       const bounds = new THREE.Box3().setFromObject(prop)
-      prop.position.y += surface.position.y + offset.y - bounds.min.y
+      prop.position.y += surface.position.y + offset.y - bounds.min.y + SURFACE_CLEARANCE
     }
 
     prop.traverse((node) => {

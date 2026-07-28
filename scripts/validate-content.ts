@@ -27,7 +27,12 @@ import {
   TEXT_BLOCK_KINDS,
   WALL_SIDES,
 } from '../src/content/types.ts'
-import { BOOLEAN_FLAGS, createInitialState, parseFlagReference } from '../src/content/flags.ts'
+import {
+  BOOLEAN_FLAGS,
+  createInitialState,
+  parseFlagReference,
+  type GameState,
+} from '../src/content/flags.ts'
 import { examineEffects } from '../src/rules/effects.ts'
 import type { GameObject } from '../src/content/types.ts'
 
@@ -450,6 +455,67 @@ for (const text of texts) {
 // Acts and scenes
 // ---------------------------------------------------------------------------
 
+/**
+ * The shape of a condition on an act, whichever field it arrived under.
+ *
+ * `gate_to_next` and `ends_when` ask the same question at opposite ends of an
+ * act, and the second one earned its own field rather than its own rules.
+ */
+function checkActGate(where: string, label: string, act: number, gate: unknown): void {
+  if (!isRecord(gate)) {
+    fail('scenes', where, `${label} must be an object`)
+    return
+  }
+
+  if (!nonEmptyString(gate['description'])) {
+    fail('scenes', where, `${label}.description is missing or empty`)
+  }
+
+  const required = gate['requires_flags']
+  if (required !== undefined) {
+    if (!Array.isArray(required)) {
+      fail('scenes', where, `${label}.requires_flags must be an array`)
+    } else {
+      for (const flag of required) {
+        if (typeof flag !== 'string' || !BOOLEAN_FLAG_SET.has(flag)) {
+          fail('scenes', where, `${label} names unknown flag ${JSON.stringify(flag)}`)
+        }
+      }
+    }
+  }
+
+  // Section 4.1 and 4.5. A threshold higher than the number of objects the flat
+  // actually contains by this act is an act that cannot be finished, and nothing
+  // else in the pipeline would notice: the game would simply never move on, and
+  // it would look like the player had missed something.
+  const needed = gate['sorted_count_min']
+  if (needed !== undefined) {
+    if (typeof needed !== 'number' || !Number.isInteger(needed) || needed < 0) {
+      fail('scenes', where, `${label}.sorted_count_min must be a whole number`)
+    } else {
+      const available = objects.filter(
+        (object) =>
+          object['sortable'] === true &&
+          typeof object['act_min'] === 'number' &&
+          object['act_min'] <= act,
+      ).length
+
+      if (needed > available) {
+        fail(
+          'scenes',
+          where,
+          `${label} wants ${needed} objects sorted, but only ${available} can be sorted by act ${act}`,
+        )
+      }
+    }
+  }
+
+  const charge = gate['charge_seconds']
+  if (charge !== undefined && (typeof charge !== 'number' || !(charge > 0))) {
+    fail('scenes', where, `${label}.charge_seconds must be a positive number of seconds`)
+  }
+}
+
 const acts = sceneData['acts']
 if (!Array.isArray(acts)) {
   fail('scenes', 'data/scenes.json', 'acts must be an array')
@@ -477,59 +543,10 @@ if (!Array.isArray(acts)) {
     }
 
     const gate = act['gate_to_next']
-    if (gate !== undefined) {
-      if (!isRecord(gate)) {
-        fail('scenes', where, 'gate_to_next must be an object')
-      } else {
-        if (!nonEmptyString(gate['description'])) {
-          fail('scenes', where, 'gate_to_next.description is missing or empty')
-        }
+    if (gate !== undefined) checkActGate(where, 'gate_to_next', number, gate)
 
-        const required = gate['requires_flags']
-        if (required !== undefined) {
-          if (!Array.isArray(required)) {
-            fail('scenes', where, 'gate_to_next.requires_flags must be an array')
-          } else {
-            for (const flag of required) {
-              if (typeof flag !== 'string' || !BOOLEAN_FLAG_SET.has(flag)) {
-                fail('scenes', where, `gate names unknown flag ${JSON.stringify(flag)}`)
-              }
-            }
-          }
-        }
-
-        // Section 4.1 and 4.5. A threshold higher than the number of objects the
-        // flat actually contains by this act is an act that cannot be finished,
-        // and nothing else in the pipeline would notice: the game would simply
-        // never move on, and it would look like the player had missed something.
-        const needed = gate['sorted_count_min']
-        if (needed !== undefined) {
-          if (typeof needed !== 'number' || !Number.isInteger(needed) || needed < 0) {
-            fail('scenes', where, 'gate_to_next.sorted_count_min must be a whole number')
-          } else {
-            const available = objects.filter(
-              (object) =>
-                object['sortable'] === true &&
-                typeof object['act_min'] === 'number' &&
-                object['act_min'] <= number,
-            ).length
-
-            if (needed > available) {
-              fail(
-                'scenes',
-                where,
-                `gate wants ${needed} objects sorted, but only ${available} can be sorted by act ${number}`,
-              )
-            }
-          }
-        }
-
-        const charge = gate['charge_seconds']
-        if (charge !== undefined && (typeof charge !== 'number' || !(charge > 0))) {
-          fail('scenes', where, 'gate_to_next.charge_seconds must be a positive number of seconds')
-        }
-      }
-    }
+    const ends = act['ends_when']
+    if (ends !== undefined) checkActGate(where, 'ends_when', number, ends)
   }
 
   for (const n of [1, 2, 3]) {
@@ -540,6 +557,32 @@ if (!Array.isArray(acts)) {
   const third = acts.find((a) => isRecord(a) && a['act'] === 3)
   if (isRecord(third) && third['gate_to_next'] !== undefined) {
     fail('scenes', 'act 3', 'has a gate_to_next, but there is no act 4')
+  }
+
+  // Section 8.4. And it has to end somewhere, on the act that ends it. A missing
+  // ending condition is a game that is complete and unfinishable at the same
+  // time: everything is reachable, nothing is over, and the player is left
+  // standing in a flat waiting for something that is never coming.
+  if (isRecord(third) && third['ends_when'] === undefined) {
+    fail('scenes', 'act 3', 'has no ends_when, so nothing ends the game')
+  }
+
+  for (const act of acts) {
+    if (!isRecord(act) || act['act'] === 3) continue
+    if (act['ends_when'] !== undefined) {
+      fail(
+        'scenes',
+        `act ${String(act['act'])}`,
+        'has an ends_when, but the game ends on act 3 and nowhere else',
+      )
+    }
+  }
+
+  // A charge is a wait the player triggers and then sits through, and only act 2
+  // has one. An ending that waited on a clock would be the game deciding when
+  // the player is finished, which is the opposite of what section 8.4 is.
+  if (isRecord(third) && isRecord(third['ends_when']) && third['ends_when']['charge_seconds'] !== undefined) {
+    fail('scenes', 'act 3', 'ends_when carries charge_seconds, so the game would end on a timer')
   }
 }
 
@@ -580,6 +623,59 @@ if (!Array.isArray(scenes)) {
         steps.forEach((step, index) => {
           if (!nonEmptyString(step)) fail('scenes', `${where} step ${index}`, 'step is empty')
         })
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Hard Rule 3, in the one scene that is made of it
+// ---------------------------------------------------------------------------
+
+/**
+ * Section 8.3. The desk scene ends on a sentence about there being no note, and
+ * the beat is that nothing follows it.
+ *
+ * The lexicons above already refuse the words. This refuses the shape, which is
+ * the part that would slip through: a reveal appended after the payoff needs no
+ * forbidden vocabulary at all, and a sixth block would read to a validator as
+ * ordinary content and to a player as the game taking the line back.
+ *
+ * If you are here because this check is failing, it is not a check to relax.
+ */
+{
+  const where = 'scene desk_scene'
+  const PAYOFF = "Most people don't leave one. You knew that. You looked anyway."
+
+  const scene = Array.isArray(scenes)
+    ? scenes.find((entry) => isRecord(entry) && entry['id'] === 'desk_scene')
+    : undefined
+
+  if (!isRecord(scene)) {
+    fail('scenes', where, 'missing, and it is the scene section 8.3 is entirely about')
+  } else {
+    const blocks = scene['blocks']
+
+    if (!Array.isArray(blocks)) {
+      fail('scenes', where, 'has no blocks')
+    } else {
+      const lines = blocks.filter((block) => isRecord(block) && block['kind'] === 'line')
+      const payoff = lines.at(-1)
+
+      if (!isRecord(payoff) || payoff['text'] !== PAYOFF) {
+        fail('scenes', where, `the last line must be exactly ${JSON.stringify(PAYOFF)}`)
+      } else {
+        const after = blocks.slice(blocks.indexOf(payoff) + 1)
+
+        for (const block of after) {
+          if (!isRecord(block) || block['kind'] !== 'stage') {
+            fail('scenes', where, 'nothing but a stage direction may follow the last line')
+          }
+        }
+
+        if (after.length > 1) {
+          fail('scenes', where, `${after.length} blocks follow the last line, and the scene allows one`)
+        }
       }
     }
   }
@@ -632,16 +728,33 @@ if (!Array.isArray(goals) || goals.length === 0) {
 {
   const written = new Set<string>()
 
+  /**
+   * The states the effects table is run against.
+   *
+   * Some effects are guarded on their own flag not being set yet, and others on
+   * a different flag already being set. The desk needs both at once: it fires
+   * only once the thread has been read and only while the desk has not been gone
+   * through. All-off and all-on each miss it, so every flag also gets a run in
+   * which it is the only one turned off.
+   */
+  const candidates: GameState[] = []
+
+  {
+    const off = createInitialState()
+    off.act = 3
+    candidates.push(off)
+
+    for (const missing of [null, ...BOOLEAN_FLAGS]) {
+      const state = createInitialState()
+      state.act = 3
+      for (const flag of BOOLEAN_FLAGS) state[flag] = flag !== missing
+      candidates.push(state)
+    }
+  }
+
   for (const object of objects) {
     for (const showedSecondLook of [false, true]) {
-      // Both extremes, because the table guards some effects on the flag not
-      // being set yet and others on a different flag already being set. Neither
-      // state alone sees everything the flat can write.
-      for (const everything of [false, true]) {
-        const state = createInitialState()
-        state.act = 3
-        if (everything) for (const flag of BOOLEAN_FLAGS) state[flag] = true
-
+      for (const state of candidates) {
         for (const effect of examineEffects(object as unknown as GameObject, state, showedSecondLook)) {
           if (effect.kind === 'flag') written.add(effect.flag)
         }
@@ -654,11 +767,7 @@ if (!Array.isArray(goals) || goals.length === 0) {
   const ELSEWHERE: Record<string, string> = {
     phone_on: 'the chime, in src/game/charge.ts',
     record_playing: 'the toggle_demo effect, applied in src/game/session.ts',
-    // Act 3 flags, with act 3 writers. Remove each as its act is built.
-    thread_read: 'act 3, not built yet',
-    desk_done: 'act 3, not built yet',
-    receipts_found: 'act 3, not built yet',
-    lights_on: 'the ending, not built yet',
+    lights_on: 'the toggle_lights effect, applied in src/game/session.ts',
   }
 
   const needed = new Set<string>()
@@ -679,10 +788,15 @@ if (!Array.isArray(goals) || goals.length === 0) {
 
   for (const act of Array.isArray(acts) ? acts : []) {
     if (!isRecord(act)) continue
-    const gate = act['gate_to_next']
-    if (!isRecord(gate) || !Array.isArray(gate['requires_flags'])) continue
-    for (const flag of gate['requires_flags']) {
-      if (typeof flag === 'string') needed.add(flag)
+
+    // Both ends of an act. An ending condition naming a flag nothing writes is
+    // the worst version of this failure: the game is finished, and it never ends.
+    for (const field of ['gate_to_next', 'ends_when']) {
+      const gate = act[field]
+      if (!isRecord(gate) || !Array.isArray(gate['requires_flags'])) continue
+      for (const flag of gate['requires_flags']) {
+        if (typeof flag === 'string') needed.add(flag)
+      }
     }
   }
 

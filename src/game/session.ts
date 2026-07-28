@@ -166,8 +166,6 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   const acts = createActs({
     acts: content.acts,
     state,
-    // Act 2 is the last act this build plays. See src/game/acts.ts.
-    stop_after: 2,
     onEnter: (next): void => {
       // Section 4.6. The night gets later, and the flat gets deeper: act 2's
       // middle layer arrives here, minus whatever is still inside something.
@@ -382,6 +380,11 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       if (effect.kind === 'start_charging') state.phone_charging_started_at = Date.now()
       if (effect.kind === 'toggle_demo') {
         state.record_playing = audio.setDemoPlaying(!state.record_playing, 'living_room')
+      }
+      if (effect.kind === 'toggle_lights') {
+        state.lights_on = !state.lights_on
+        lighting.setStringLights(state.lights_on)
+        props.setStringLights(state.lights_on)
       }
     }
     applyFlagEffects(state, effects)

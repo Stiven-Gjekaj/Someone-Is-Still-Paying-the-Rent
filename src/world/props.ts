@@ -19,8 +19,16 @@ import { markerLabelTexture } from './textures.ts'
 
 export interface PropFactory {
   build(shape: PropShape, tint?: PaletteKey): THREE.Group
+  /** Section 5. The one thing in the flat the player can leave switched on. */
+  setStringLights(on: boolean): void
   dispose(): void
 }
+
+/** Glass catching the street. Section 5 is explicit that this is not lit. */
+const BULB_OFF = 0.07
+
+/** Lit. Six small bulbs, warm, the way they have been for six summers. */
+const BULB_ON = 1.4
 
 export function createPropFactory(materials: Materials): PropFactory {
   // Geometries and the one material these shapes own outright, so the caller can
@@ -76,6 +84,21 @@ export function createPropFactory(materials: Materials): PropFactory {
   // Drawing a label costs a canvas, so the three are drawn once and shared even
   // if the trio is ever built more than once.
   const labels = new Map<SortDestination, THREE.MeshStandardMaterial>()
+
+  /**
+   * The bulbs on the balcony wire, at factory scope so the ending can reach them.
+   *
+   * `emissiveIntensity: 0.07` is the OFF state and the comment below says why: it
+   * is glass catching the street, not a lit filament. Turning them on climbs from
+   * it. Built once and shared, the way the labels are.
+   */
+  const bulb = new THREE.MeshStandardMaterial({
+    color: 0xffd89b,
+    emissive: 0xffb457,
+    emissiveIntensity: BULB_OFF,
+    roughness: 0.4,
+  })
+  owned.push(bulb)
 
   function labelMaterial(destination: SortDestination): THREE.MeshStandardMaterial {
     const existing = labels.get(destination)
@@ -279,16 +302,8 @@ export function createPropFactory(materials: Materials): PropFactory {
     // string_lights: a run of bulbs on a sagging wire. They still work, but they
     // are not on: section 5 makes switching them on the player's choice, and the
     // flag it sets decides whether they are burning in the final exterior shot.
-    // The faint emissive is glass catching the street, not a lit filament.
     const span = 2.2
     const segments = 11
-    const bulb = new THREE.MeshStandardMaterial({
-      color: 0xffd89b,
-      emissive: 0xffb457,
-      emissiveIntensity: 0.07,
-      roughness: 0.4,
-    })
-    owned.push(bulb)
 
     for (let i = 0; i <= segments; i += 1) {
       const t = i / segments
@@ -308,6 +323,11 @@ export function createPropFactory(materials: Materials): PropFactory {
 
   return {
     build,
+
+    setStringLights(on: boolean): void {
+      bulb.emissiveIntensity = on ? BULB_ON : BULB_OFF
+    },
+
     dispose(): void {
       for (const geometry of owned) geometry.dispose()
       owned.length = 0

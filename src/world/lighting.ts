@@ -118,7 +118,28 @@ const ACT_LEVELS: Record<number, number> = {
 export interface LightingRig {
   group: THREE.Group
   applyAct(act: ActNumber): void
+  /**
+   * Section 5. The string lights on the balcony, which are off until the player
+   * turns them on and which nothing else in the flat depends on.
+   *
+   * A separate light from the balcony lamp on purpose. That one is what falls out
+   * of the living room door and bounces off wet concrete; this one hangs on the
+   * wire, where the bulbs are.
+   */
+  setStringLights(on: boolean): void
   dispose(): void
+}
+
+/**
+ * Where the run of bulbs hangs, from `data/placement.json`: the south balcony
+ * wall, 0.62 up from the surface anchor. Small and close, because six bulbs are
+ * not a room light.
+ */
+const STRING_LIGHTS = {
+  position: [6.2, 1.6, -0.06] as const,
+  color: 0xffc98d,
+  intensity: 2.6,
+  distance: 3.4,
 }
 
 export function buildLighting(act: ActNumber): LightingRig {
@@ -151,6 +172,16 @@ export function buildLighting(act: ActNumber): LightingRig {
     lamps.push({ light, base: lamp.intensity })
   }
 
+  const string = new THREE.PointLight(
+    STRING_LIGHTS.color,
+    0,
+    STRING_LIGHTS.distance,
+    2,
+  )
+  string.position.set(...STRING_LIGHTS.position)
+  string.name = 'lamp:string_lights'
+  group.add(string)
+
   function applyAct(next: ActNumber): void {
     const level = ACT_LEVELS[next] ?? 1
     for (const lamp of lamps) lamp.light.intensity = lamp.base * level
@@ -162,7 +193,13 @@ export function buildLighting(act: ActNumber): LightingRig {
   return {
     group,
     applyAct,
+
+    setStringLights(on: boolean): void {
+      string.intensity = on ? STRING_LIGHTS.intensity : 0
+    },
+
     dispose(): void {
+      string.dispose()
       for (const lamp of lamps) lamp.light.dispose()
       lamps.length = 0
       fill.dispose()

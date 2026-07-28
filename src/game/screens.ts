@@ -78,6 +78,14 @@ export function createScreens(config: ScreensConfig): Screens {
     // beat later and take the pointer back, closing the menu under them.
     if (menu.isOpen()) return
 
+    // Nor if something else has taken the screen in the meantime. Every beat
+    // releases a second or so after it ends, once its fade has run, and the
+    // ending starts from a flag that the last of those beats is what sets. So
+    // the last memory in the game routinely finishes fading out while the
+    // ending is already running, and this used to put the HUD back on top of it
+    // and take the pointer away from the one list the player has to click.
+    if (config.isBusy()) return
+
     hud.setVisible(true)
     goalLine.setVisible(true)
     if (!player.isLocked()) player.lock()

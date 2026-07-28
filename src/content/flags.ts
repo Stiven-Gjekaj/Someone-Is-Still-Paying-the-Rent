@@ -72,6 +72,8 @@ export interface GameState {
 export type FlagReference =
   | { kind: 'state'; flag: BooleanFlag }
   | { kind: 'derived'; prefix: DerivedFlagPrefix; object: string }
+  /** `act:2`, meaning the night has reached at least that act. */
+  | { kind: 'act'; act: ActNumber }
 
 const BOOLEAN_FLAG_SET: ReadonlySet<string> = new Set(BOOLEAN_FLAGS)
 const DERIVED_PREFIX_SET: ReadonlySet<string> = new Set(DERIVED_FLAG_PREFIXES)
@@ -91,15 +93,25 @@ export function parseFlagReference(raw: string): FlagReference | null {
   }
 
   const prefix = raw.slice(0, colon)
-  const object = raw.slice(colon + 1)
+  const rest = raw.slice(colon + 1)
 
-  if (!DERIVED_PREFIX_SET.has(prefix) || object.length === 0) return null
+  // `act:2`. The junk drawer is jammed shut until the second act and then it is
+  // not, which is one object with two readings gated on a condition, which is
+  // exactly what a second look already is. See docs/CONTENT_RULES.md.
+  if (prefix === 'act') {
+    const act = Number(rest)
+    if (act !== 1 && act !== 2 && act !== 3) return null
+    return { kind: 'act', act: act as ActNumber }
+  }
 
-  return { kind: 'derived', prefix: prefix as DerivedFlagPrefix, object }
+  if (!DERIVED_PREFIX_SET.has(prefix) || rest.length === 0) return null
+
+  return { kind: 'derived', prefix: prefix as DerivedFlagPrefix, object: rest }
 }
 
 export function isSatisfied(state: GameState, ref: FlagReference): boolean {
   if (ref.kind === 'state') return state[ref.flag]
+  if (ref.kind === 'act') return state.act >= ref.act
 
   const object = state.objects[ref.object]
   if (object === undefined) return false

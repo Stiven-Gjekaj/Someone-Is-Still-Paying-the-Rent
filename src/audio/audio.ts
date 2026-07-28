@@ -18,6 +18,7 @@ import {
   createRain,
   createRoomTone,
   chime,
+  createDemo,
   keyInLock,
   noiseBuffer,
   tick,
@@ -31,6 +32,8 @@ const FRIDGE_LEVEL = 0.055
 const TICK_LEVEL = 0.035
 // Quiet. Section 8.2 wants a sound the player stops for, not one that stops them.
 const CHIME_LEVEL = 0.09
+// Under the rain rather than over it. It is a stereo in another room.
+const DEMO_LEVEL = 0.06
 
 const TICK_MIN_GAP = 5
 const TICK_MAX_GAP = 16
@@ -66,6 +69,11 @@ export interface Audio {
    * from everywhere. The player should have to notice which room it came from.
    */
   playChime(room: RoomId): number
+  /**
+   * Section 5. The Low Orbit demo on his stereo, from where the stereo is.
+   * Returns whether it is playing now, so the caller can track `record_playing`.
+   */
+  setDemoPlaying(playing: boolean, room: RoomId): boolean
   dispose(): void
 }
 
@@ -86,6 +94,7 @@ export function createAudio(plan: FloorPlan): Audio {
   let muted = false
   let ducked = false
   let noise: AudioBuffer | null = null
+  let demo: Source | null = null
 
   const forward = new THREE.Vector3()
   const up = new THREE.Vector3()
@@ -209,6 +218,37 @@ export function createAudio(plan: FloorPlan): Audio {
       return chime(context, panner, CHIME_LEVEL)
     },
 
+    setDemoPlaying(playing: boolean, room: RoomId): boolean {
+      if (context === null || master === null || noise === null) return false
+
+      if (!playing) {
+        demo?.stop()
+        demo = null
+        return false
+      }
+
+      if (demo !== null) return true
+
+      const song = createDemo(context, noise, DEMO_LEVEL)
+      const panner = context.createPanner()
+      panner.panningModel = 'HRTF'
+      panner.distanceModel = 'inverse'
+      panner.refDistance = 1.4
+      panner.maxDistance = 14
+      panner.rolloffFactor = 1.4
+
+      const at = centreOf(plan, room)
+      panner.positionX.value = at.x
+      panner.positionY.value = at.y
+      panner.positionZ.value = at.z
+
+      song.output.connect(panner).connect(master)
+      song.start()
+      demo = song
+      sources.push(song)
+      return true
+    },
+
     setFridgeMuffled(value: boolean): void {
       fridge?.setMuffled(value)
     },
@@ -237,6 +277,7 @@ export function createAudio(plan: FloorPlan): Audio {
       context = null
       master = null
       noise = null
+      demo = null
       ducked = false
       fridge = null
       radiators = null

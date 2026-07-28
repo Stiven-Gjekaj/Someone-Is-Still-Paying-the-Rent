@@ -285,3 +285,146 @@ export function chime(context: AudioContext, destination: AudioNode, level: numb
 
   return 1.5
 }
+
+/**
+ * Section 5. The Low Orbit demo: "one song, unmixed, drums too loud, alive."
+ *
+ * Bass, two chords, and a kick and snare mixed the way a band mixes itself at
+ * two in the morning in somebody's front room, which is to say the drums win. It
+ * loops, because a record does.
+ *
+ * Deliberately not sad. This is the only time the player hears him make anything,
+ * and section 0 asks for the struggles to be interleaved with the plans and the
+ * noise. It is a decent song by people who were enjoying themselves.
+ */
+export function createDemo(context: AudioContext, buffer: AudioBuffer, level: number): Source {
+  const output = context.createGain()
+  output.gain.value = level
+
+  // Through a narrow band, so it reads as a small stereo across a room rather
+  // than as music playing at the player.
+  const speaker = context.createBiquadFilter()
+  speaker.type = 'bandpass'
+  speaker.frequency.value = 900
+  speaker.Q.value = 0.55
+  speaker.connect(output)
+
+  const bar = 1.85
+  const beat = bar / 4
+  const started: { stop(): void }[] = []
+
+  // Two chords, eight bars apart from each other and from nothing else. A minor
+  // to F, which is every song anybody wrote in a front room.
+  const CHORDS = [
+    [110, 130.81, 164.81],
+    [87.31, 110, 174.61],
+  ]
+
+  function voice(hz: number, at: number, hold: number, gain: number, type: OscillatorType): void {
+    const tone = context.createOscillator()
+    tone.type = type
+    tone.frequency.setValueAtTime(hz, at)
+
+    const shape = context.createGain()
+    shape.gain.setValueAtTime(0, at)
+    shape.gain.linearRampToValueAtTime(gain, at + 0.02)
+    shape.gain.setValueAtTime(gain, at + hold * 0.7)
+    shape.gain.exponentialRampToValueAtTime(0.0001, at + hold)
+
+    tone.connect(shape).connect(speaker)
+    tone.start(at)
+    tone.stop(at + hold + 0.05)
+    started.push(tone)
+  }
+
+  function hit(at: number, gain: number, pitch: number, decay: number): void {
+    const drum = context.createOscillator()
+    drum.type = 'sine'
+    drum.frequency.setValueAtTime(pitch, at)
+    drum.frequency.exponentialRampToValueAtTime(pitch * 0.4, at + decay)
+
+    const shape = context.createGain()
+    shape.gain.setValueAtTime(gain, at)
+    shape.gain.exponentialRampToValueAtTime(0.0001, at + decay)
+
+    drum.connect(shape).connect(speaker)
+    drum.start(at)
+    drum.stop(at + decay + 0.02)
+    started.push(drum)
+  }
+
+  function snare(at: number, gain: number): void {
+    const noise = context.createBufferSource()
+    noise.buffer = buffer
+
+    const band = context.createBiquadFilter()
+    band.type = 'bandpass'
+    band.frequency.value = 1900
+    band.Q.value = 0.8
+
+    const shape = context.createGain()
+    shape.gain.setValueAtTime(gain, at)
+    shape.gain.exponentialRampToValueAtTime(0.0001, at + 0.16)
+
+    noise.connect(band).connect(shape).connect(speaker)
+    noise.start(at)
+    noise.stop(at + 0.2)
+    started.push(noise)
+  }
+
+  /** Schedules one pass. Called again, a bar early, to keep it going. */
+  function schedule(from: number, bars: number): number {
+    for (let index = 0; index < bars; index += 1) {
+      const at = from + index * bar
+      const chord = CHORDS[Math.floor(index / 2) % CHORDS.length] ?? CHORDS[0]!
+
+      // Bass, on the one and the three, up an octave down.
+      voice(chord[0]! / 2, at, beat * 1.6, 0.5, 'triangle')
+      voice(chord[0]! / 2, at + beat * 2, beat * 1.6, 0.42, 'triangle')
+
+      // The chord, held, quiet under everything.
+      for (const hz of chord) voice(hz, at + 0.01, bar * 0.92, 0.11, 'sawtooth')
+
+      // The drums. Louder than any of it, which is the note in section 5.
+      hit(at, 1.15, 92, 0.3)
+      hit(at + beat * 2.5, 1.0, 92, 0.28)
+      snare(at + beat, 0.85)
+      snare(at + beat * 3, 0.9)
+    }
+
+    return from + bars * bar
+  }
+
+  // `ReturnType` rather than `number`: @types/node is in scope for the validator
+  // and the tests, and it types the browser's setInterval as Node's.
+  let timer: ReturnType<typeof globalThis.setInterval> | null = null
+  let nextAt = 0
+
+  return {
+    output,
+
+    start(): void {
+      nextAt = schedule(context.currentTime + 0.08, 8)
+
+      // Rescheduled rather than looped from a buffer: it is a few hundred bytes
+      // of oscillator either way, and this keeps the whole song in one place.
+      timer = globalThis.setInterval(() => {
+        if (nextAt - context.currentTime < bar * 4) nextAt = schedule(nextAt, 8)
+      }, 1000)
+    },
+
+    stop(): void {
+      if (timer !== null) globalThis.clearInterval(timer)
+      timer = null
+
+      for (const node of started) {
+        try {
+          node.stop()
+        } catch {
+          // Already finished. Nothing to do.
+        }
+      }
+      started.length = 0
+    },
+  }
+}

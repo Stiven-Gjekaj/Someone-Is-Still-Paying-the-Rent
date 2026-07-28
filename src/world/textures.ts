@@ -222,6 +222,75 @@ export function markerLabelTexture(text: string, seed = 30): THREE.CanvasTexture
 }
 
 /**
+ * Section 8.4. The courier label that goes on the Lena box when it is sealed.
+ *
+ * Printed, not written, which is the whole difference from the marker labels
+ * above: the other two boxes are going nowhere and this one is going a long way,
+ * so somebody sat down and filled in a form for it.
+ *
+ * Her name is on it and her address is not legible, and that is not a shortcut.
+ * The bible says she lives abroad and never says where, section 9 keeps a list
+ * of things the game must never answer, and the shape of a printed address block
+ * is what sells the label rather than the words in it. Do not fill these lines
+ * in later.
+ */
+export function shippingLabelTexture(name: string, seed = 40): THREE.CanvasTexture {
+  const width = 512
+  const height = 384
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('2d canvas context unavailable')
+
+  const random = seeded(seed)
+
+  ctx.fillStyle = '#f2efe6'
+  ctx.fillRect(0, 0, width, height)
+
+  ctx.strokeStyle = 'rgba(40,38,42,0.5)'
+  ctx.lineWidth = 3
+  ctx.strokeRect(14, 14, width - 28, height - 28)
+
+  // The band across the top of every courier label ever printed.
+  ctx.fillStyle = '#26242a'
+  ctx.fillRect(14, 14, width - 28, 56)
+
+  ctx.fillStyle = '#f2efe6'
+  ctx.font = '600 26px "Helvetica Neue", Helvetica, Arial, sans-serif'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('INTERNATIONAL', 34, 43)
+
+  ctx.fillStyle = '#26242a'
+  ctx.font = '600 34px "Helvetica Neue", Helvetica, Arial, sans-serif'
+  ctx.fillText(name.toUpperCase(), 34, 116)
+
+  // The address, as ruled lines rather than letters. Long enough to look like
+  // somewhere, short enough not to be anywhere.
+  ctx.fillStyle = 'rgba(38,36,42,0.62)'
+  for (let line = 0; line < 4; line += 1) {
+    const length = 150 + random() * 230
+    ctx.fillRect(34, 156 + line * 26, length, 9)
+  }
+
+  // The barcode, which is the other thing that says printed rather than written.
+  ctx.fillStyle = '#26242a'
+  let x = 34
+  while (x < width - 60) {
+    const bar = 2 + Math.floor(random() * 6)
+    ctx.fillRect(x, 282, bar, 62)
+    x += bar + 3 + Math.floor(random() * 5)
+  }
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.anisotropy = 4
+  return texture
+}
+
+/**
  * The city across the street, wrapped around the flat.
  *
  * Deliberately warm. It is the only thing outside the windows and the only thing

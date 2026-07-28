@@ -27,7 +27,9 @@ import {
   TEXT_BLOCK_KINDS,
   WALL_SIDES,
 } from '../src/content/types.ts'
-import { BOOLEAN_FLAGS, parseFlagReference } from '../src/content/flags.ts'
+import { BOOLEAN_FLAGS, createInitialState, parseFlagReference } from '../src/content/flags.ts'
+import { examineEffects } from '../src/rules/effects.ts'
+import type { GameObject } from '../src/content/types.ts'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
@@ -618,6 +620,75 @@ if (!Array.isArray(goals) || goals.length === 0) {
     } else if (reference.kind === 'derived' && !objectIds.has(reference.object)) {
       fail('scenes', where, `"when" refers to object ${reference.object}, which does not exist`)
     }
+  }
+}
+
+// Every flag the content leans on has to be set by something.
+//
+// A second look gated on a flag nothing writes never resolves, and a gate on one
+// never opens. Both fail silently and both look, from inside the game, exactly
+// like a player who has missed something. This runs the real effects table over
+// the real objects rather than trusting a list.
+{
+  const written = new Set<string>()
+
+  for (const object of objects) {
+    for (const showedSecondLook of [false, true]) {
+      // Both extremes, because the table guards some effects on the flag not
+      // being set yet and others on a different flag already being set. Neither
+      // state alone sees everything the flat can write.
+      for (const everything of [false, true]) {
+        const state = createInitialState()
+        state.act = 3
+        if (everything) for (const flag of BOOLEAN_FLAGS) state[flag] = true
+
+        for (const effect of examineEffects(object as unknown as GameObject, state, showedSecondLook)) {
+          if (effect.kind === 'flag') written.add(effect.flag)
+        }
+      }
+    }
+  }
+
+  // Set by the session rather than by looking at something, so they are named
+  // here with the reason. Anything else must come from the effects table.
+  const ELSEWHERE: Record<string, string> = {
+    phone_on: 'the chime, in src/game/charge.ts',
+    record_playing: 'the toggle_demo effect, applied in src/game/session.ts',
+    // Act 3 flags, with act 3 writers. Remove each as its act is built.
+    thread_read: 'act 3, not built yet',
+    desk_done: 'act 3, not built yet',
+    receipts_found: 'act 3, not built yet',
+    lights_on: 'the ending, not built yet',
+  }
+
+  const needed = new Set<string>()
+
+  for (const object of objects) {
+    const secondLook = object['second_look']
+    if (isRecord(secondLook) && typeof secondLook['requires_flag'] === 'string') {
+      const ref = parseFlagReference(secondLook['requires_flag'])
+      if (ref?.kind === 'state') needed.add(ref.flag)
+    }
+
+    const hiddenUntil = object['hidden_until']
+    if (typeof hiddenUntil === 'string') {
+      const ref = parseFlagReference(hiddenUntil)
+      if (ref?.kind === 'state') needed.add(ref.flag)
+    }
+  }
+
+  for (const act of Array.isArray(acts) ? acts : []) {
+    if (!isRecord(act)) continue
+    const gate = act['gate_to_next']
+    if (!isRecord(gate) || !Array.isArray(gate['requires_flags'])) continue
+    for (const flag of gate['requires_flags']) {
+      if (typeof flag === 'string') needed.add(flag)
+    }
+  }
+
+  for (const flag of needed) {
+    if (written.has(flag) || flag in ELSEWHERE) continue
+    fail('objects', `flag ${flag}`, 'the content depends on it and nothing in the flat sets it')
   }
 }
 

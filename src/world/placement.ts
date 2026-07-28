@@ -22,8 +22,15 @@ export interface PlacedObjects {
   group: THREE.Group
   /** Everything the raycast can hit, by object id. */
   byObject: Map<string, THREE.Object3D>
-  /** Placements skipped because their object belongs to a later act. */
+  /** Ids of placements skipped, because their object is not in the flat yet. */
   deferred: string[]
+  /**
+   * Builds a skipped placement and puts it in the room, now.
+   *
+   * Returns null if the id was never deferred or has already been revealed, so
+   * a caller can run the whole pass repeatedly without tracking what it did.
+   */
+  reveal(id: string): THREE.Object3D | null
   dispose(): void
 }
 
@@ -49,16 +56,15 @@ export function placeObjects(
   group.name = 'objects'
 
   const byObject = new Map<string, THREE.Object3D>()
-  const deferred: string[] = []
+
+  // Kept as the whole record rather than just the id: revealing one later needs
+  // the surface and the shape, and looking them up again from `getPlacements()`
+  // would put the same list in two places.
+  const held = new Map<string, Placement>()
 
   const present = new Set(objects.filter((o) => o.act_min <= act).map((o) => o.id))
 
-  for (const placement of placements) {
-    if (!present.has(placement.id)) {
-      deferred.push(placement.id)
-      continue
-    }
-
+  function build(placement: Placement): THREE.Object3D {
     const surface = surfaces.get(placement.surface)
     if (surface === undefined) {
       // The validator rules this out, so reaching here means the data and the
@@ -108,15 +114,33 @@ export function placeObjects(
 
     group.add(prop)
     byObject.set(placement.id, prop)
+    return prop
+  }
+
+  for (const placement of placements) {
+    if (present.has(placement.id)) build(placement)
+    else held.set(placement.id, placement)
   }
 
   return {
     group,
     byObject,
-    deferred,
+    get deferred(): string[] {
+      return [...held.keys()]
+    },
+
+    reveal(id: string): THREE.Object3D | null {
+      const placement = held.get(id)
+      if (placement === undefined) return null
+
+      held.delete(id)
+      return build(placement)
+    },
+
     dispose(): void {
       group.clear()
       byObject.clear()
+      held.clear()
     },
   }
 }

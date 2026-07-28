@@ -50,7 +50,7 @@ export interface Screens {
 export function createScreens(config: ScreensConfig): Screens {
   const { player, hud, goalLine, menu } = config
 
-  function pause(): void {
+  function showPauseMenu(): void {
     hud.setVisible(false)
     menu.showPause([
       {
@@ -62,14 +62,30 @@ export function createScreens(config: ScreensConfig): Screens {
       },
       {
         label: 'Comfort',
-        onSelect: (): void => menu.showComfort(config.settings(), config.applySettings, pause),
+        onSelect: (): void =>
+          menu.showComfort(config.settings(), config.applySettings, showPauseMenu),
       },
       {
         // Hard Rule 9. Always reachable, from anywhere, without unloading the flat.
         label: 'Support resources',
-        onSelect: (): void => menu.showResources(pause),
+        onSelect: (): void => menu.showResources(showPauseMenu),
       },
     ])
+  }
+
+  /**
+   * Opens the pause menu, once.
+   *
+   * Escape both reaches this directly and releases the pointer, and releasing
+   * the pointer is the other thing that reaches it, so one keypress arrives
+   * twice. Rebuilding the menu in between replaces the buttons under the
+   * player's cursor, which is how a click on "Support resources" can land on a
+   * node that no longer exists. Going back from a submenu calls `showPauseMenu`
+   * rather than this, because there the menu being open is the point.
+   */
+  function pause(): void {
+    if (menu.isOpen()) return
+    showPauseMenu()
   }
 
   function release(): void {

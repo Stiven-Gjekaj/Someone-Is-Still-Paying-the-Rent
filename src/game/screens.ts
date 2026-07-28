@@ -1,0 +1,124 @@
+/**
+ * Who has the screen and the pointer right now.
+ *
+ * By the end of the game five things want it: the overlay, a memory, the opening
+ * beat, the desk scene, and the ending. Plus the pause menu, which may interrupt
+ * any of them and must never be interrupted by one, because Hard Rule 9 says the
+ * support resources are reachable at all times.
+ *
+ * All of that used to be four separate places in the session that had to agree
+ * with each other. It is one place now, because the number of things contending
+ * for it is about to double.
+ *
+ * The two calls are `hold`, meaning something other than the flat is on screen
+ * now, and `release`, meaning give it back. Both are safe to call more than once.
+ */
+
+import type { Player } from '../player/controller.ts'
+import type { Hud } from '../ui/hud.ts'
+import type { GoalLine } from '../ui/goal.ts'
+import type { Menu } from '../ui/menu.ts'
+import type { Settings } from '../settings.ts'
+
+export interface ScreensConfig {
+  player: Player
+  hud: Hud
+  goalLine: GoalLine
+  menu: Menu
+  settings(): Settings
+  applySettings(next: Settings): void
+  /**
+   * Whether something is deliberately holding the screen.
+   *
+   * Every one of those things releases the pointer on purpose, and a released
+   * pointer is normally what opens the pause menu. Without this, opening a
+   * document would pause the game.
+   */
+  isBusy(): boolean
+}
+
+export interface Screens {
+  /** Something other than the flat is on screen. Hides the HUD, drops the pointer. */
+  hold(): void
+  /** Hands the flat back. Does nothing while the player is paused. */
+  release(): void
+  /** Hard Rule 9. The pause menu, from anywhere, at any time. */
+  pause(): void
+  isPaused(): boolean
+}
+
+export function createScreens(config: ScreensConfig): Screens {
+  const { player, hud, goalLine, menu } = config
+
+  function pause(): void {
+    hud.setVisible(false)
+    menu.showPause([
+      {
+        label: 'Resume',
+        onSelect: (): void => {
+          menu.close()
+          player.lock()
+        },
+      },
+      {
+        label: 'Comfort',
+        onSelect: (): void => menu.showComfort(config.settings(), config.applySettings, pause),
+      },
+      {
+        // Hard Rule 9. Always reachable, from anywhere, without unloading the flat.
+        label: 'Support resources',
+        onSelect: (): void => menu.showResources(pause),
+      },
+    ])
+  }
+
+  function release(): void {
+    // Not if the player has paused in the meantime. Escape out of a memory and
+    // straight into the pause menu, and the memory's own release would arrive a
+    // beat later and take the pointer back, closing the menu under them.
+    if (menu.isOpen()) return
+
+    hud.setVisible(true)
+    goalLine.setVisible(true)
+    if (!player.isLocked()) player.lock()
+  }
+
+  // Escape releases the pointer, and the browser owns that key, so the pause menu
+  // hangs off the unlock rather than off a key handler that could be missed.
+  player.onLockChange((locked) => {
+    if (locked) {
+      // Hard Rule 9. A lock that arrives while the menu is up is a request made
+      // just before the player paused, resolving just after: closing an overlay
+      // asks for the pointer back, and pressing Escape in the moment before the
+      // browser answers used to take the pause menu away again. Honour the pause
+      // rather than the stale request.
+      if (menu.isOpen()) {
+        player.unlock()
+        return
+      }
+
+      hud.setVisible(true)
+      goalLine.setVisible(true)
+      return
+    }
+
+    goalLine.setVisible(false)
+    if (config.isBusy()) return
+    pause()
+  })
+
+  return {
+    hold(): void {
+      hud.setVisible(false)
+      goalLine.setVisible(false)
+      player.unlock()
+    },
+
+    release,
+    pause,
+
+    isPaused(): boolean {
+      return menu.isOpen()
+    },
+  }
+}

@@ -41,6 +41,7 @@ import { applyFlagEffects, examineEffects } from '../rules/effects.ts'
 import { createCarry } from './carry.ts'
 import { createActs } from './acts.ts'
 import { createCharge } from './charge.ts'
+import { createScreens } from './screens.ts'
 import { writeCheckpoint } from './save.ts'
 import { loadSettings, saveSettings, type Settings } from '../settings.ts'
 import type {
@@ -233,67 +234,16 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   applySettings(settings)
 
-  function showPause(): void {
-    hud.setVisible(false)
-    menu.showPause([
-      {
-        label: 'Resume',
-        onSelect: (): void => {
-          menu.close()
-          player.lock()
-        },
-      },
-      {
-        label: 'Comfort',
-        onSelect: (): void => menu.showComfort(settings, applySettings, showPause),
-      },
-      {
-        // Hard Rule 9. Always reachable, from anywhere, without unloading the flat.
-        label: 'Support resources',
-        onSelect: (): void => menu.showResources(showPause),
-      },
-    ])
-  }
-
-  // Escape releases the pointer, and the browser owns that key, so the pause menu
-  // hangs off the unlock rather than off a key handler that could be missed.
-  player.onLockChange((locked) => {
-    if (locked) {
-      // Hard Rule 9. A lock that arrives while the menu is up is a request made
-      // just before the player paused, resolving just after: closing an overlay
-      // asks for the pointer back, and pressing Escape in the moment before the
-      // browser answers used to take the pause menu away again. Honour the pause
-      // rather than the stale request.
-      if (menu.isOpen()) {
-        player.unlock()
-        return
-      }
-
-      hud.setVisible(true)
-      goalLine.setVisible(true)
-      return
-    }
-    goalLine.setVisible(false)
-    // The overlay unlocks on purpose when a document opens, and so does a memory.
-    // Neither is a pause, and neither is the opening, which nobody has started
-    // playing yet.
-    if (overlay.isOpen() || memories.isPlaying() || opening.isPlaying()) return
-    showPause()
+  const screens = createScreens({
+    player,
+    hud,
+    goalLine,
+    menu,
+    settings: () => settings,
+    applySettings,
+    // The three things that hold the screen today. Two more join them in act 3.
+    isBusy: () => overlay.isOpen() || memories.isPlaying() || opening.isPlaying(),
   })
-
-  /**
-   * Hands the flat back after an overlay or a memory.
-   *
-   * Not if the player has paused in the meantime. Escape out of a memory and
-   * straight into the pause menu, and the memory's own release would arrive a
-   * beat later and take the pointer back, closing the menu under them.
-   */
-  function release(): void {
-    if (menu.isOpen()) return
-    hud.setVisible(true)
-    goalLine.setVisible(true)
-    if (!player.isLocked()) player.lock()
-  }
 
   overlay.onClose(() => {
     // Section 4.3. Object, then thought, then memory: closing the thought is what
@@ -305,12 +255,12 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       audio.setDucked(true)
       memories.play(owed, () => {
         audio.setDucked(false)
-        release()
+        screens.release()
       })
       return
     }
 
-    release()
+    screens.release()
   })
 
   /**
@@ -379,9 +329,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     const held = carry.held()
     if (held === null) return
 
-    hud.setVisible(false)
-    goalLine.setVisible(false)
-    player.unlock()
+    screens.hold()
 
     overlay.showChoice(
       `${held.object.name}. Where does it go?`,
@@ -447,9 +395,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     // And the only thing that opens a shoebox or moves a record.
     revealPending()
 
-    hud.setVisible(false)
-    goalLine.setVisible(false)
-    player.unlock()
+    screens.hold()
 
     // A readable opens its document, if this act is allowed to read it. The dead
     // phone is the reason for the second half of that sentence.
@@ -475,8 +421,8 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     //
     // This listener is registered after the overlay's and the fragment player's,
     // so whichever of them consumed the key has already said so.
-    if (event.key === 'Escape' && !event.defaultPrevented && !menu.isOpen()) {
-      showPause()
+    if (event.key === 'Escape' && !event.defaultPrevented && !screens.isPaused()) {
+      screens.pause()
       return
     }
 

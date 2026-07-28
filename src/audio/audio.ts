@@ -19,6 +19,7 @@ import {
   createRoomTone,
   chime,
   createDemo,
+  drawer,
   keyInLock,
   noiseBuffer,
   tick,
@@ -34,6 +35,8 @@ const TICK_LEVEL = 0.035
 const CHIME_LEVEL = 0.09
 // Under the rain rather than over it. It is a stereo in another room.
 const DEMO_LEVEL = 0.06
+// Close and dry. It is a desk in the room you are standing in.
+const DRAWER_LEVEL = 0.12
 
 const TICK_MIN_GAP = 5
 const TICK_MAX_GAP = 16
@@ -74,6 +77,8 @@ export interface Audio {
    * Returns whether it is playing now, so the caller can track `record_playing`.
    */
   setDemoPlaying(playing: boolean, room: RoomId): boolean
+  /** Section 8.3. One drawer. The scene fires these faster and then stops. */
+  playDrawer(): number
   dispose(): void
 }
 
@@ -247,6 +252,11 @@ export function createAudio(plan: FloorPlan): Audio {
       demo = song
       sources.push(song)
       return true
+    },
+
+    playDrawer(): number {
+      if (context === null || master === null || noise === null) return 0
+      return drawer(context, noise, master, DRAWER_LEVEL)
     },
 
     setFridgeMuffled(value: boolean): void {

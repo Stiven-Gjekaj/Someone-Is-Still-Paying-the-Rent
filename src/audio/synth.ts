@@ -428,3 +428,57 @@ export function createDemo(context: AudioContext, buffer: AudioBuffer, level: nu
     },
   }
 }
+
+/**
+ * Section 8.3. A drawer opening, then shutting.
+ *
+ * Wood on wood, which is a filtered noise slide with a knock at each end: the
+ * pull, the run, and the stop. Deliberately unmusical. The desk scene fires these
+ * faster and faster and then not at all, and the not at all is the scene.
+ */
+export function drawer(context: AudioContext, buffer: AudioBuffer, destination: AudioNode, level: number): number {
+  const start = context.currentTime + 0.01
+
+  // The run: noise through a low band that opens as the drawer comes out.
+  const run = context.createBufferSource()
+  run.buffer = buffer
+
+  const grain = context.createBiquadFilter()
+  grain.type = 'bandpass'
+  grain.frequency.setValueAtTime(240, start)
+  grain.frequency.linearRampToValueAtTime(620, start + 0.22)
+  grain.Q.value = 0.9
+
+  const shape = context.createGain()
+  shape.gain.setValueAtTime(0, start)
+  shape.gain.linearRampToValueAtTime(level * 0.55, start + 0.03)
+  shape.gain.linearRampToValueAtTime(level * 0.3, start + 0.18)
+  shape.gain.exponentialRampToValueAtTime(0.0001, start + 0.26)
+
+  run.connect(grain).connect(shape).connect(destination)
+  run.start(start)
+  run.stop(start + 0.3)
+
+  // The stop at the end of the runners, and the shut after it.
+  for (const [at, weight] of [[0.24, 1], [0.46, 0.7]] as const) {
+    const knock = context.createOscillator()
+    knock.type = 'triangle'
+    knock.frequency.setValueAtTime(180, start + at)
+    knock.frequency.exponentialRampToValueAtTime(72, start + at + 0.05)
+
+    const thud = context.createGain()
+    thud.gain.setValueAtTime(0, start + at)
+    thud.gain.linearRampToValueAtTime(level * weight, start + at + 0.005)
+    thud.gain.exponentialRampToValueAtTime(0.0001, start + at + 0.13)
+
+    const soften = context.createBiquadFilter()
+    soften.type = 'lowpass'
+    soften.frequency.value = 700
+
+    knock.connect(thud).connect(soften).connect(destination)
+    knock.start(start + at)
+    knock.stop(start + at + 0.18)
+  }
+
+  return 0.6
+}

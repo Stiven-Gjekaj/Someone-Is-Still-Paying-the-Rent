@@ -380,6 +380,13 @@ main {
   outline: none;
 }
 
+/* Where the arrow keys are. Warm rather than merely lighter, because in a list
+   of twenty a slightly paler row is not an answer to "which one am I on". */
+.choose-option.is-highlighted {
+  border-color: rgba(217, 178, 111, 0.6);
+  box-shadow: inset 2px 0 0 var(--bulb);
+}
+
 .choose-key {
   flex: 0 0 1.4rem;
   text-align: center;
@@ -814,4 +821,115 @@ main {
   font-size: 0.9375rem;
   line-height: 1.7;
   color: rgba(214, 210, 203, 0.5);
+}
+
+/* Section 8.4. The ending.
+
+   Three states from one element, because it runs continuously from the flat to
+   the street and a cut anywhere in it would read as a scene change. It starts
+   faint, so the box is sealed in a room the player can still see; it goes to
+   black for the voicemail, which is a phone held in the dark; and it lifts off
+   the morning at the end, which is the only reveal the game has. */
+.ending {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: rgba(6, 6, 9, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1400ms ease, background 1400ms ease, visibility 0s linear 1400ms;
+  /* Under the overlay, over the HUD. The ending's first step asks a question
+     through the ordinary chooser, and a wash over the top of it would dim the
+     one screen in the game where the player has to read a list. */
+  z-index: 19;
+}
+
+.ending.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1400ms ease, background 1400ms ease, visibility 0s;
+}
+
+.ending.is-dark {
+  background: rgba(3, 3, 5, 0.99);
+}
+
+/* The morning is behind this element, so the black comes off it rather than
+   the element going away. Nothing moves; the shot is held. */
+.ending.is-revealing {
+  background: rgba(3, 3, 5, 0);
+  transition: opacity 1400ms ease, background 2600ms ease;
+}
+
+.ending-body {
+  max-width: 34rem;
+  width: 100%;
+}
+
+.ending-line {
+  opacity: 0;
+  transform: translateY(0.4rem);
+  transition: opacity 900ms ease, transform 900ms ease;
+  margin: 0 0 1.15rem;
+}
+
+.ending-line:last-child {
+  margin-bottom: 0;
+}
+
+.ending-line.is-shown {
+  opacity: 1;
+  transform: none;
+}
+
+.ending-line.is-past {
+  opacity: 0.32;
+}
+
+.ending .doc-line {
+  font-family: inherit;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: #d6d2cb;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.95);
+}
+
+.ending .doc-stage {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: rgba(214, 210, 203, 0.5);
+}
+
+/* The voicemail bubble, which is the one place a message renders over black
+   rather than on a phone screen. */
+.ending .doc-message {
+  max-width: 100%;
+}
+
+/* Section 11. Small type, over the morning, and it does not compete with it. */
+.ending-card {
+  opacity: 0;
+  transition: opacity 1600ms ease;
+  margin: 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.9;
+  letter-spacing: 0.04em;
+  color: rgba(246, 242, 234, 0.92);
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.85);
+}
+
+.ending-card.is-shown {
+  opacity: 1;
+}
+
+/* The card sits low so it is not over the middle of the shot it arrives on. */
+.ending.is-card {
+  align-items: flex-end;
+  padding-bottom: 3rem;
 }

@@ -36,6 +36,7 @@ import { createAudio } from '../audio/audio.ts'
 import { markExamined, resolveExamine } from '../rules/secondlook.ts'
 import { documentReadable, verbFor } from '../rules/verbs.ts'
 import { recordSort, sortDestinations, sortLabel } from '../rules/sorting.ts'
+import { isRevealed, newlyRevealed } from '../rules/reveal.ts'
 import { createCarry } from './carry.ts'
 import { createActs } from './acts.ts'
 import { writeCheckpoint } from './save.ts'
@@ -95,14 +96,13 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   const props = createPropFactory(materials)
 
-  // The flat is furnished for act 1 whatever act is being played. Act 2's objects
-  // are placed under the bed, and spawning them without the box having been
-  // opened gives away the whole Mira thread: see the note in src/game/acts.ts.
-  // The dev `?act=` parameter overrides this, because previewing them is the
-  // only reason to ask for them.
-  const placementAct: ActNumber = config.dev === true ? act : 1
-
-  const placed = placeObjects(getPlacements(), furnishings.surfaces, props, content.objects, placementAct)
+  const placed = placeObjects(
+    getPlacements(),
+    furnishings.surfaces,
+    props,
+    content.objects,
+    (object) => isRevealed(object, state),
+  )
   engine.scene.add(placed.group)
 
   // Anything already in a box stays in the box. Without this, resuming act 2
@@ -117,7 +117,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   // Say plainly what is not in the room. A flat quietly missing sixteen objects
   // looks identical to a flat where placement silently failed.
   console.info(
-    `act ${act}: ${placed.byObject.size} objects placed, ${placed.deferred.length} held back for later acts`,
+    `act ${act}: ${placed.byObject.size} objects placed, ${placed.deferred.length} not found yet`,
   )
 
   const lighting = buildLighting(act)
@@ -147,13 +147,27 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   let pendingFragment: Fragment | null = null
   goalLine.refresh(state)
 
+  /**
+   * Puts into the flat anything that has just become findable.
+   *
+   * Cheap enough to run after every state change, and it has to be: the act
+   * turning over, a shoebox coming out from under the bed, and a record being
+   * moved on a shelf all reveal things, and none of them knows about the others.
+   */
+  function revealPending(): void {
+    for (const id of newlyRevealed(content.objects, state, placed.deferred)) {
+      placed.reveal(id)
+    }
+  }
+
   const acts = createActs({
     acts: content.acts,
     state,
     onEnter: (next): void => {
-      // Section 4.6. The night gets later. The flat does not get fuller: see the
-      // note in src/game/acts.ts for why nothing respawns here.
+      // Section 4.6. The night gets later, and the flat gets deeper: act 2's
+      // middle layer arrives here, minus whatever is still inside something.
       lighting.applyAct(next)
+      revealPending()
       weather.applyAct(next)
       goalLine.refresh(state)
 
@@ -391,6 +405,9 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     // Section 4.5. Looking at something is the only thing that can open a gate
     // other than sorting, so this is the other place the act is checked.
     acts.check()
+
+    // And the only thing that opens a shoebox or moves a record.
+    revealPending()
 
     hud.setVisible(false)
     goalLine.setVisible(false)

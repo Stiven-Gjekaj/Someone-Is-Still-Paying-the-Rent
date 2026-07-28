@@ -85,6 +85,17 @@ export interface GameObject {
    * away the ending of the game.
    */
   text_from_act?: ActNumber
+  /**
+   * A flag reference, in the same namespace second looks use. Until it holds, the
+   * object is not in the flat at all: not placed, not raycastable, not there.
+   *
+   * `act_min` says which act an object belongs to. This says what has to happen
+   * inside that act first. The Mira thread is in a shoebox under the bed and the
+   * demo is behind a record on the shelf, and section 5 spends the whole of act 2
+   * building toward finding them. Laying them out in the open the moment the act
+   * turns over would give away every one of those beats at once.
+   */
+  hidden_until?: string
   second_look?: SecondLook
   /** Present when the strings are verbatim from the bible. Absent means authored. */
   section?: string

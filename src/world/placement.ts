@@ -14,7 +14,7 @@
 
 import * as THREE from 'three'
 
-import type { ActNumber, GameObject, Placement } from '../content/types.ts'
+import type { GameObject, Placement } from '../content/types.ts'
 import type { SurfaceAnchor } from './furniture.ts'
 import type { PropFactory } from './props.ts'
 
@@ -45,12 +45,17 @@ const POSE_TILT: Record<string, number> = {
   leaning: -1.35,
 }
 
+/**
+ * `isPresent` decides what is in the room. It is passed in rather than computed
+ * here because "is this object in the flat yet" is a content rule, not a
+ * geometry one: see `src/rules/reveal.ts`, which owns both halves of it.
+ */
 export function placeObjects(
   placements: Placement[],
   surfaces: Map<string, SurfaceAnchor>,
   props: PropFactory,
   objects: GameObject[],
-  act: ActNumber,
+  isPresent: (object: GameObject) => boolean,
 ): PlacedObjects {
   const group = new THREE.Group()
   group.name = 'objects'
@@ -62,7 +67,7 @@ export function placeObjects(
   // would put the same list in two places.
   const held = new Map<string, Placement>()
 
-  const present = new Set(objects.filter((o) => o.act_min <= act).map((o) => o.id))
+  const present = new Set(objects.filter(isPresent).map((o) => o.id))
 
   function build(placement: Placement): THREE.Object3D {
     const surface = surfaces.get(placement.surface)

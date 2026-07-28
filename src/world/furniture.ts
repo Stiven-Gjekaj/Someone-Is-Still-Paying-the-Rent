@@ -140,20 +140,78 @@ export function buildFurniture(
     }
 
     if (piece.shape === 'bed') {
-      slab(shape, w, 0.24, d, materials.woodDark, 0, 0.12, 0)
-      slab(shape, w - 0.06, h - 0.24, d - 0.06, material, 0, 0.24 + (h - 0.24) / 2, 0)
+      // A frame on legs rather than a divan. The `under_bed` surface is a real
+      // place in section 5 and things get put on it, so there has to be an actual
+      // gap: a solid base from the floor up would swallow the whole Mira thread.
+      const clearance = 0.19
+      const frame = 0.1
+
+      for (const sx of [-1, 1]) {
+        for (const sz of [-1, 1]) {
+          slab(
+            shape,
+            0.07,
+            clearance,
+            0.07,
+            materials.woodDark,
+            sx * (w / 2 - 0.07),
+            clearance / 2,
+            sz * (d / 2 - 0.07),
+          )
+        }
+      }
+
+      slab(shape, w, frame, d, materials.woodDark, 0, clearance + frame / 2, 0)
+      slab(shape, w - 0.06, h - clearance - frame, d - 0.06, material, 0, clearance + frame + (h - clearance - frame) / 2, 0)
       slab(shape, w * 0.8, 0.1, 0.3, materials.fabricGrey, 0, h + 0.05, -d / 2 + 0.22)
-      slab(shape, w, 0.5, 0.05, materials.woodDark, 0, 0.25 + 0.25, -d / 2 - 0.02)
+      slab(shape, w, 0.5, 0.05, materials.woodDark, 0, 0.5, -d / 2 - 0.02)
       return shape
     }
 
-    if (piece.shape === 'wardrobe' || piece.shape === 'cabinet') {
+    if (piece.shape === 'cabinet') {
       slab(shape, w, h, d, material, 0, h / 2, 0)
       // Door split and two handles, so it does not read as a solid block.
       slab(shape, 0.012, h - 0.1, 0.01, materials.plasticDark, 0, h / 2, d / 2 + 0.005)
       for (const sx of [-1, 1]) {
         slab(shape, 0.02, 0.16, 0.03, materials.metalDull, sx * 0.06, h * 0.52, d / 2 + 0.02)
       }
+      return shape
+    }
+
+    if (piece.shape === 'wardrobe') {
+      // Standing open. It has to be: the shelf inside it is a named surface with
+      // an object on it, and a shut wardrobe is a box you cannot see into. It is
+      // also true to the night. You do not pack a flat with the doors closed.
+      const panel = 0.03
+
+      slab(shape, panel, h, d, material, -w / 2 + panel / 2, h / 2, 0)
+      slab(shape, panel, h, d, material, w / 2 - panel / 2, h / 2, 0)
+      slab(shape, w, panel, d, material, 0, h - panel / 2, 0)
+      slab(shape, w, panel, d, material, 0, panel / 2, 0)
+      slab(shape, w, h, panel, materials.woodDark, 0, h / 2, -d / 2 + panel / 2)
+
+      // The shelf the invoice folder sits on, drawn where the surface says it is.
+      for (const spec of piece.surfaces ?? []) {
+        if (spec.orientation === 'vertical') continue
+        slab(shape, w - panel * 2, 0.024, d - panel, material, 0, spec.height - 0.012, 0)
+      }
+
+      // The rail, and what is still hanging off it.
+      const rail = h * 0.62
+      slab(shape, w - panel * 2, 0.02, 0.02, materials.metalDull, 0, rail, 0.02)
+      for (const at of [-0.3, -0.1, 0.16]) {
+        slab(shape, 0.11, 0.66, 0.14, materials.fabricGrey, at, rail - 0.35, 0.02)
+      }
+
+      // The left door, swung wide. The right one is off its hinges against the
+      // wall, which is where it has been since a flatmate took it off years ago.
+      const door = new THREE.Group()
+      slab(door, w / 2, h - 0.06, 0.026, material, w / 4, (h - 0.06) / 2, 0)
+      slab(door, 0.02, 0.16, 0.03, materials.metalDull, 0.06, h * 0.52, 0.03)
+      door.position.set(-w / 2, 0, d / 2)
+      door.rotation.y = 1.9
+      shape.add(door)
+
       return shape
     }
 

@@ -145,6 +145,16 @@
       "id": "find_the_charger",
       "when": "phone_found",
       "text": "His phone. Dead. The charger wasn't with it."
+    },
+    {
+      "id": "wait_for_the_charge",
+      "when": "charger_found",
+      "text": "It is charging. Keep going."
+    },
+    {
+      "id": "the_phone_is_on",
+      "when": "phone_on",
+      "text": "It is on."
     }
   ]
 }

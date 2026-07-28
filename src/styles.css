@@ -348,6 +348,14 @@ main {
   gap: 0.5rem;
 }
 
+/* Section 8.4. The Lena box can hold anything up to everything the player
+   packed, so past nine the list scrolls rather than running off the screen. */
+.choose-options.is-long {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding-right: 0.4rem;
+}
+
 .choose-option {
   display: flex;
   align-items: center;
@@ -365,7 +373,8 @@ main {
 }
 
 .choose-option:hover,
-.choose-option:focus-visible {
+.choose-option:focus-visible,
+.choose-option.is-highlighted {
   background: rgba(38, 40, 45, 0.86);
   border-color: rgba(216, 212, 205, 0.34);
   outline: none;

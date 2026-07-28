@@ -119,4 +119,26 @@ describe('restoreState', () => {
 
     assert.equal(state.sorted_count, 0)
   })
+
+  it('brings back the one thing that was taken', () => {
+    const state = restoreState({ ...saved(), taken: 'boots_muddy' }, known)
+    assert.ok(state !== null)
+
+    assert.equal(state.taken, 'boots_muddy')
+  })
+
+  it('starts with nothing taken, because the night has not asked yet', () => {
+    const state = restoreState(saved(), known)
+    assert.ok(state !== null)
+
+    assert.equal(state.taken, null)
+  })
+
+  it('drops a taken object the flat no longer has', () => {
+    for (const bad of ['gone_since', '', 7, null, {}]) {
+      const state = restoreState({ ...saved(), taken: bad }, known)
+      assert.ok(state !== null)
+      assert.equal(state.taken, null)
+    }
+  })
 })

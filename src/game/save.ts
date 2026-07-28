@@ -23,7 +23,7 @@ const STORAGE_KEY = 'sispr.checkpoint'
  * a new shape is the one failure mode that makes a save system worse than having
  * none, because it looks like it worked.
  */
-const SAVE_VERSION = 1
+const SAVE_VERSION = 2
 
 export interface Checkpoint {
   version: number
@@ -76,6 +76,12 @@ export function restoreState(stored: unknown, knownObjects: ReadonlySet<string>)
   if (typeof charging === 'number' && Number.isFinite(charging)) {
     state.phone_charging_started_at = charging
   }
+
+  // Section 8.4. Only if it is still an object the flat has, for the same reason
+  // the sorted ids are filtered: a save that names something deleted since would
+  // put a thing that does not exist into the player's bag.
+  const taken = stored['taken']
+  if (typeof taken === 'string' && knownObjects.has(taken)) state.taken = taken
 
   const objects = stored['objects']
   if (isRecord(objects)) {

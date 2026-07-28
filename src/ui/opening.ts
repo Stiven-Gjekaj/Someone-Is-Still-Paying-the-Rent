@@ -8,9 +8,14 @@
  * The screen is black rather than absent so the flat has time to load and light
  * itself behind it. Nobody should watch the first frame resolve.
  *
- * Skippable from the first frame. Somebody replaying, or somebody who needs to
- * stop and start again, should not have to sit through it a second time.
+ * Skippable from the first frame, on any key. Somebody replaying, or somebody who
+ * needs to stop and start again, should not have to sit through it a second time.
+ *
+ * The timing, the skip, and the release all come from `src/ui/sequence.ts`, which
+ * four beats share. What is here is the schedule.
  */
+
+import { createSequence } from './sequence.ts'
 
 const KEY_AT_MS = 1400
 const CARD_IN_MS = 900
@@ -26,90 +31,42 @@ export interface Opening {
 }
 
 export function createOpening(mount: HTMLElement, onKey: () => void): Opening {
-  const element = document.createElement('div')
-  element.className = 'opening'
-  element.setAttribute('aria-hidden', 'true')
+  const sequence = createSequence(mount, {
+    className: 'opening',
+    fadeMs: FADE_UP_MS,
+    skipOn: 'any',
+    skipOnClick: true,
+  })
 
   const line = document.createElement('p')
   line.className = 'opening-card'
-  element.append(line)
+  sequence.element.append(line)
 
   const hint = document.createElement('p')
   hint.className = 'opening-hint'
   hint.textContent = 'Any key to skip'
-  element.append(hint)
+  sequence.element.append(hint)
 
-  mount.append(element)
-
-  const timers: number[] = []
-  let playing = false
-  let finish: (() => void) | null = null
-
-  function clearTimers(): void {
-    for (const timer of timers) window.clearTimeout(timer)
-    timers.length = 0
-  }
-
-  function after(ms: number, run: () => void): void {
-    timers.push(window.setTimeout(run, ms))
-  }
-
-  function end(): void {
-    if (!playing) return
-    playing = false
-    clearTimers()
-
-    element.classList.remove('is-open', 'is-card', 'is-hinting')
-
-    const done = finish
-    finish = null
-
-    // The fade is on the element, so the flat is already there underneath by the
-    // time this resolves and the player takes the pointer.
-    window.setTimeout(() => {
-      line.textContent = ''
-      done?.()
-    }, FADE_UP_MS)
-  }
-
-  function onKeyDown(event: KeyboardEvent): void {
-    if (!playing) return
-    event.preventDefault()
-    end()
-  }
-
-  window.addEventListener('keydown', onKeyDown)
-  element.addEventListener('click', () => end())
+  // Before the fade, so the card fades out with the black rather than after it.
+  // The text itself is left alone and replaced on the next play, for the same
+  // reason: clearing it here would pop it off mid-fade.
+  sequence.onEnd(() => sequence.element.classList.remove('is-card', 'is-hinting'))
 
   return {
     play(card, onDone): void {
-      if (playing) return
-
-      playing = true
-      finish = onDone
-      clearTimers()
+      if (sequence.isPlaying()) return
 
       line.textContent = card
-      element.classList.add('is-open')
-      after(600, () => element.classList.add('is-hinting'))
+      sequence.begin(onDone)
 
-      after(KEY_AT_MS, onKey)
-      after(KEY_AT_MS + 900, () => element.classList.add('is-card'))
-      after(KEY_AT_MS + 900 + CARD_IN_MS + CARD_HOLD_MS, end)
+      sequence.after(600, () => sequence.element.classList.add('is-hinting'))
+      sequence.after(KEY_AT_MS, onKey)
+      sequence.after(KEY_AT_MS + 900, () => sequence.element.classList.add('is-card'))
+      sequence.after(KEY_AT_MS + 900 + CARD_IN_MS + CARD_HOLD_MS, sequence.end)
     },
 
-    isPlaying(): boolean {
-      return playing
-    },
-
-    skip: end,
-
-    dispose(): void {
-      clearTimers()
-      playing = false
-      finish = null
-      window.removeEventListener('keydown', onKeyDown)
-      element.remove()
-    },
+    isPlaying: sequence.isPlaying,
+    skip: sequence.end,
+    dispose: sequence.dispose,
   }
 }

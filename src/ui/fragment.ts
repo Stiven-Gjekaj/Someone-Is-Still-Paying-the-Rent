@@ -8,10 +8,15 @@
  * A vignette closes in rather than a cut to black. The flat stays faintly there
  * at the edges the whole time, which is the honest shape of remembering something
  * while holding it in your hands.
+ *
+ * The timing, the Escape handling, and the release all come from
+ * `src/ui/sequence.ts`, which four beats share. What is here is the vignette and
+ * the order the lines arrive in.
  */
 
 import type { Fragment } from '../content/types.ts'
 import { lineSchedule, sequenceDuration } from '../rules/pacing.ts'
+import { createSequence } from './sequence.ts'
 
 export interface FragmentPlayer {
   /** Runs the fragment and calls back once it has released. */
@@ -29,73 +34,28 @@ const FADE_MS = 900
 const HOLD_MS = 1600
 
 export function createFragmentPlayer(mount: HTMLElement): FragmentPlayer {
-  const element = document.createElement('div')
-  element.className = 'fragment'
-  element.setAttribute('aria-hidden', 'true')
+  const sequence = createSequence(mount, {
+    className: 'fragment',
+    fadeMs: FADE_MS,
+    skipOn: 'escape',
+  })
 
   const vignette = document.createElement('div')
   vignette.className = 'fragment-vignette'
-  element.append(vignette)
+  sequence.element.append(vignette)
 
   const lines = document.createElement('div')
   lines.className = 'fragment-lines'
-  element.append(lines)
-
-  mount.append(element)
-
-  const timers: number[] = []
-  // Escape is the way out of everything else in this game, so it is the way out
-  // of a memory too. Hard Rule 9: nothing here may trap the player in a beat.
-  function onKeyDown(event: KeyboardEvent): void {
-    if (!playing) return
-    if (event.key === 'Escape' || event.key === 'e' || event.key === 'E') {
-      event.preventDefault()
-      end()
-    }
-  }
-
-  window.addEventListener('keydown', onKeyDown)
-
-  let playing = false
-  let finish: (() => void) | null = null
-
-  function clearTimers(): void {
-    for (const timer of timers) window.clearTimeout(timer)
-    timers.length = 0
-  }
-
-  function after(ms: number, run: () => void): void {
-    timers.push(window.setTimeout(run, ms))
-  }
-
-  function end(): void {
-    if (!playing) return
-    playing = false
-    clearTimers()
-
-    element.classList.remove('is-open')
-
-    const done = finish
-    finish = null
-
-    // Let the vignette open again before the flat gets the input back. Cutting
-    // straight out of a memory reads as an interruption.
-    window.setTimeout(() => {
-      lines.replaceChildren()
-      done?.()
-    }, FADE_MS)
-  }
+  sequence.element.append(lines)
 
   return {
     play(fragment, onDone): void {
-      if (playing) return
-
-      playing = true
-      finish = onDone
-      clearTimers()
+      if (sequence.isPlaying()) return
 
       // Every line is in the document from the start, invisible, so the block
-      // does not jump around underneath the player as each one arrives.
+      // does not jump around underneath the player as each one arrives. They are
+      // replaced here rather than cleared on the way out, so the last one fades
+      // with the vignette instead of vanishing out from under it.
       const nodes = fragment.lines.map((text) => {
         const line = document.createElement('p')
         line.className = 'fragment-line'
@@ -104,32 +64,22 @@ export function createFragmentPlayer(mount: HTMLElement): FragmentPlayer {
       })
 
       lines.replaceChildren(...nodes)
-      element.classList.add('is-open')
+      sequence.begin(onDone)
 
       // Section 4.3. One at a time, each held long enough to be read, and the
       // ones before it settling back so the newest is where the eye goes.
       lineSchedule(fragment.lines).forEach((at, index) => {
-        after(FADE_MS + at, () => {
+        sequence.after(FADE_MS + at, () => {
           for (let i = 0; i < index; i += 1) nodes[i]?.classList.add('is-past')
           nodes[index]?.classList.add('is-shown')
         })
       })
 
-      after(FADE_MS + sequenceDuration(fragment.lines) + HOLD_MS, end)
+      sequence.after(FADE_MS + sequenceDuration(fragment.lines) + HOLD_MS, sequence.end)
     },
 
-    isPlaying(): boolean {
-      return playing
-    },
-
-    skip: end,
-
-    dispose(): void {
-      clearTimers()
-      playing = false
-      finish = null
-      window.removeEventListener('keydown', onKeyDown)
-      element.remove()
-    },
+    isPlaying: sequence.isPlaying,
+    skip: sequence.end,
+    dispose: sequence.dispose,
   }
 }

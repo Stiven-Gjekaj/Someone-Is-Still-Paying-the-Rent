@@ -22,6 +22,20 @@ export interface Engine {
   stop(): void
   dispose(): void
   setFieldOfView(degrees: number): void
+  /**
+   * Section 8.4. Draws something other than the flat until it is cleared.
+   *
+   * The ending goes outside, and outside is its own scene with its own camera
+   * and its own lighting, none of which the flat's can express. The update
+   * callback keeps running underneath either way, so whatever is holding the
+   * screen stays in charge of when the shot ends.
+   */
+  setView(view: View | null): void
+}
+
+export interface View {
+  scene: THREE.Scene
+  camera: THREE.PerspectiveCamera
 }
 
 export interface EngineOptions {
@@ -66,10 +80,17 @@ export function createEngine(mount: HTMLElement, options: EngineOptions = {}): E
   const clock = new THREE.Clock(false)
   let update: ((delta: number, elapsed: number) => void) | null = null
   let running = false
+  let view: View | null = null
 
   function onResize(): void {
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
+
+    if (view !== null) {
+      view.camera.aspect = camera.aspect
+      view.camera.updateProjectionMatrix()
+    }
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(window.innerWidth, window.innerHeight)
   }
@@ -79,7 +100,9 @@ export function createEngine(mount: HTMLElement, options: EngineOptions = {}): E
   function tick(): void {
     const delta = Math.min(clock.getDelta(), MAX_DELTA)
     if (update !== null) update(delta, clock.elapsedTime)
-    renderer.render(scene, camera)
+
+    if (view === null) renderer.render(scene, camera)
+    else renderer.render(view.scene, view.camera)
   }
 
   return {
@@ -117,6 +140,14 @@ export function createEngine(mount: HTMLElement, options: EngineOptions = {}): E
     setFieldOfView(degrees: number): void {
       camera.fov = degrees
       camera.updateProjectionMatrix()
+    },
+
+    setView(next: View | null): void {
+      view = next
+      if (next === null) return
+
+      next.camera.aspect = window.innerWidth / Math.max(1, window.innerHeight)
+      next.camera.updateProjectionMatrix()
     },
   }
 }

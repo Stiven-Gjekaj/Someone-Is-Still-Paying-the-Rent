@@ -56,6 +56,23 @@ export function recordSort(state: GameState, id: string, destination: SortDestin
 }
 
 /**
+ * Everything that went into one particular box, in the order the content
+ * declares them rather than the order they were packed.
+ *
+ * Section 8.4 needs the Lena box listed back at the player so they can take one
+ * thing out of it. Content order rather than packing order on purpose: a list
+ * that put the last thing you packed at the top would be the game pointing at
+ * something, and this list is the one place it must point at nothing.
+ */
+export function sortedTo(
+  state: GameState,
+  objects: GameObject[],
+  destination: SortDestination,
+): GameObject[] {
+  return objects.filter((object) => state.objects[object.id]?.sorted_to === destination)
+}
+
+/**
  * How many of the objects in front of the player could still be sorted.
  *
  * The act 1 gate asks for ten. This is what proves ten are actually there, and

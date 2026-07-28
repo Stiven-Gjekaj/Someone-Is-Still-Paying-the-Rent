@@ -12,7 +12,14 @@ import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 
 import { createInitialState } from '../src/content/flags.ts'
-import { isSorted, recordSort, sortDestinations, sortLabel, sortableInAct } from '../src/rules/sorting.ts'
+import {
+  isSorted,
+  recordSort,
+  sortDestinations,
+  sortLabel,
+  sortableInAct,
+  sortedTo,
+} from '../src/rules/sorting.ts'
 import { documentReadable, verbFor } from '../src/rules/verbs.ts'
 import type { Act, GameObject, SceneData } from '../src/content/types.ts'
 
@@ -167,5 +174,39 @@ describe('the act 1 gate', () => {
     for (const destination of sortDestinations()) {
       assert.match(sortLabel(destination), /^[A-Z ]+$/)
     }
+  })
+})
+
+describe('sortedTo', () => {
+  it('lists what went into one box and nothing that went into another', () => {
+    const state = createInitialState()
+
+    recordSort(state, 'boots_muddy', 'lena')
+    recordSort(state, 'team_bib', 'donate')
+    recordSort(state, 'key_bowl', 'lena')
+
+    assert.deepEqual(
+      sortedTo(state, objects, 'lena').map((object) => object.id),
+      ['key_bowl', 'boots_muddy'],
+    )
+  })
+
+  it('is empty before anything has been packed', () => {
+    assert.deepEqual(sortedTo(createInitialState(), objects, 'lena'), [])
+  })
+
+  // Section 8.4. The list the ending shows is content order, not packing order.
+  // Packing order would put the last thing the player touched at the top, and
+  // the one list in this game that must point at nothing would be pointing.
+  it('is in content order rather than the order things were packed', () => {
+    const state = createInitialState()
+
+    recordSort(state, 'key_bowl', 'lena')
+    recordSort(state, 'boots_muddy', 'lena')
+
+    const listed = sortedTo(state, objects, 'lena').map((object) => object.id)
+    const declared = objects.filter((object) => listed.includes(object.id)).map((o) => o.id)
+
+    assert.deepEqual(listed, declared)
   })
 })

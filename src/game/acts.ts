@@ -19,6 +19,17 @@ import { evaluateGate, nextAct, type GateReason } from '../rules/gates.ts'
 export interface ActsConfig {
   acts: Act[]
   state: GameState
+  /**
+   * The last act this build knows how to play. The gate past it may open, and
+   * the act will not move.
+   *
+   * This exists to be deleted. `phone_dead` carries `text_from_act: 3`, so
+   * entering act 3 makes the phone thread readable, and behind the thread are the
+   * desk scene and the ending. Reading the last thing Niko sent and then finding
+   * nothing after it is the one failure this content cannot absorb, so the build
+   * stops one step short of it until there is something there.
+   */
+  stop_after?: ActNumber
   /** Called once, after the state has moved, with the act now being played. */
   onEnter(act: ActNumber): void
 }
@@ -44,6 +55,7 @@ export function createActs(config: ActsConfig): Acts {
     check(now = Date.now()): void {
       const next = nextAct(acts, state, now)
       if (next === null || next <= state.act) return
+      if (config.stop_after !== undefined && next > config.stop_after) return
 
       state.act = next
       config.onEnter(next)

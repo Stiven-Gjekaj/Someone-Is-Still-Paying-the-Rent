@@ -423,6 +423,9 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     for (const effect of effects) {
       if (effect.kind === 'muffle_fridge') audio.setFridgeMuffled(true)
       if (effect.kind === 'start_charging') state.phone_charging_started_at = Date.now()
+      if (effect.kind === 'toggle_demo') {
+        state.record_playing = audio.setDemoPlaying(!state.record_playing, 'living_room')
+      }
     }
     applyFlagEffects(state, effects)
 
@@ -479,7 +482,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, placed, weather, lighting, opening, interact },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, placed, weather, lighting, opening, interact, revealPending },
     })
   }
 

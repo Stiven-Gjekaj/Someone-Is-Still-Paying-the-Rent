@@ -135,9 +135,13 @@
       "ambient"
     ],
     "act_min": 1,
-    "sortable": true,
+    "sortable": false,
     "examine": "Lid up. Still plugged in. The needle is sitting where he left it.",
-    "design_note": "Functional. If the player puts a record on, it plays quietly for the rest of the night and sets record_playing."
+    "second_look": {
+      "requires_flag": "record_playing",
+      "text": "You lift the needle off. The room goes back to the rain, and it takes a second to notice how much smaller it got."
+    },
+    "design_note": "Functional, and not sortable, which is a deliberate departure from section 4.1: examining it is what puts the demo on and takes it off again, and a sortable object stops offering Examine the moment it has been examined once. See docs/CONTENT_RULES.md. It is plugged in and it is the only thing in the flat that makes a sound he made."
   },
   {
     "id": "zlatan_plant",

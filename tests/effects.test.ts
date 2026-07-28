@@ -122,6 +122,37 @@ describe('the documents that flags hang off', () => {
   })
 })
 
+describe('the record player', () => {
+  it('does nothing until the demo has been found behind the record', () => {
+    const state = createInitialState()
+    state.act = 2
+
+    const { effects } = look('record_player', state)
+    assert.deepEqual(effects, [])
+  })
+
+  it('offers to play once the demo has been examined', () => {
+    const state = createInitialState()
+    state.act = 2
+    state.objects['demo_cdr'] = { examined: true, second_look_seen: false, sorted_to: null }
+
+    const { effects } = look('record_player', state)
+    assert.deepEqual(effects, [{ kind: 'toggle_demo' }])
+  })
+
+  it('offers to take it off again while it is playing', () => {
+    const state = createInitialState()
+    state.act = 2
+    state.objects['demo_cdr'] = { examined: true, second_look_seen: false, sorted_to: null }
+    state.record_playing = true
+
+    const { effects, reading } = look('record_player', state)
+
+    assert.equal(reading.secondLook, true)
+    assert.deepEqual(effects, [{ kind: 'toggle_demo' }])
+  })
+})
+
 describe('the fridge towel', () => {
   it('muffles the fridge rather than setting a flag', () => {
     const { effects, state } = look('fridge_towel')
@@ -140,6 +171,7 @@ describe('everything else', () => {
       'referral_letter',
       'mira_draft',
       'fridge_towel',
+      'record_player',
     ])
 
     for (const target of objects) {

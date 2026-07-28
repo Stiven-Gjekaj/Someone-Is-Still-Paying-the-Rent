@@ -25,6 +25,8 @@ export type ExamineEffect =
   | { kind: 'start_charging' }
   /** Section 5. The towel wins, posthumously. */
   | { kind: 'muffle_fridge' }
+  /** Section 5. The demo, on his stereo. Toggled, because a record can be taken off. */
+  | { kind: 'toggle_demo' }
 
 export function examineEffects(
   object: GameObject,
@@ -63,6 +65,12 @@ export function examineEffects(
 
     case 'fridge_towel':
       effects.push({ kind: 'muffle_fridge' })
+      break
+
+    case 'record_player':
+      // Nothing to play until the demo has been found behind the record. Before
+      // that the needle is just sitting where he left it.
+      if (state.objects['demo_cdr']?.examined === true) effects.push({ kind: 'toggle_demo' })
       break
 
     default:

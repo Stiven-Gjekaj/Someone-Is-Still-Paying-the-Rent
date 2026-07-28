@@ -482,3 +482,262 @@ export function drawer(context: AudioContext, buffer: AudioBuffer, destination: 
 
   return 0.6
 }
+
+/**
+ * Section 8.4. Packing tape coming off the roll and going across a box.
+ *
+ * A long bright tear, and then the flat of the hand pressing it down. Two
+ * sounds, and the second one is why it reads as sealing something rather than
+ * as opening it: tape pulled off a box has no press at the end.
+ */
+export function tape(context: AudioContext, buffer: AudioBuffer, destination: AudioNode, level: number): number {
+  const start = context.currentTime + 0.02
+
+  // The tear. High, rough, and rising as the roll speeds up.
+  const tear = context.createBufferSource()
+  tear.buffer = buffer
+
+  const rasp = context.createBiquadFilter()
+  rasp.type = 'bandpass'
+  rasp.frequency.setValueAtTime(1800, start)
+  rasp.frequency.linearRampToValueAtTime(3400, start + 0.5)
+  rasp.Q.value = 0.7
+
+  const shape = context.createGain()
+  shape.gain.setValueAtTime(0, start)
+  shape.gain.linearRampToValueAtTime(level * 0.7, start + 0.05)
+  shape.gain.linearRampToValueAtTime(level * 0.85, start + 0.42)
+  shape.gain.exponentialRampToValueAtTime(0.0001, start + 0.58)
+
+  tear.connect(rasp).connect(shape).connect(destination)
+  tear.start(start)
+  tear.stop(start + 0.62)
+
+  // The hand, twice, flattening it down. Low and dull, no edge on it at all.
+  for (const [at, weight] of [[0.62, 0.9], [0.82, 0.65]] as const) {
+    const press = context.createBufferSource()
+    press.buffer = buffer
+
+    const dull = context.createBiquadFilter()
+    dull.type = 'lowpass'
+    dull.frequency.value = 380
+
+    const pat = context.createGain()
+    pat.gain.setValueAtTime(0, start + at)
+    pat.gain.linearRampToValueAtTime(level * weight, start + at + 0.02)
+    pat.gain.exponentialRampToValueAtTime(0.0001, start + at + 0.18)
+
+    press.connect(dull).connect(pat).connect(destination)
+    press.start(start + at)
+    press.stop(start + at + 0.22)
+  }
+
+  return 1.05
+}
+
+/**
+ * Section 8.4. A key going into a ceramic bowl.
+ *
+ * Metal on glaze: a bright short strike, a smaller one as it settles, and the
+ * ring of the bowl underneath both. The bowl is the sound. It is the last thing
+ * the player does in the flat and it should be almost nothing.
+ */
+export function keyInBowl(context: AudioContext, destination: AudioNode, level: number): number {
+  const start = context.currentTime + 0.02
+
+  // The two strikes. Short, bright, and the second one much smaller.
+  for (const [at, hz, weight] of [[0, 2400, 1], [0.09, 3100, 0.42]] as const) {
+    const strike = context.createOscillator()
+    strike.type = 'triangle'
+    strike.frequency.setValueAtTime(hz, start + at)
+    strike.frequency.exponentialRampToValueAtTime(hz * 0.7, start + at + 0.03)
+
+    const shape = context.createGain()
+    shape.gain.setValueAtTime(0, start + at)
+    shape.gain.linearRampToValueAtTime(level * weight, start + at + 0.003)
+    shape.gain.exponentialRampToValueAtTime(0.0001, start + at + 0.09)
+
+    strike.connect(shape).connect(destination)
+    strike.start(start + at)
+    strike.stop(start + at + 0.12)
+  }
+
+  // The bowl, which keeps going after the key has stopped moving.
+  const ring = context.createOscillator()
+  ring.type = 'sine'
+  ring.frequency.setValueAtTime(1180, start)
+
+  const body = context.createGain()
+  body.gain.setValueAtTime(0, start)
+  body.gain.linearRampToValueAtTime(level * 0.3, start + 0.01)
+  body.gain.exponentialRampToValueAtTime(0.0001, start + 0.9)
+
+  ring.connect(body).connect(destination)
+  ring.start(start)
+  ring.stop(start + 1)
+
+  return 1.1
+}
+
+/**
+ * Section 8.4. The phone buzzing on a hard surface, before the voicemail.
+ *
+ * Not a call, so not a ring: a short low rattle, twice, which is what a phone
+ * does face-up on a table. It is the last sound the flat makes at the player.
+ */
+export function buzz(context: AudioContext, buffer: AudioBuffer, destination: AudioNode, level: number): number {
+  const start = context.currentTime + 0.02
+
+  for (const at of [0, 0.42]) {
+    const motor = context.createOscillator()
+    motor.type = 'square'
+    motor.frequency.setValueAtTime(52, start + at)
+
+    const rattle = context.createBufferSource()
+    rattle.buffer = buffer
+
+    const surface = context.createBiquadFilter()
+    surface.type = 'bandpass'
+    surface.frequency.value = 190
+    surface.Q.value = 2.4
+
+    const shape = context.createGain()
+    shape.gain.setValueAtTime(0, start + at)
+    shape.gain.linearRampToValueAtTime(level, start + at + 0.02)
+    shape.gain.linearRampToValueAtTime(level * 0.8, start + at + 0.24)
+    shape.gain.exponentialRampToValueAtTime(0.0001, start + at + 0.3)
+
+    const grit = context.createGain()
+    grit.gain.setValueAtTime(0, start + at)
+    grit.gain.linearRampToValueAtTime(level * 0.5, start + at + 0.02)
+    grit.gain.exponentialRampToValueAtTime(0.0001, start + at + 0.3)
+
+    motor.connect(shape).connect(destination)
+    rattle.connect(surface).connect(grit).connect(destination)
+
+    motor.start(start + at)
+    motor.stop(start + at + 0.34)
+    rattle.start(start + at)
+    rattle.stop(start + at + 0.34)
+  }
+
+  return 0.8
+}
+
+/**
+ * Section 8.4. The band-pass a saved voicemail is played back through.
+ *
+ * A phone speaker with a two-year-old recording on it has no bottom and no top,
+ * and that missing bandwidth is the whole reason a voicemail sounds like a
+ * voicemail. Everything in the ending's voicemail step goes through this, and
+ * nothing else in the game does.
+ *
+ * Returns the node to connect into, and the node that connects onward.
+ */
+export function voicemailLine(context: AudioContext): { input: AudioNode; output: AudioNode } {
+  const low = context.createBiquadFilter()
+  low.type = 'highpass'
+  low.frequency.value = 420
+  low.Q.value = 0.6
+
+  const high = context.createBiquadFilter()
+  high.type = 'lowpass'
+  high.frequency.value = 3000
+  high.Q.value = 0.6
+
+  // The small resonance every handset speaker has, which is what stops the
+  // filtered version reading as merely quiet.
+  const speaker = context.createBiquadFilter()
+  speaker.type = 'peaking'
+  speaker.frequency.value = 1500
+  speaker.Q.value = 1.4
+  speaker.gain.value = 6
+
+  low.connect(high).connect(speaker)
+
+  return { input: low, output: speaker }
+}
+
+/**
+ * Section 8.4. A voice on a saved voicemail, without words.
+ *
+ * The game has no recorded audio and will not have any, so what plays under the
+ * written blocks is the shape of somebody talking: a pitch that moves the way a
+ * sentence moves, gated into syllables, through the line above. It reads as a
+ * person on a small speaker in the next room, which is exactly as much as it
+ * needs to.
+ *
+ * `seconds` is how long the line lasts, and `lift` is whether it ends up rather
+ * than down, because the difference between a sentence and a question is the
+ * last syllable.
+ */
+export function voice(
+  context: AudioContext,
+  destination: AudioNode,
+  level: number,
+  seconds: number,
+  lift: boolean,
+  seed: number,
+): void {
+  const start = context.currentTime + 0.02
+
+  const larynx = context.createOscillator()
+  larynx.type = 'sawtooth'
+
+  const base = 112
+  larynx.frequency.setValueAtTime(base, start)
+
+  // A speaking contour rather than a tune. Down across the sentence, with the
+  // small rises that land on the stressed syllables.
+  const steps = Math.max(3, Math.round(seconds * 3.4))
+  for (let i = 1; i <= steps; i += 1) {
+    const at = start + (seconds * i) / steps
+    const fall = 1 - (i / steps) * 0.22
+    const wobble = 1 + (((seed * 37 + i * 53) % 17) / 17 - 0.5) * 0.16
+    larynx.frequency.linearRampToValueAtTime(base * fall * wobble, at)
+  }
+
+  if (lift) larynx.frequency.linearRampToValueAtTime(base * 1.18, start + seconds)
+
+  // Syllables. The gate is what makes it speech rather than a drone.
+  const gate = context.createGain()
+  gate.gain.setValueAtTime(0, start)
+
+  const rate = 4.6
+  const count = Math.max(1, Math.round(seconds * rate))
+  for (let i = 0; i < count; i += 1) {
+    const at = start + (seconds * i) / count
+    const length = seconds / count
+    const weight = 0.55 + (((seed * 29 + i * 41) % 13) / 13) * 0.45
+
+    gate.gain.setValueAtTime(0.02 * level, at)
+    gate.gain.linearRampToValueAtTime(level * weight, at + length * 0.28)
+    gate.gain.linearRampToValueAtTime(level * weight * 0.5, at + length * 0.7)
+    gate.gain.linearRampToValueAtTime(0.02 * level, at + length * 0.94)
+  }
+
+  gate.gain.linearRampToValueAtTime(0, start + seconds + 0.05)
+
+  // A vowel, roughly. Two formants is enough to stop a sawtooth sounding like
+  // an alarm.
+  const first = context.createBiquadFilter()
+  first.type = 'bandpass'
+  first.frequency.value = 620
+  first.Q.value = 3.5
+
+  const second = context.createBiquadFilter()
+  second.type = 'bandpass'
+  second.frequency.value = 1180
+  second.Q.value = 4.5
+
+  const mix = context.createGain()
+  mix.gain.value = 0.7
+
+  larynx.connect(gate)
+  gate.connect(first).connect(mix)
+  gate.connect(second).connect(mix)
+  mix.connect(destination)
+
+  larynx.start(start)
+  larynx.stop(start + seconds + 0.1)
+}

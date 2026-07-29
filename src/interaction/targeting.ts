@@ -14,6 +14,7 @@
 import * as THREE from 'three'
 
 import type { GameObject } from '../content/types.ts'
+import type { Reachable } from './reach.ts'
 
 const REACH = 2.4
 
@@ -31,6 +32,17 @@ export interface Targeting {
   /** Recomputes the target and returns it. Null when nothing is in reach. */
   update(): Target | null
   current(): Target | null
+  /** How far the ray goes, so nothing else has to decide what "in reach" means. */
+  reach(): number
+  /**
+   * Everything in the scene carrying an object id, with somewhere to aim at.
+   *
+   * Bounding box centres rather than origins: a desk's origin can be at one
+   * corner, and turning to face a corner of something is not turning to face it.
+   * Unfiltered by distance, because the caller owns that question and the answer
+   * has to come from `reach()` rather than from two places agreeing.
+   */
+  candidates(): Reachable[]
 }
 
 function objectIdOf(node: THREE.Object3D): string | null {
@@ -99,6 +111,36 @@ export function createTargeting(
 
     current(): Target | null {
       return target
+    },
+
+    reach(): number {
+      return REACH
+    },
+
+    candidates(): Reachable[] {
+      const found = new Map<string, Reachable>()
+      const box = new THREE.Box3()
+      const centre = new THREE.Vector3()
+
+      for (const root of roots) {
+        root.traverse((node) => {
+          const id = objectIdOf(node)
+          if (id === null || found.has(id) || !byId.has(id)) return
+
+          // The outermost node with this id, so the box covers the whole prop
+          // rather than whichever mesh the traversal reached first.
+          const owner = ownerOf(node, id)
+          if (!owner.visible) return
+
+          box.setFromObject(owner)
+          if (box.isEmpty()) return
+
+          box.getCenter(centre)
+          found.set(id, { id, at: { x: centre.x, y: centre.y, z: centre.z } })
+        })
+      }
+
+      return [...found.values()]
     },
   }
 }

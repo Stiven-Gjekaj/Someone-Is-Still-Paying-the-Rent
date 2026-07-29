@@ -50,6 +50,9 @@ export interface Screens {
 export function createScreens(config: ScreensConfig): Screens {
   const { player, hud, goalLine, menu } = config
 
+  /** Whether the player was using the mouse when the last beat took the screen. */
+  let heldThePointer = false
+
   function showPauseMenu(): void {
     hud.setVisible(false)
     menu.showPause([
@@ -104,7 +107,12 @@ export function createScreens(config: ScreensConfig): Screens {
 
     hud.setVisible(true)
     goalLine.setVisible(true)
-    if (!player.isLocked()) player.lock()
+
+    // Only give the pointer back to somebody who had it. Asking for a lock
+    // without a gesture behind it fails, and for a player using the keyboard
+    // that is every single time an overlay closes: a console error each, and a
+    // browser prompt on some of them, for a lock they never wanted.
+    if (heldThePointer && !player.isLocked()) player.lock()
   }
 
   // Escape releases the pointer, and the browser owns that key, so the pause menu
@@ -133,6 +141,10 @@ export function createScreens(config: ScreensConfig): Screens {
 
   return {
     hold(): void {
+      // Remembered here rather than asked for later, because by the time the
+      // beat releases the pointer has been gone for a while either way.
+      heldThePointer = player.isLocked()
+
       hud.setVisible(false)
       goalLine.setVisible(false)
       player.unlock()

@@ -87,6 +87,9 @@ export function createDeskScene(mount: HTMLElement, onDrawer: () => void): DeskS
         sequence.after(FADE_MS + at, () => {
           for (let i = 0; i < index; i += 1) nodes[i]?.classList.add('is-past')
           nodes[index]?.classList.add('is-shown')
+          // Hard Rule 3. The payoff is read out when the pacing reaches it and
+          // not a moment before, which is the whole reason the announcer exists.
+          sequence.announce(timing[index]?.text ?? '')
         })
       })
 

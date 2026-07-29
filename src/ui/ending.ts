@@ -220,6 +220,8 @@ export function createEndingPlayer(mount: HTMLElement, config: EndingConfig): En
             nodes[index]?.classList.add('is-shown')
 
             const block = blocks[index]
+            sequence.announce(block?.text ?? '')
+
             const line = block === undefined ? null : spoken(block)
             if (line !== null) config.audio().playVoice(line.seconds, line.lift, index + 1)
           })
@@ -264,6 +266,7 @@ export function createEndingPlayer(mount: HTMLElement, config: EndingConfig): En
           node.classList.add('ending-card')
           node.classList.add('is-shown')
           body.replaceChildren(node)
+          sequence.announce(line.text)
           // Low in the frame, out of the middle of the shot it is sitting over.
           sequence.element.classList.add('is-card')
         })

@@ -34,6 +34,14 @@ export interface Sequence {
   after(ms: number, run: () => void): void
   /** Opens it and takes the screen. `onDone` fires once the fade has finished. */
   begin(onDone: () => void): void
+  /**
+   * Reads one line out, now.
+   *
+   * Called by whichever timer reveals that line, so what is heard and what is on
+   * screen arrive together. Nothing announces itself: a beat that filled the
+   * document up front and left this alone would be silent.
+   */
+  announce(text: string): void
   /** Runs when the sequence ends, before the fade. For clearing what was shown. */
   onEnd(listener: () => void): void
   end(): void
@@ -44,8 +52,33 @@ export interface Sequence {
 export function createSequence(mount: HTMLElement, config: SequenceConfig): Sequence {
   const element = document.createElement('div')
   element.className = config.className
+
+  // The visual copy stays hidden from assistive technology, and a separate
+  // announcer carries the words. See `announce` below for why it is done this
+  // way round rather than by making this element a live region.
   element.setAttribute('aria-hidden', 'true')
   mount.append(element)
+
+  /**
+   * What a screen reader actually hears, a line at a time.
+   *
+   * Every beat puts all of its lines in the document up front and reveals them
+   * with CSS, which is what stops the block jumping about under the player as
+   * each one arrives. That is fatal to the obvious approach: make the beat a
+   * live region and it announces the whole scene the moment it is filled,
+   * including the desk scene's last line, minutes before the pacing gets there.
+   * Hard Rule 3 is that nothing arrives after that sentence, and having it
+   * arrive before everything else is no better.
+   *
+   * Flipping `aria-hidden` off each line as it shows would be tidier and is not
+   * reliably announced across screen readers. So the text is appended here, into
+   * a region that has nothing in it but the words that have actually landed, by
+   * the same timers that reveal them.
+   */
+  const announcer = document.createElement('div')
+  announcer.className = 'beat-announcer'
+  announcer.setAttribute('aria-live', 'polite')
+  mount.append(announcer)
 
   const timers: number[] = []
   const listeners: (() => void)[] = []
@@ -107,7 +140,16 @@ export function createSequence(mount: HTMLElement, config: SequenceConfig): Sequ
       playing = true
       finish = onDone
       clearTimers()
+      announcer.replaceChildren()
       element.classList.add('is-open')
+    },
+
+    announce(text: string): void {
+      if (text.trim().length === 0) return
+
+      const line = document.createElement('p')
+      line.textContent = text
+      announcer.append(line)
     },
 
     onEnd(listener: () => void): void {
@@ -127,6 +169,7 @@ export function createSequence(mount: HTMLElement, config: SequenceConfig): Sequ
       listeners.length = 0
       window.removeEventListener('keydown', onKeyDown)
       element.remove()
+      announcer.remove()
     },
   }
 }

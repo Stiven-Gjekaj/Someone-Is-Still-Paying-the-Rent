@@ -72,6 +72,7 @@ export function createFragmentPlayer(mount: HTMLElement): FragmentPlayer {
         sequence.after(FADE_MS + at, () => {
           for (let i = 0; i < index; i += 1) nodes[i]?.classList.add('is-past')
           nodes[index]?.classList.add('is-shown')
+          sequence.announce(fragment.lines[index] ?? '')
         })
       })
 

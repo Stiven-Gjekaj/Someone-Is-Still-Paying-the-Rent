@@ -61,7 +61,10 @@ export function createOpening(mount: HTMLElement, onKey: () => void): Opening {
 
       sequence.after(600, () => sequence.element.classList.add('is-hinting'))
       sequence.after(KEY_AT_MS, onKey)
-      sequence.after(KEY_AT_MS + 900, () => sequence.element.classList.add('is-card'))
+      sequence.after(KEY_AT_MS + 900, () => {
+        sequence.element.classList.add('is-card')
+        sequence.announce(card)
+      })
       sequence.after(KEY_AT_MS + 900 + CARD_IN_MS + CARD_HOLD_MS, sequence.end)
     },
 

@@ -33,6 +33,7 @@ import { createEndingPlayer } from '../ui/ending.ts'
 import { createMenu } from '../ui/menu.ts'
 import { renderDocument } from '../ui/document.ts'
 import { createTargeting } from '../interaction/targeting.ts'
+import { aimAt, turnOrder, type Turn } from '../interaction/reach.ts'
 import { createHighlight } from '../interaction/highlight.ts'
 import { createAudio } from '../audio/audio.ts'
 import { markExamined, resolveExamine } from '../rules/secondlook.ts'
@@ -487,6 +488,50 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     }
   }
 
+  /**
+   * Section 4.2 and 8.2. Steps the crosshair round what is within reach.
+   *
+   * The ring comes from `src/interaction/reach.ts`, which sorts by angle and
+   * refuses anything past the raycast's own reach. What happens here is the
+   * other half of that promise: each candidate is only accepted once the real
+   * ray, fired from the real camera, actually resolves to it. So cycling cannot
+   * offer anything the player could not have found by turning their head where
+   * they are standing, whatever a bounding box centre happens to say.
+   *
+   * If nothing survives, the camera goes back where it was. Being left pointed
+   * at a wall by a key that did nothing is worse than the key doing nothing.
+   */
+  function cycle(direction: Turn): void {
+    const camera = engine.camera
+    const from = { x: camera.position.x, y: camera.position.y, z: camera.position.z }
+
+    const ring = turnOrder(from, camera.rotation.y, targeting.candidates(), {
+      reach: targeting.reach(),
+      direction,
+      skip: targeting.current()?.id ?? null,
+    })
+
+    const wasYaw = camera.rotation.y
+    const wasPitch = camera.rotation.x
+
+    for (const item of ring) {
+      // No clamp needed: `aimAt` builds its pitch from an atan2 over a distance
+      // that cannot be negative, so it is always inside the range the mouse has.
+      const aim = aimAt(from, item.at)
+      camera.rotation.y = aim.yaw
+      camera.rotation.x = aim.pitch
+      camera.updateMatrixWorld(true)
+
+      const found = targeting.update()
+      if (found !== null && found.id === item.id) return
+    }
+
+    camera.rotation.y = wasYaw
+    camera.rotation.x = wasPitch
+    camera.updateMatrixWorld(true)
+    targeting.update()
+  }
+
   function onKeyDown(event: KeyboardEvent): void {
     if (opening.isPlaying()) return
 
@@ -508,6 +553,16 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     // longer playing and only the flag it left behind says the key was spoken
     // for. Without this, skipping a memory also examines whatever the crosshair
     // happened to be resting on.
+    // Tab steps round the room, but only while the flat is the player's. With a
+    // document, the take-one-thing list, or the pause menu up it has to do its
+    // ordinary job of moving between buttons, and the ending's chooser is a list
+    // of buttons somebody has to be able to reach.
+    if (event.key === 'Tab' && !busy() && !screens.isPaused()) {
+      event.preventDefault()
+      cycle(event.shiftKey ? 'left' : 'right')
+      return
+    }
+
     if (event.code === 'KeyE' && !event.defaultPrevented && !overlay.isOpen()) interact()
   }
 
@@ -523,7 +578,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, ending, endingPlayer, placed, props, weather, lighting, opening, desk, interact, revealPending },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, ending, endingPlayer, placed, props, weather, lighting, opening, desk, interact, revealPending, cycle },
     })
   }
 

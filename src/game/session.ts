@@ -282,6 +282,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     player.setHeadBob(next.headBob)
     player.setSensitivity(next.sensitivity)
     engine.setFieldOfView(next.fieldOfView)
+    audio.setVolume(next.volume)
   }
 
   applySettings(settings)

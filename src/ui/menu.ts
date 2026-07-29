@@ -11,6 +11,7 @@ import { getAdvisory } from '../content/index.ts'
 import {
   FIELD_OF_VIEW_RANGE,
   SENSITIVITY_RANGE,
+  VOLUME_RANGE,
   type Settings,
 } from '../settings.ts'
 
@@ -152,6 +153,11 @@ export function createMenu(mount: HTMLElement): Menu {
       nodes.push(
         slider('Look sensitivity', current.sensitivity, SENSITIVITY_RANGE, (v) => v.toFixed(2), (v) => {
           current.sensitivity = v
+        }),
+      )
+      nodes.push(
+        slider('Volume', current.volume, VOLUME_RANGE, (v) => `${Math.round(v * 100)}`, (v) => {
+          current.volume = v
         }),
       )
       nodes.push(

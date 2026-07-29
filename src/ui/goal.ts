@@ -35,6 +35,11 @@ export function currentGoal(goals: Goal[], state: GameState): Goal | null {
 export function createGoalLine(mount: HTMLElement, goals: Goal[]): GoalLine {
   const element = document.createElement('p')
   element.className = 'goal'
+  // The one place the game says what it wants, so it is worth hearing. Safe as a
+  // live region precisely because section 4.6 keeps it rare: a quest log
+  // announcing itself every few seconds would be the different game that section
+  // is refusing to be.
+  element.setAttribute('aria-live', 'polite')
   mount.append(element)
 
   let showing: string | null = null

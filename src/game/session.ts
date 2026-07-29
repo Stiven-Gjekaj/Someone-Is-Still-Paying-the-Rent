@@ -547,7 +547,12 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   }
 
   engine.start((delta) => {
-    if (player.isLocked()) player.update(delta)
+    // Whether the flat is the player's, not whether the browser happens to be
+    // holding the pointer. Gating this on the lock was the other half of the
+    // game being unplayable without a mouse: somebody who never clicks to lock
+    // never gets a frame of movement either, so the arrow keys would turn a
+    // camera that nothing is updating.
+    if (!busy() && !screens.isPaused()) player.update(delta)
     weather.update(delta)
     audio.update(delta, engine.camera)
 

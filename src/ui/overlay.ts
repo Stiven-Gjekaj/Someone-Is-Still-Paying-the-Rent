@@ -46,9 +46,19 @@ export function createOverlay(mount: HTMLElement): Overlay {
 
   const panel = document.createElement('div')
   panel.className = 'overlay-panel'
+  // Focusable without being in the tab order, so focus can be put here when a
+  // document opens and a screen reader starts reading from the right place.
+  // Without it the text is in the accessible tree and nothing ever visits it.
+  panel.tabIndex = -1
+  panel.setAttribute('role', 'dialog')
+  panel.setAttribute('aria-modal', 'true')
   element.append(panel)
 
   const listeners: (() => void)[] = []
+
+  /** Where focus was before this took the screen, so it can go back. */
+  let camefrom: HTMLElement | null = null
+
   let open = false
   let current: OverlayMode | null = null
   let choices: Choice[] = []
@@ -69,6 +79,14 @@ export function createOverlay(mount: HTMLElement): Overlay {
     highlighted = -1
     element.classList.remove('is-open', 'is-examine', 'is-document', 'is-choose')
     panel.replaceChildren()
+
+    // Back where it came from, if that is still somewhere. Leaving focus on a
+    // panel that has just been emptied strands a keyboard at the top of the
+    // document, and the flat is the thing the player is going back to.
+    const returning = camefrom
+    camefrom = null
+    if (returning !== null && returning.isConnected) returning.focus()
+
     for (const listener of listeners) listener()
   }
 
@@ -167,12 +185,26 @@ export function createOverlay(mount: HTMLElement): Overlay {
   mount.append(element)
 
   function openWith(mode: OverlayMode): void {
+    const active = document.activeElement
+    camefrom = active instanceof HTMLElement && active !== panel ? active : null
+
     open = true
     current = mode
     element.classList.add('is-open')
     element.classList.toggle('is-examine', mode === 'examine')
     element.classList.toggle('is-document', mode === 'document')
     element.classList.toggle('is-choose', mode === 'choose')
+
+    // The panel, never the first option, even on a chooser. Focus on a button
+    // is not a neutral place to start: Enter on a focused button activates it,
+    // natively, straight past the guard that keeps `is-highlighted` at nowhere.
+    // The player would have taken Lena's note by pressing the key that means
+    // "yes" to a question they had not answered. Section 4.1 and 8.4 both say
+    // the game holds no opinion about which one, and a default is an opinion.
+    //
+    // From here Tab reaches the options, or the arrow keys walk them. Either
+    // way the player put the cursor somewhere before Enter meant anything.
+    panel.focus()
   }
 
   return {

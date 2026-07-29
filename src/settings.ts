@@ -11,13 +11,24 @@ const STORAGE_KEY = 'sispr.settings'
 
 export interface Settings {
   headBob: boolean
-  /** Mouse look multiplier. */
+  /** Mouse look multiplier. Also scales the arrow keys. */
   sensitivity: number
   fieldOfView: number
+  /**
+   * Everything the flat makes, from silence to as loud as it was authored.
+   *
+   * Not a nicety. The rain, the fridge and the radiators run for the whole game,
+   * and section 8.2's chime is a gate signal rather than decoration: a player who
+   * cannot hear it has no idea the night has moved on. Until v0.5 the only
+   * control was the pause menu's mute, which is all or nothing.
+   */
+  volume: number
 }
 
 export const SENSITIVITY_RANGE = { min: 0.4, max: 2, step: 0.05 }
 export const FIELD_OF_VIEW_RANGE = { min: 55, max: 85, step: 1 }
+/** Down to nothing, because somebody may want the flat silent and still played. */
+export const VOLUME_RANGE = { min: 0, max: 1, step: 0.05 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
@@ -25,7 +36,7 @@ function clamp(value: number, min: number, max: number): number {
 
 export function defaultSettings(): Settings {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  return { headBob: !reduced, sensitivity: 1, fieldOfView: 62 }
+  return { headBob: !reduced, sensitivity: 1, fieldOfView: 62, volume: 1 }
 }
 
 export function loadSettings(): Settings {
@@ -44,6 +55,9 @@ export function loadSettings(): Settings {
       fieldOfView: typeof stored.fieldOfView === 'number'
         ? clamp(stored.fieldOfView, FIELD_OF_VIEW_RANGE.min, FIELD_OF_VIEW_RANGE.max)
         : base.fieldOfView,
+      volume: typeof stored.volume === 'number' && Number.isFinite(stored.volume)
+        ? clamp(stored.volume, VOLUME_RANGE.min, VOLUME_RANGE.max)
+        : base.volume,
     }
   } catch {
     // Private browsing, a full quota, or a corrupted value. Defaults are fine,

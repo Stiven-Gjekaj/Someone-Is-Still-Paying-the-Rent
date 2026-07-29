@@ -102,6 +102,14 @@ export interface Audio {
    * and the door is shut. Not the same as muting: nothing brings this back.
    */
   leave(seconds: number): void
+  /** The comfort setting, from silence to one. Composes with everything else. */
+  setVolume(value: number): void
+  /**
+   * What the mix is actually at, after every ramp has run. For tests and the
+   * console, the way `charge.remaining()` is: there is no other way to see
+   * whether a volume slider reached the thing it is supposed to be moving.
+   */
+  mixLevel(): number
   /** Section 8.4. Your own phone on a hard surface. Not a call. */
   playBuzz(): number
   /**
@@ -133,16 +141,22 @@ export function createAudio(plan: FloorPlan): Audio {
   let ducked = false
   /** Section 8.4. Once the door is shut the flat does not come back. */
   let left = false
+  let volume = 1
   let noise: AudioBuffer | null = null
   let demo: Source | null = null
 
   const forward = new THREE.Vector3()
   const up = new THREE.Vector3()
 
-  /** Mute wins over duck, so pausing inside a memory still goes quiet. */
+  /**
+   * Mute wins over duck, so pausing inside a memory still goes quiet, and the
+   * comfort setting scales whatever is left. One place composes all of it, so
+   * turning the volume down inside a memory keeps the memory ducked and turning
+   * it up after the door has shut does not reopen the door.
+   */
   function level(): number {
     if (left || muted) return 0
-    return ducked ? DUCK_LEVEL : 1
+    return (ducked ? DUCK_LEVEL : 1) * volume
   }
 
   function rampTo(seconds: number): void {
@@ -309,6 +323,16 @@ export function createAudio(plan: FloorPlan): Audio {
       rampTo(seconds)
     },
 
+    setVolume(value: number): void {
+      volume = Math.min(1, Math.max(0, value))
+      // Quick, because this one is being dragged and has to answer as it moves.
+      rampTo(0.05)
+    },
+
+    mixLevel(): number {
+      return master?.gain.value ?? 0
+    },
+
     playBuzz(): number {
       if (context === null || master === null || noise === null) return 0
       return buzz(context, noise, master, BUZZ_LEVEL)
@@ -355,6 +379,7 @@ export function createAudio(plan: FloorPlan): Audio {
       demo = null
       ducked = false
       left = false
+      volume = 1
       fridge = null
       radiators = null
     },

@@ -136,6 +136,56 @@ ending it may be taped inside a carton. There are two versions of the sound and 
 with the bowl, the bowl rings under the key; without it, the key goes down on something bare and
 nothing answers.
 
+## Controls
+
+| Key | What it does |
+|---|---|
+| `W` `A` `S` `D` | Walk |
+| Arrow keys, or the mouse | Look |
+| `Tab`, `Shift+Tab` | Step the crosshair round what is within reach |
+| `E`, or click | Examine, read, take, or sort whatever the crosshair is on |
+| `Escape` | Out of whatever is on screen, then the pause menu |
+
+The arrows used to be a second set of movement keys and looking was mouse only,
+which meant the game could not be played at all without a mouse: aiming the
+crosshair is the only verb section 4.2 has. Rebinding them costs anybody who was
+walking with the arrows their habit, and it is still right.
+
+Holding an arrow starts slow and speeds up, so a tap is a fine adjustment and a
+hold is a turn. `Tab` exists because even that is not enough: `junk_drawer` is a
+thirty-millimetre panel visible from about a third of one percent of the angles
+in the kitchen, and nobody should have to land on it by hand.
+
+**`Tab` is not an objective marker**, and section 8.2 forbids one outright. It
+reaches only what the raycast already reaches, and every candidate is confirmed
+by firing the real ray before the camera settles on it, so it can never point at
+anything the player could not have found by turning their head where they are
+standing. It removes the precision from searching, not the searching.
+
+## Accessibility
+
+- Playable with the keyboard alone, start to finish. Nothing needs a pointer,
+  including the advisory, the title screen, the sort chooser and the
+  take-one-thing list at the ending.
+- The prompt, the carry line and the goal line are live regions, so what the
+  crosshair is on, what is in your hands and what the game wants are all spoken.
+  The reticle is not: it is a dot.
+- Every beat that takes the screen reads itself out a line at a time, in step
+  with the pacing. That is why `src/ui/sequence.ts` keeps a separate announcer
+  rather than making the beat a live region: all the lines are in the document
+  from the start so the block cannot jump, and a live region would announce the
+  desk scene's last line minutes before the scene reaches it.
+- Opening a document moves focus into it and closing one puts focus back.
+- A volume slider in Comfort, down to silence. The rain and the fridge run for
+  the whole game and section 8.2's chime is a gate signal, so this is not a
+  nicety.
+- Head bob follows `prefers-reduced-motion` and can be switched off regardless.
+
+Two things it does not do. There is no text scaling yet. And nothing helps a
+player who cannot see find their way across a room: `Tab` solves aiming, not
+navigation, and audio beacons or spoken room descriptions would be a design
+conversation rather than a setting.
+
 ## Requirements
 
 Node 24. The version is pinned in `.nvmrc`.
@@ -213,12 +263,17 @@ src/
   game/     the session, screens, carrying, acts, the charge, the ending, checkpoints
   ui/       hud, overlays, the chooser, and the four beats that take the screen
   audio/    synthesis and the mixer
-tests/      node --test over everything in rules/ and game/
+tests/      node --test over the pure logic in rules/, player/, interaction/ and game/
 ```
 
 Anything in `src/rules/` is pure and takes its data as arguments, so it runs under `node --test`
 with no renderer and no browser. Anything that touches the DOM, the scene graph, or the clock
-lives outside it.
+lives outside it. Two modules outside `rules/` follow the same rule for the same reason:
+`src/player/look.ts` and `src/interaction/reach.ts` hold the arithmetic behind the arrow keys and
+the `Tab` ring. Neither can be measured in a browser, because a headless run on a software
+rasteriser renders at about two frames a second and the engine clamps `delta`, so wall-clock time
+and game time come apart by a factor of five. Pulling the sums out found a real bug: the camera
+turned nearly ten percent faster at fifteen frames a second than at sixty.
 
 Four things take the screen: the opening beat, a memory, the desk scene, and the ending. They look
 nothing like each other and are the same mechanism underneath, so the mechanism is

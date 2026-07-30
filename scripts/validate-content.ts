@@ -35,6 +35,7 @@ import {
 } from '../src/content/flags.ts'
 import { examineEffects } from '../src/rules/effects.ts'
 import type { GameObject } from '../src/content/types.ts'
+import { READ } from './content-review.ts'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
@@ -1995,6 +1996,62 @@ const OPEN_TO_A_HUMAN: Record<string, string> = {
       + `building anywhere near it${typeof room === 'string' ? ` in the ${room}` : ''}. Either it is `
       + 'warmer than it looks, in which case say so in A_FUTURE_HE_WAS_BUILDING with the words '
       + 'that earn it, or something forward-looking belongs in that room.',
+    )
+  }
+}
+
+/**
+ * The v0.6 read, kept honest.
+ *
+ * `scripts/content-review.ts` holds one entry per player-facing string. This
+ * makes that a fact rather than an intention: a new string with no entry fails,
+ * an entry for a string that no longer exists fails, and an entry whose recorded
+ * text has drifted from the data fails.
+ *
+ * The third one is the point. A verdict is about particular words. Change the
+ * words and the verdict is a leftover, and a leftover verdict is worse than no
+ * verdict, because it looks like somebody checked.
+ */
+{
+  const unread: string[] = []
+  for (const strand of playerFacing) {
+    const verdict = READ[strand.where]
+    if (verdict === undefined) {
+      unread.push(strand.where)
+      continue
+    }
+    if (verdict.text !== strand.text) {
+      fail(
+        'content review',
+        strand.where,
+        'the string has changed since it was read, so its verdict in '
+        + 'scripts/content-review.ts is about words that are no longer there. Re-read it '
+        + 'against all six passes, not only the one that prompted the edit, and update '
+        + `the entry.\n      read:  ${JSON.stringify(verdict.text)}\n      now:   ${JSON.stringify(strand.text)}`,
+      )
+    }
+  }
+
+  for (const where of unread) {
+    fail(
+      'content review',
+      where,
+      'is player-facing and has no entry in scripts/content-review.ts. Read it against '
+      + 'the six passes in docs/CONTENT_REVIEW.md and record the verdict. An entry with '
+      + 'no notes means read with nothing to argue, which is an answer, but it has to be '
+      + 'given rather than assumed.',
+    )
+  }
+
+  const collected = new Set(playerFacing.map((strand) => strand.where))
+  for (const where of Object.keys(READ)) {
+    if (collected.has(where)) continue
+    fail(
+      'content review',
+      where,
+      'has a verdict in scripts/content-review.ts but is not a string the validator '
+      + 'collects. Either it was deleted, in which case remove the entry, or the label '
+      + 'moved, in which case the verdict is now attached to nothing.',
     )
   }
 }

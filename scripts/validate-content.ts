@@ -1856,6 +1856,133 @@ for (const lexicon of LEXICONS) {
   }
 }
 
+/**
+ * Hard Rule 5, which is the one human-only rule with a shape.
+ *
+ * "Niko's struggles are always interleaved with plans, humor, and care. Every
+ * middle layer discovery sits near evidence of a future he was still building."
+ *
+ * That second sentence is a claim about adjacency, and the data knows what is
+ * next to what. So this names the objects that count as evidence of a future,
+ * with the words that earn each one, and then checks that no middle-layer
+ * discovery is stranded away from all of them.
+ *
+ * **The default is suspicion, and that is the whole design.** Anything from act 2
+ * down that is not on this list is treated as a struggle and needs a warm
+ * neighbour. A list of struggles instead would pass silently the day somebody
+ * adds a fifty-second object and forgets to classify it, and silence is exactly
+ * what this rule cannot afford.
+ *
+ * Adding to this list is a content judgement, not a way to quiet the check. The
+ * phrase is required so that the judgement can be argued with.
+ */
+const A_FUTURE_HE_WAS_BUILDING: Record<string, string> = {
+  sketchbook_new: 'Starting again. Or trying to. Both are true.',
+  job_application: "keep it. they should know who's showing up.",
+  demo_cdr: "we'll fix the mix later.",
+  zlatan_plant: 'He was taking care of things.',
+  concert_tickets: 'for a show in April. He bought them in February.',
+  cuttings_jar: 'He was propagating. Plural. Plans, plural.',
+  recipe_card: 'propped against the tin where he could see it while he cooked.',
+  empty_pots: 'waiting for spring. He was getting back to it.',
+  notebook_4am: 'tired of being tired. gym tomorrow. / didn\'t. tuesday then.',
+  bass_case: 'a mint tin of broken strings labeled in marker. Evidence.',
+  dad_lighter: 'It still has fuel in it.',
+  photobooth_strip: 'By the third they are laughing.',
+  hoodie_mira: 'Washed and folded before it went into the box.',
+  photo_hike_box: 'kept the blur one anyway. best one.',
+  two_chairs: 'Section 5. The balcony is exclusively a place of warm memory.',
+  caps_jar: 'Section 5. The balcony is exclusively a place of warm memory.',
+  string_lights: 'The one thing in the flat the player can leave better than they found it.',
+  team_bib: 'Bib #1, worn with total unearned confidence.',
+  game_controller: 'The left stick still drifts, and he kept playing on it.',
+  fridge_towel: 'He wedged a towel under the fridge rather than live with it.',
+  mug_chipped: 'The kebab place, and the sauce that kept them going back.',
+}
+
+/**
+ * Hard Rule 5 findings that a person has to settle, not the validator.
+ *
+ * Reported on every run and never a failure. The alternative was to quietly move
+ * the object into the warm list until the check went green, which is how a
+ * review of your own work ends up agreeing with itself. An entry here is an open
+ * question with the argument attached, and it stays printed until somebody
+ * answers it.
+ */
+const OPEN_TO_A_HUMAN: Record<string, string> = {
+  appt_card:
+    'The cancelled counselling card is the one middle-layer discovery with nothing forward-looking '
+    + 'in its room. The bathroom holds it plus the cologne, the spare towel and the toothbrush, and '
+    + 'all three of those are the player\'s grief rather than his life. Hard Rule 6 makes this the '
+    + 'mental-health room on purpose and keeps it sparse, so the two rules meet here and the second '
+    + 'one is not satisfied. Against that: the card is three years old rather than recent, "He kept '
+    + 'it anyway" is not nothing, and the spare towel he kept folded for you is arguably the care '
+    + 'the rule asks for. It was not on the warm list before this check was written and it is not '
+    + 'being added to it now, because adding it now would be reclassifying to make a failure go '
+    + 'away. Recommendation: something of his that points forwards belongs in that room. No '
+    + 'existing object can move into it without taking the warmth out of the room it leaves.',
+}
+
+{
+  const inRoom = new Map<string, string[]>()
+  const inRevealGroup = new Map<string, string[]>()
+
+  for (const object of objects) {
+    const id = String(object['id'])
+    const room = object['room']
+    if (typeof room === 'string') {
+      const list = inRoom.get(room) ?? []
+      list.push(id)
+      inRoom.set(room, list)
+    }
+
+    const hidden = object['hidden_until']
+    if (typeof hidden === 'string') {
+      const list = inRevealGroup.get(hidden) ?? []
+      list.push(id)
+      inRevealGroup.set(hidden, list)
+    }
+  }
+
+  for (const id of Object.keys(A_FUTURE_HE_WAS_BUILDING)) {
+    if (!objectIds.has(id)) {
+      fail('hard rules', `future ${id}`, 'is named as evidence of a future but is not an object')
+    }
+    if (A_FUTURE_HE_WAS_BUILDING[id]?.trim().length === 0) {
+      fail('hard rules', `future ${id}`, 'is named as evidence of a future with no words to show for it')
+    }
+  }
+
+  for (const object of objects) {
+    const id = String(object['id'])
+    const act = object['act_min']
+    const room = object['room']
+
+    // The middle layer and below. Act 1 is the surface the player is meant to
+    // fall for him on, and section 5 already builds it out of warmth.
+    if (typeof act !== 'number' || act < 2) continue
+    if (id in A_FUTURE_HE_WAS_BUILDING) continue
+
+    const hidden = object['hidden_until']
+    const neighbours = [
+      ...(typeof room === 'string' ? inRoom.get(room) ?? [] : []),
+      ...(typeof hidden === 'string' ? inRevealGroup.get(hidden) ?? [] : []),
+    ]
+
+    if (neighbours.some((near) => near !== id && near in A_FUTURE_HE_WAS_BUILDING)) continue
+    if (id in OPEN_TO_A_HUMAN) continue
+
+    fail(
+      'hard rules',
+      `object ${id}`,
+      'Hard Rule 5. It is a middle-layer discovery with no evidence of a future he was still '
+      + `building anywhere near it${typeof room === 'string' ? ` in the ${room}` : ''}. Either it is `
+      + 'warmer than it looks, in which case say so in A_FUTURE_HE_WAS_BUILDING with the words '
+      + 'that earn it, or something forward-looking belongs in that room.',
+    )
+  }
+}
+
 // Hard Rules 4 and 8, which are human-only and stay that way. A hit is a string
 // that somebody has to have read, not a string that is wrong. See CAUSE_AND_VERDICT.
 {
@@ -2025,6 +2152,12 @@ function report(): void {
     AMBIGUITY_LEDGER.forEach((question, index) => {
       console.log(`  ${index + 1}. ${question}`)
     })
+    const open = Object.entries(OPEN_TO_A_HUMAN)
+    if (open.length > 0) {
+      console.log('\nHard Rule 5 has open questions. Somebody has to decide these:')
+      for (const [id, argument] of open) console.log(`  ${id}: ${argument}`)
+    }
+
     console.log('\nFour of the ten hard rules cannot be checked mechanically at all.')
     console.log('See docs/CONTENT_RULES.md.')
     return

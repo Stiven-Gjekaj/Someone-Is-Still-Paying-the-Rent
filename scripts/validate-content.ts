@@ -1580,12 +1580,17 @@ function collect(where: string, value: unknown, room?: string): void {
   }
 }
 
+// The field is part of the label because a block can carry several of them. A
+// notebook entry with a `time` and a `text` is two strings, and calling both of
+// them "block 0" makes a failure message name a place that holds two strings and
+// point at neither. It also makes the label unusable as a key, which
+// scripts/content-review.ts needs it to be.
 function collectBlocks(where: string, blocks: unknown, room?: string): void {
   if (!Array.isArray(blocks)) return
   blocks.forEach((block, index) => {
     if (!isRecord(block)) return
     for (const field of ['text', 'time', 'where', 'label', 'sender']) {
-      collect(`${where} block ${index}`, block[field], room)
+      collect(`${where} block ${index} ${field}`, block[field], room)
     }
   })
 }
@@ -1813,7 +1818,7 @@ const REVIEWED: Record<string, Reviewed> = {
     text: 'He watered it out of a wine glass that first night, because Zlatan deserves stemware.',
     reason: 'A joke about a monstera. It is also Hard Rule 5 doing its job.',
   },
-  'text lena_note block 1': {
+  'text lena_note block 1 text': {
     text:
       "Whatever you keep of his, keep it because it's him, not because it hurts to put it down. "
       + 'He would hate that.',
@@ -1821,14 +1826,14 @@ const REVIEWED: Record<string, Reviewed> = {
       'Causal, and about why the player should keep a thing rather than about why he died. '
       + 'Verbatim from the bible, section 7.1.',
   },
-  'text vera_letter block 0': {
+  'text vera_letter block 0 text': {
     text:
       'My Niko. I am sending the proper recipe because whatever you are making from memory is '
       + 'wrong, I can feel it from here. Double the lemon. Are you eating? Send a photo of the '
       + 'plant, not the sky this time.',
     reason: 'A grandmother being rude about his cooking. Verbatim from the bible, section 7.6.',
   },
-  'text mira_draft block 1': {
+  'text mira_draft block 1 text': {
     text:
       'I keep starting this and it turns into a list of things I should have said in October, so '
       + 'here is the shortest version. None of it was your fault, and most of it was good. The '
@@ -1841,7 +1846,7 @@ const REVIEWED: Record<string, Reviewed> = {
       + 'violation, so it is worth saying plainly: the letter declines to give a reason, which is '
       + 'the opposite of giving one.',
   },
-  'text job_application block 0': {
+  'text job_application block 0 text': {
     text:
       '...seven years across motion and illustration, most recently freelance. I work best on '
       + 'small teams, and I am trying to work smaller and slower on purpose...',

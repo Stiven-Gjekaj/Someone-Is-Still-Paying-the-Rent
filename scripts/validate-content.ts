@@ -1893,28 +1893,57 @@ for (const lexicon of LEXICONS) {
  * Adding to this list is a content judgement, not a way to quiet the check. The
  * phrase is required so that the judgement can be argued with.
  */
-const A_FUTURE_HE_WAS_BUILDING: Record<string, string> = {
-  sketchbook_new: 'Starting again. Or trying to. Both are true.',
-  job_application: "keep it. they should know who's showing up.",
-  demo_cdr: "we'll fix the mix later.",
-  zlatan_plant: 'He was taking care of things.',
-  concert_tickets: 'for a show in April. He bought them in February.',
-  cuttings_jar: 'He was propagating. Plural. Plans, plural.',
-  recipe_card: 'propped against the tin where he could see it while he cooked.',
-  empty_pots: 'waiting for spring. He was getting back to it.',
-  notebook_4am: 'tired of being tired. gym tomorrow. / didn\'t. tuesday then.',
-  bass_case: 'a mint tin of broken strings labeled in marker. Evidence.',
-  dad_lighter: 'It still has fuel in it.',
-  photobooth_strip: 'By the third they are laughing.',
-  hoodie_mira: 'Washed and folded before it went into the box.',
-  photo_hike_box: 'kept the blur one anyway. best one.',
-  two_chairs: 'Section 5. The balcony is exclusively a place of warm memory.',
-  caps_jar: 'Section 5. The balcony is exclusively a place of warm memory.',
-  string_lights: 'The one thing in the flat the player can leave better than they found it.',
-  team_bib: 'Bib #1, worn with total unearned confidence.',
-  game_controller: 'The left stick still drifts, and he kept playing on it.',
-  fridge_towel: 'He wedged a towel under the fridge rather than live with it.',
-  mug_chipped: 'The kebab place, and the sauce that kept them going back.',
+interface Warmth {
+  /**
+   * Verbatim from one of the object's own strings: its name, its examine text,
+   * its second look, or a fragment it triggers. Checked below, because a
+   * paraphrase cannot be argued with. A reader who disagrees has to be able to
+   * go and read the words the claim rests on.
+   */
+  quote?: string
+  /**
+   * Why the object counts when its own words do not say so. Rarer, and it should
+   * stay rare: an object whose warmth has to be argued for is an object a player
+   * may not receive as warm.
+   */
+  argument?: string
+}
+
+const A_FUTURE_HE_WAS_BUILDING: Record<string, Warmth> = {
+  sketchbook_new: { quote: 'Starting again. Or trying to. Both are true.' },
+  job_application: { quote: "keep it. they should know who's showing up." },
+  demo_cdr: { quote: "we'll fix the mix later." },
+  zlatan_plant: { quote: 'He was taking care of things.' },
+  concert_tickets: { quote: 'for a show in April. He bought them in February.' },
+  cuttings_jar: { quote: 'He was propagating. Plural. Plans, plural.' },
+  recipe_card: { quote: 'propped against the tin where he could see it while he cooked.' },
+  empty_pots: { quote: 'He was getting back to it. The pots were waiting.' },
+  notebook_4am: { quote: 'tired of being tired. gym tomorrow.' },
+  bass_case: { quote: 'a mint tin of broken strings labeled in marker. Evidence.' },
+  dad_lighter: { quote: 'It still has fuel in it.' },
+  photobooth_strip: { quote: 'By the third they are laughing' },
+  hoodie_mira: { quote: 'Washed and folded before it went into the box' },
+  photo_hike_box: { quote: 'kept the blur one anyway. best one.' },
+  team_bib: { quote: 'He kept the bib in his own bag so the job could never be given to anyone else.' },
+  game_controller: { quote: 'There was no shortage of good nights.' },
+  fridge_towel: { quote: 'Best call of that year.' },
+  mug_chipped: { quote: 'There was a ceremony. There was a speech. The speech was deliberately too long.' },
+
+  two_chairs: {
+    argument:
+      'Section 5 and Hard Rule 10. The balcony is exclusively a place of warm memory, so its '
+      + 'objects are warm by construction rather than by any sentence.',
+  },
+  caps_jar: {
+    argument:
+      'Section 5 and Hard Rule 10, as above. "An archive of good evenings, kept in glass" says it '
+      + 'too, but the rule is the reason.',
+  },
+  string_lights: {
+    argument:
+      'The one thing in the flat the player can leave better than they found it. That is a fact '
+      + 'about what the game lets you do rather than about what any string says.',
+  },
 }
 
 /**
@@ -1961,12 +1990,65 @@ const OPEN_TO_A_HUMAN: Record<string, string> = {
     }
   }
 
-  for (const id of Object.keys(A_FUTURE_HE_WAS_BUILDING)) {
+  // Every string an object speaks with: its own name, examine text and second
+  // look, plus any fragment it triggers and any keystone text it opens.
+  const speaksFor = new Map<string, string>()
+  for (const id of objectIds) speaksFor.set(id, id)
+  for (const fragment of fragments) {
+    const trigger = fragment['trigger']
+    if (typeof trigger === 'string') speaksFor.set(String(fragment['id']), trigger)
+  }
+  for (const text of texts) {
+    const object = text['object']
+    if (typeof object === 'string') speaksFor.set(String(text['id']), object)
+  }
+
+  const wordsOf = new Map<string, string[]>()
+  for (const strand of playerFacing) {
+    const match = /^(?:object|fragment|text) (\S+) /.exec(strand.where)
+    if (match === null) continue
+    const owner = speaksFor.get(String(match[1]))
+    if (owner === undefined) continue
+    const list = wordsOf.get(owner) ?? []
+    list.push(strand.text)
+    wordsOf.set(owner, list)
+  }
+
+  for (const [id, warmth] of Object.entries(A_FUTURE_HE_WAS_BUILDING)) {
     if (!objectIds.has(id)) {
       fail('hard rules', `future ${id}`, 'is named as evidence of a future but is not an object')
+      continue
     }
-    if (A_FUTURE_HE_WAS_BUILDING[id]?.trim().length === 0) {
-      fail('hard rules', `future ${id}`, 'is named as evidence of a future with no words to show for it')
+
+    const { quote, argument } = warmth
+    if ((quote === undefined) === (argument === undefined)) {
+      fail(
+        'hard rules',
+        `future ${id}`,
+        'needs exactly one of quote or argument. A quote is the object\'s own words and is '
+        + 'checked. An argument is why it counts when its own words do not say so.',
+      )
+      continue
+    }
+
+    if (argument !== undefined) {
+      if (argument.trim().length === 0) {
+        fail('hard rules', `future ${id}`, 'has an empty argument')
+      }
+      continue
+    }
+
+    // A paraphrase cannot be argued with, so the quote has to be findable.
+    const said = wordsOf.get(id) ?? []
+    if (!said.some((text) => text.includes(quote as string))) {
+      fail(
+        'hard rules',
+        `future ${id}`,
+        `is claimed warm on the strength of ${JSON.stringify(quote)}, which it does not say. `
+        + 'Quote it verbatim from the object\'s name, examine text, second look or a fragment it '
+        + 'triggers, or move the claim to an argument and say plainly that the object\'s own words '
+        + 'do not carry it.',
+      )
     }
   }
 

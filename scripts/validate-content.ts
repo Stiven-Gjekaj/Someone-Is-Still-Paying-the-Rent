@@ -1636,6 +1636,17 @@ if (Array.isArray(scenes)) {
   }
 }
 
+// The goal line. Found by the v0.6 read: this text goes straight to the screen
+// in `src/ui/goal.ts` and into the live region a screen reader speaks, and until
+// now it was the one source of player-facing prose no lexicon had ever seen. The
+// six strings there today are clean. The seventh was the risk.
+if (Array.isArray(goals)) {
+  for (const goal of goals) {
+    if (!isRecord(goal)) continue
+    collect(`goal ${String(goal['id'])} text`, goal['text'])
+  }
+}
+
 if (isRecord(advisory)) {
   collect('advisory lead_in', advisory['lead_in'])
   const lines = advisory['lines']

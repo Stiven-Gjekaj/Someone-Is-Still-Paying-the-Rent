@@ -14,17 +14,23 @@ judgment calls sit.
 | 1 | The method of death is never named, shown, implied, or hinted at | Validator, then a human |
 | 2 | The death did not happen in the flat | Validator, then a human |
 | 3 | There is no suicide note, and none may ever be added | Validator, then a human |
-| 4 | No single cause is ever given or implied | Human only |
-| 5 | Struggles are always interleaved with plans, humor, and care | Human only |
+| 4 | No single cause is ever given or implied | Explicit forms only, then a human |
+| 5 | Struggles are always interleaved with plans, humor, and care | Adjacency only, then a human |
 | 6 | The bathroom contains no medication objects | Validator |
 | 7 | The word "suicide" appears on the advisory screen only | Validator |
-| 8 | The game never answers whether the player could have prevented it | Human only |
+| 8 | The game never answers whether the player could have prevented it | Explicit forms only, then a human |
 | 9 | The advisory and support resources exist and are reachable | Validator |
 | 10 | Nothing on the balcony carries dark connotation | Validator, then a human |
 
-"Validator" means `npm run validate` fails the build. "Human only" means nothing mechanical can
-catch a violation, so it has to be caught in review. Four of the ten are human only, and they are
-the four that matter most, so do not read a passing validator as a passing content review.
+"Validator" means `npm run validate` fails the build. "Then a human" means the check catches a
+shape or a vocabulary and cannot catch the thing that actually goes wrong, so it has to be caught in
+review. **Do not read a passing validator as a passing content review.** Rules 4, 5 and 8 gained
+partial checks in v0.6, described below, and the partial is the dangerous part: a check that fires
+on some violations makes silence feel like a verdict.
+
+The v0.6 read is written up in [`CONTENT_REVIEW.md`](CONTENT_REVIEW.md), with a recorded verdict per
+string in `scripts/content-review.ts`. That read is itself preparation for a human read rather than
+a substitute for one, and it says so on its first line. It leaves four open calls.
 
 ### What the validator actually does
 
@@ -54,6 +60,55 @@ shot. See `src/world/exterior.ts`, which explains at length why the height betwe
 the balcony is not legible in it, and read the shot by eye against the rule rather than trusting
 that the strings passed.
 
+### What v0.6 added, and what it still cannot see
+
+Three checks, each covering a slice of a human-only rule. Read the limits as carefully as the
+coverage.
+
+**The cause and verdict lexicon** (rules 4 and 8). Both rules are about causation and
+counterfactuals, and both have stock phrasings: "because", "the reason", "if he had", "would have",
+"should have", "too late", "the signs", "saw it coming". `CAUSE_AND_VERDICT` scans for them.
+
+A hit is not a failure. It is a string somebody has to have read, and the `REVIEWED` allowlist is
+where that reading is recorded, one entry per string with the reason it is allowed and the text as
+it was read. Changing an allowlisted string fails the build, because the permission was granted to
+particular words.
+
+*What it cannot see:* implication, which is the actual risk. Every string in the corpus that
+argues under rules 4 or 8 in the v0.6 read passed this lexicon clean. Not one of the fifteen argued
+rows was found by it.
+
+**The Hard Rule 5 adjacency check.** "Every middle layer discovery sits near evidence of a future he
+was still building" is a claim about what is next to what, and the data knows that.
+`A_FUTURE_HE_WAS_BUILDING` names 21 objects that count as evidence of a future, each with the phrase
+that earns it, and every object from act 2 down that is not on the list must have one of them in its
+room or its reveal group.
+
+The default is suspicion on purpose. A list of struggles instead would pass silently the day
+somebody adds an object and forgets to classify it. Adding to the warm list is a content judgement,
+not a way to quiet the check, which is why the phrase is required: so the judgement can be argued
+with.
+
+*What it cannot see:* whether the warm object actually reads as warm in play, or whether being in
+the same room is near enough. A monstera two metres away and a monstera behind a wardrobe door are
+the same fact to this check.
+
+*What it found:* one gap, `appt_card`, recorded as `OPEN_TO_A_HUMAN` and printed on every run.
+
+**The completeness and drift check.** `scripts/content-review.ts` holds one entry per player-facing
+string. A string with no entry fails, an entry for a string that no longer exists fails, and **an
+entry whose recorded text has drifted from the data fails**.
+
+The third is the one that keeps the review alive. A verdict is about particular words, so a changed
+string turns its verdict into a leftover, and a leftover verdict is worse than none because it looks
+like somebody checked.
+
+*What it cannot see:* whether any verdict was ever any good.
+
+**Editing a string, in practice.** The build will stop you and tell you which entry to update. When
+it does, re-read the string against all six passes rather than only the one that prompted the edit.
+Changing a line to satisfy rule 4 is exactly how a rule 8 problem gets introduced.
+
 ## The ambiguity ledger
 
 Seven questions the game must never answer. Each is listed with the content that touches it, so
@@ -62,12 +117,17 @@ that a change to any of these objects gets checked against the question it is ne
 | # | Question | Content that touches it |
 |---|---|---|
 | 1 | What the unsent draft was going to say | `phone_dead`, `desk` |
-| 2 | When Mira's letter was written, and why they ended | `mira_draft`, `mug_blue`, `hoodie_mira`, `photobooth_strip`, `underbed_box` |
+| 2 | When Mira's letter was written, and why they ended | `mira_draft`, `mug_blue`, `hoodie_mira`, `photobooth_strip`, `underbed_box`, `concert_tickets` |
 | 3 | Who the second concert ticket was for | `concert_tickets` |
 | 4 | Whether the 4 a.m. entries were his worst nights or ordinary insomnia | `notebook_4am`, `corkboard`, `alarm_clock` |
 | 5 | Why he never called the referral number | `referral_letter`, `appt_card`, `zlatan_plant` |
 | 6 | Whether anyone could have changed anything | `pc_bag`, `phone_dead`, `boots_muddy`, `team_photo`, and every second-look string |
 | 7 | "Why" | The whole flat |
+
+`concert_tickets` was added to question 2 by the v0.6 read. Its second look says "the date is after
+they ended", which bounds the ending from a direction none of the under-bed objects do, and the
+draft names October. Between them a player can narrow when it happened further than either object
+suggests on its own. Neither answers the question, but a change to either now moves the other.
 
 The failure mode to watch for is not a sentence that answers one of these outright. It is a
 sentence that makes an answer feel available. Second-look text is the most dangerous surface in
@@ -76,6 +136,12 @@ from explaining.
 
 **The second-look rule:** reframe, never confirm. Grief sees patterns. The game refuses to verify
 them.
+
+The v0.6 read expected to find problems here and did not. Of the 13 second looks, only three touch
+the middle layer at all, and two of those three open a question rather than closing one: "Now you
+wonder which side of sleep this was on", and "You will never get to ask who the second one was for".
+The reframing surface currently reframes toward uncertainty. That is a fact about the strings as
+written, not a property of the mechanism, and the mechanism is still the one to watch.
 
 ## Writing style
 

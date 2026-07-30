@@ -45,7 +45,7 @@ The plan for this pass asked for a visible row per string here. That was the wro
 deviation is written down rather than made quietly.
 
 A table of 262 rows reading "pass" is the rubber stamp the pass exists to prevent. It makes the
-review look thorough while burying the fifteen rows that matter, and nobody scrolls it. So the rows
+review look thorough while burying the seventeen rows that matter, and nobody scrolls it. So the rows
 live in `scripts/content-review.ts`, where `npm run validate` enforces three things the table could
 only claim:
 
@@ -100,8 +100,10 @@ and 170 (65%) are neither.
 
 That is a claim about adjacency, and the data knows what is next to what, so this pass became a
 check rather than a reading. `A_FUTURE_HE_WAS_BUILDING` in the validator names 21 objects that count
-as evidence of a future, each with the phrase that earns it. Every object from act 2 down that is
-not on that list must have one of them in its room or its reveal group.
+as evidence of a future, each showing its working: eighteen quote the object's own words verbatim,
+and the three that cannot are balcony objects, warm by Hard Rule 10 rather than by any sentence.
+Every object from act 2 down that is not on that list must have one of them in its room or its
+reveal group.
 
 The default is suspicion on purpose. A list of struggles instead would pass silently the day
 somebody adds an object and forgets to classify it, and silence is what this rule cannot afford.
@@ -420,6 +422,18 @@ louder." Recorded as the load-bearing string for "not a saint", so that anybody 
 goalkeeping fragment knows what else goes with it. The corpus has exactly one line that says plainly
 he was bad at something he loved, and this is it. Everything else in the not-a-saint column is a
 failure of admin or nerve rather than of ability.
+
+**`scene desk_scene block 3 text`** | "Most people don't leave one. You knew that. You looked
+anyway." Where the corpus does the "not a mystery to be solved" work out loud. The game states
+plainly that there is nothing to find and that the player knew it before they started looking, which
+forecloses the search the desk scene would otherwise invite. Nothing else in the corpus says this,
+so a change here has nowhere to fall back to.
+
+**`scene voicemail block 3 text`** | "that's it, that's the whole message. bring cash. see you
+Wednesday." Where "his laugh, not his diagnosis" lands structurally rather than only by word count:
+the last the player hears of him, in his own voice, making a plan for Wednesday. Anything that
+displaces the voicemail from that position weakens the guardrail no matter how much warm material is
+elsewhere in the flat.
 
 ### The cumulative read
 

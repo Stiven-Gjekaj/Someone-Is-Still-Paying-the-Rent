@@ -549,13 +549,35 @@ export const READ: Record<string, Verdict> = {
   "scene desk_scene block 0 text": { text: "(Drawers open in sequence. Papers lift. The sounds get faster.)" },
   "scene desk_scene block 1 text": { text: "invoices... warranty... sketches... nothing... nothing..." },
   "scene desk_scene block 2 text": { text: "(The sounds stop. Long silence on the last empty drawer.)" },
-  "scene desk_scene block 3 text": { text: "Most people don't leave one. You knew that. You looked anyway." },
+  "scene desk_scene block 3 text": {
+    text: "Most people don't leave one. You knew that. You looked anyway.",
+    notes: {
+      section10:
+        'Recorded as a pass rather than an argument, because it is where the corpus does '
+        + 'the "not a mystery to be solved" work out loud. The game states plainly that '
+        + 'there is nothing to find and that the player knew it before they started '
+        + 'looking, which forecloses the search the whole desk scene would otherwise '
+        + 'invite. Nothing else in the corpus says this, so a change here has nowhere to '
+        + 'fall back to.',
+    },
+  },
   "scene desk_scene block 4 text": { text: "(Nothing else. No music sting. The rain continues.)" },
   "scene voicemail block 0 text": { text: "(street noise, wind)" },
   "scene voicemail block 1 text": { text: "okay so, update... Beni says if we win tonight he's naming the sauce after us..." },
   "scene voicemail block 1 sender": { text: "Niko" },
   "scene voicemail block 2 text": { text: "(laughing, losing it)" },
-  "scene voicemail block 3 text": { text: "that's it, that's the whole message. bring cash. see you Wednesday." },
+  "scene voicemail block 3 text": {
+    text: "that's it, that's the whole message. bring cash. see you Wednesday.",
+    notes: {
+      section10:
+        'Recorded as a pass rather than an argument. Section 10 asks that the player '
+        + 'leave knowing his laugh rather than his diagnosis, and this is where that lands '
+        + 'structurally rather than only by word count: it is the last the player hears of '
+        + 'him, it is in his own voice, and he is making a plan for Wednesday. Anything '
+        + 'that displaces the voicemail from that position weakens the guardrail no matter '
+        + 'how much warm material is elsewhere in the flat.',
+    },
+  },
   "scene voicemail block 4 text": { text: "(click)" },
   "scene final_card block 0 text": { text: "If you're carrying something like this, you don't have to sort it alone." },
   "goal pack_the_flat text": { text: "Pack what you can. The lease ends Sunday." },

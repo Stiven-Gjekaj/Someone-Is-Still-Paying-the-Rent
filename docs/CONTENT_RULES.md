@@ -75,19 +75,20 @@ it was read. Changing an allowlisted string fails the build, because the permiss
 particular words.
 
 *What it cannot see:* implication, which is the actual risk. Every string in the corpus that
-argues under rules 4 or 8 in the v0.6 read passed this lexicon clean. Not one of the fifteen argued
+argues under rules 4 or 8 in the v0.6 read passed this lexicon clean. Not one of the seventeen argued
 rows was found by it.
 
 **The Hard Rule 5 adjacency check.** "Every middle layer discovery sits near evidence of a future he
 was still building" is a claim about what is next to what, and the data knows that.
-`A_FUTURE_HE_WAS_BUILDING` names 21 objects that count as evidence of a future, each with the phrase
-that earns it, and every object from act 2 down that is not on the list must have one of them in its
-room or its reveal group.
+`A_FUTURE_HE_WAS_BUILDING` names 21 objects that count as evidence of a future, and every object
+from act 2 down that is not on the list must have one of them in its room or its reveal group.
 
 The default is suspicion on purpose. A list of struggles instead would pass silently the day
 somebody adds an object and forgets to classify it. Adding to the warm list is a content judgement,
-not a way to quiet the check, which is why the phrase is required: so the judgement can be argued
-with.
+not a way to quiet the check, so each entry has to show its working: either a `quote` from the
+object's own name, examine text, second look or a fragment it triggers, which is checked verbatim,
+or an `argument` for why it counts when its own words do not say so. Eighteen are quotes. The three
+arguments are all balcony objects, warm by Hard Rule 10 rather than by any sentence.
 
 *What it cannot see:* whether the warm object actually reads as warm in play, or whether being in
 the same room is near enough. A monstera two metres away and a monstera behind a wardrobe door are

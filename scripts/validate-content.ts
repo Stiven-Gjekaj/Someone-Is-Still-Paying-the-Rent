@@ -1738,6 +1738,108 @@ const LEXICONS: readonly Lexicon[] = [
   },
 ]
 
+/**
+ * Hard Rules 4 and 8, in the forms they can actually be written in.
+ *
+ * These two are marked human-only in `docs/CONTENT_RULES.md` and they stay that
+ * way: no lexicon catches implication, and implication is the whole risk. What a
+ * lexicon does catch is the explicit form. A cause gets stated with "because" or
+ * "the reason"; a verdict on preventability gets stated with "if I had", "should
+ * have", "saw it coming", "my fault". A sentence can break either rule without
+ * one of these words, but it cannot contain one of these words and be nobody's
+ * business.
+ *
+ * So unlike the lexicons above, a hit here is not a failure. It is a string that
+ * has to have been read by somebody, and `REVIEWED` below is where the reading
+ * is recorded. A hit with no entry fails; an entry whose string has since been
+ * edited also fails, because the reading was of the old words.
+ */
+const CAUSE_AND_VERDICT: readonly string[] = [
+  // Cause. Hard Rule 4: no single cause is ever given or implied.
+  'because', 'the reason', 'reason why', 'that is why', "that's why",
+  'caused', 'led to', 'brought on', 'drove him', 'down to',
+  // Verdict. Hard Rule 8: the game never answers whether it could have been
+  // prevented, in either direction.
+  'if he had', 'if I had', 'if you had', 'if only', 'if someone had',
+  'would have', 'could have', 'should have', 'what if',
+  'too late', 'the signs', 'warning signs', 'saw it coming', 'missed it',
+  'my fault', 'his fault', 'your fault', 'blame',
+  'gave up', 'give up', 'let him down', 'nothing anyone could',
+  // Intent. Section 7 says the documents talk around it, and talking around it
+  // is allowed, so these are here to be read rather than to be refused.
+  'on purpose', 'meant to',
+]
+
+/**
+ * Every string in the game that speaks in one of those forms, and why it is
+ * allowed to.
+ *
+ * The text is stored alongside the reason on purpose. Keying on the location
+ * alone would let somebody rewrite a line, keep the word, and inherit a reading
+ * that was done on different words. When the text moves, the entry stops
+ * matching and the check asks for the reading again.
+ */
+interface Reviewed {
+  text: string
+  reason: string
+}
+
+const REVIEWED: Record<string, Reviewed> = {
+  'object underbed_box examine': {
+    text: 'A shoebox pushed to the far side, against the wall, where you would have to be looking to find it.',
+    reason:
+      'A conditional about searching a room, not about a death. It does carry the fact that the '
+      + 'player is only looking tonight, which is the resonance section 4.5 is built on, but it '
+      + 'states no verdict about that and offers none.',
+  },
+  'fragment F-03 beat': {
+    text: 'The naming ceremony. He watered it with a wine glass because "Zlatan deserves stemware."',
+    reason:
+      'The same joke as the line below, in the one-line summary the bible gives each fragment. '
+      + 'Not shown to the player; the validator scans it anyway, and so does this.',
+  },
+  'fragment F-03 line 2': {
+    text: 'He watered it out of a wine glass that first night, because Zlatan deserves stemware.',
+    reason: 'A joke about a monstera. It is also Hard Rule 5 doing its job.',
+  },
+  'text lena_note block 1': {
+    text:
+      "Whatever you keep of his, keep it because it's him, not because it hurts to put it down. "
+      + 'He would hate that.',
+    reason:
+      'Causal, and about why the player should keep a thing rather than about why he died. '
+      + 'Verbatim from the bible, section 7.1.',
+  },
+  'text vera_letter block 0': {
+    text:
+      'My Niko. I am sending the proper recipe because whatever you are making from memory is '
+      + 'wrong, I can feel it from here. Double the lemon. Are you eating? Send a photo of the '
+      + 'plant, not the sky this time.',
+    reason: 'A grandmother being rude about his cooking. Verbatim from the bible, section 7.6.',
+  },
+  'text mira_draft block 1': {
+    text:
+      'I keep starting this and it turns into a list of things I should have said in October, so '
+      + 'here is the shortest version. None of it was your fault, and most of it was good. The '
+      + 'blue mug is yours whenever you want it.',
+    reason:
+      'The riskiest string in the game, and it is verbatim from the bible, section 7.4. Mira is '
+      + 'writing to Niko about the end of a relationship, before his death, and "none of it was '
+      + 'your fault" is her refusing to assign blame for the breakup. It is not addressed to the '
+      + 'player and it is not about the death. Read the other way it would be a Hard Rule 4 '
+      + 'violation, so it is worth saying plainly: the letter declines to give a reason, which is '
+      + 'the opposite of giving one.',
+  },
+  'text job_application block 0': {
+    text:
+      '...seven years across motion and illustration, most recently freelance. I work best on '
+      + 'small teams, and I am trying to work smaller and slower on purpose...',
+    reason:
+      'A cover letter describing how he wanted to work. Hard Rule 5 evidence: he was still '
+      + 'applying for things.',
+  },
+}
+
 function containsTerm(text: string, term: string): boolean {
   const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return new RegExp(`\\b${escaped}\\b`, 'i').test(text)
@@ -1750,6 +1852,53 @@ for (const lexicon of LEXICONS) {
       if (containsTerm(strand.text, term)) {
         fail('hard rules', strand.where, `${lexicon.rule}. Matched "${term}".`)
       }
+    }
+  }
+}
+
+// Hard Rules 4 and 8, which are human-only and stay that way. A hit is a string
+// that somebody has to have read, not a string that is wrong. See CAUSE_AND_VERDICT.
+{
+  const usedEntries = new Set<string>()
+
+  for (const strand of playerFacing) {
+    const matched = CAUSE_AND_VERDICT.filter((term) => containsTerm(strand.text, term))
+    if (matched.length === 0) continue
+
+    const entry = REVIEWED[strand.where]
+
+    if (entry === undefined) {
+      fail(
+        'hard rules',
+        strand.where,
+        `speaks of cause or of what could have been ("${matched.join('", "')}"), and Hard Rules 4 `
+        + 'and 8 say the game does neither. If it is allowed, say why in REVIEWED in '
+        + 'scripts/validate-content.ts and record it in docs/CONTENT_REVIEW.md.',
+      )
+      continue
+    }
+
+    usedEntries.add(strand.where)
+
+    if (entry.text !== strand.text) {
+      fail(
+        'hard rules',
+        strand.where,
+        'has been rewritten since it was read against Hard Rules 4 and 8. The reading was of the '
+        + 'old words. Read the new ones and update REVIEWED.',
+      )
+    }
+
+    if (entry.reason.trim().length === 0) {
+      fail('hard rules', strand.where, 'is allowed by REVIEWED with no reason given')
+    }
+  }
+
+  // An entry for a string that no longer says anything causal is an entry nobody
+  // will ever read again, and a stale allowance is how the next one slips past.
+  for (const where of Object.keys(REVIEWED)) {
+    if (!usedEntries.has(where)) {
+      fail('hard rules', where, 'is allowed by REVIEWED but no longer matches. Drop the entry.')
     }
   }
 }

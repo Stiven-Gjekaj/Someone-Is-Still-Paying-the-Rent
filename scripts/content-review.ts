@@ -586,6 +586,43 @@ export const READ: Record<string, Verdict> = {
   "goal the_phone_is_on text": { text: "It is on." },
   "goal the_desk text": { text: "The desk. You have been leaving it until later all night." },
   "goal nothing_left_to_find text": { text: "There is nothing else to look for. Finish up." },
+  "orientation nothing_in_reach": {
+    text: "Nothing within reach.",
+    notes: {
+      section10:
+        'The first content added since the v0.6 read, and the whole set is here '
+        + 'because the read\'s completeness check refused it until it was. Recorded '
+        + 'as read with nothing to argue: these are directions, not narration. '
+        + 'They describe the room the player is standing in rather than the man who '
+        + 'lived in it, and none of them says anything about Niko at all, which is '
+        + 'the property that keeps an accessibility affordance out of the way of '
+        + 'section 10.',
+    },
+  },
+  "orientation in_reach_lead": { text: "Within reach:" },
+  "orientation toward": {
+    text: "{name}, {bearing}, {metres} metres.",
+    notes: {
+      cumulative:
+        'The one string in the game that tells a player where to go, so it is the '
+        + 'one closest to the objective marker section 8.2 rules out. What keeps it '
+        + 'on the right side: it points only at the thing the goal line has already '
+        + 'named out loud, it is spoken on request rather than shown, and it never '
+        + 'names anything the player has not been told about. It converts a sentence '
+        + 'the game has already said into one a player who cannot see can act on. '
+        + 'Widening it to more than one thing, or choosing that thing by importance '
+        + 'rather than by what the goal says, would make it the other thing.',
+    },
+  },
+  "orientation one_metre": { text: "{name}, {bearing}, one metre." },
+  "orientation bearings ahead": { text: "ahead of you" },
+  "orientation bearings ahead_left": { text: "ahead and to your left" },
+  "orientation bearings left": { text: "to your left" },
+  "orientation bearings behind_left": { text: "behind you and to your left" },
+  "orientation bearings behind": { text: "behind you" },
+  "orientation bearings behind_right": { text: "behind you and to your right" },
+  "orientation bearings right": { text: "to your right" },
+  "orientation bearings ahead_right": { text: "ahead and to your right" },
   "advisory lead_in": { text: "If you or someone you love is struggling, support is real and reachable:" },
   "advisory line 0": { text: "This game is about losing a friend to suicide. It contains grief and depictions of depression. It does not depict the act, the method, or the death itself." },
   "advisory line 1": { text: "Play gently. You can pause any time. The flat will wait." },

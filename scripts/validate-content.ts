@@ -89,6 +89,7 @@ const texts = loadJson('data/texts.json') as Record<string, unknown>[]
 const roomData = loadJson('data/rooms.json') as Record<string, unknown>
 const sceneData = loadJson('data/scenes.json') as Record<string, unknown>
 const resources = loadJson('data/resources.json') as Record<string, unknown>
+const orientation = loadJson('data/orientation.json') as Record<string, unknown>
 const floorPlan = loadJson('data/floorplan.json') as Record<string, unknown>
 
 const objectIds = new Set(objects.map((o) => String(o['id'])))
@@ -1650,6 +1651,27 @@ if (Array.isArray(goals)) {
   for (const goal of goals) {
     if (!isRecord(goal)) continue
     collect(`goal ${String(goal['id'])} text`, goal['text'])
+  }
+}
+
+// Everything the orientation key can say. Spoken to a screen reader rather than
+// drawn, which makes it the easiest kind of string to forget is player-facing,
+// so it is collected here for the same reason the goal line is: `src/` is not
+// scanned, and a string only lives in `data/` so that this can see it.
+//
+// `note` is skipped by name. It is the one field in that file written for
+// whoever opens it rather than for a player.
+{
+  for (const [key, value] of Object.entries(orientation)) {
+    if (key === 'note') continue
+    if (typeof value === 'string') {
+      collect(`orientation ${key}`, value)
+      continue
+    }
+    if (!isRecord(value)) continue
+    for (const [inner, phrase] of Object.entries(value)) {
+      collect(`orientation ${key} ${inner}`, phrase)
+    }
   }
 }
 

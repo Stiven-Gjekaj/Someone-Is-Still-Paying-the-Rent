@@ -1,0 +1,17 @@
+{
+  "note": "Everything the orientation key can say. In data rather than in code because it is player-facing, and player-facing strings live where the validator and the v0.6 content review can read them. See docs/VERIFICATION.md and scripts/content-review.ts.",
+  "nothing_in_reach": "Nothing within reach.",
+  "in_reach_lead": "Within reach:",
+  "toward": "{name}, {bearing}, {metres} metres.",
+  "one_metre": "{name}, {bearing}, one metre.",
+  "bearings": {
+    "ahead": "ahead of you",
+    "ahead_left": "ahead and to your left",
+    "left": "to your left",
+    "behind_left": "behind you and to your left",
+    "behind": "behind you",
+    "behind_right": "behind you and to your right",
+    "right": "to your right",
+    "ahead_right": "ahead and to your right"
+  }
+}

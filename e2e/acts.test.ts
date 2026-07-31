@@ -15,7 +15,7 @@
  * cheat: the flat it produces is the flat act 3 actually begins in.
  *
  * The one check that proves the whole road is `e2e/full/playthrough.test.ts`,
- * and it takes twenty minutes, which is why it does not run on a push.
+ * and it takes about eight minutes, which is why it does not run on a push.
  *
  * ## Winding the clock instead of waiting on it
  *

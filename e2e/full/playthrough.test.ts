@@ -8,7 +8,7 @@
  * used to aim a camera that cannot take a pointer lock headless, and it does not
  * write a single flag. Every flag in this run is set by the flat.
  *
- * It costs about twenty minutes, most of it the act 2 charge, which is four real
+ * It costs about eight minutes, half of it the act 2 charge, which is four real
  * minutes by design because section 4.5 says the waiting is the point. That is
  * why it runs on a schedule and on demand rather than on every push, and why
  * `docs/VERIFICATION.md` says plainly that a green fast suite is not evidence
@@ -66,8 +66,21 @@ async function walkTheFlat(game: Driver, act: number): Promise<string[]> {
       // skipping it is how a run walks the whole flat and never opens the
       // drawer. Reported rather than thrown, because one awkward angle should
       // not end a twenty-minute run.
-      if (!await game.aimAt(object.id, room)) {
-        missed.push(`${object.id} (${room})`)
+      // The declared room first, then everywhere else. `room` says where the
+      // player is standing when they meet a thing, and for a couple of objects
+      // that is not where the thing is: the bible puts the invoice folder on the
+      // wardrobe top shelf in the bedroom and indexes it under the living room,
+      // because the living room is where it gets sorted. Trusting the field over
+      // the flat reported a perfectly reachable object as unreachable.
+      let aimed = await game.aimAt(object.id, room)
+      for (const elsewhere of rooms) {
+        if (aimed) break
+        if (elsewhere === room) continue
+        aimed = await game.aimAt(object.id, elsewhere)
+      }
+
+      if (!aimed) {
+        missed.push(`${object.id} (declared in the ${room})`)
         continue
       }
 

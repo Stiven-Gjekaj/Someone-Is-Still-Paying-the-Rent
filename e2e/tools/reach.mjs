@@ -90,12 +90,18 @@ const found = await page.evaluate(({ id, spots }) => {
     seen.push({ spot: spot?.map((n) => Number(n.toFixed(2))) ?? null, hits })
   }
 
-  return {
-    inTheFlat: dev.placed.byObject.has(id),
-    at: placed === undefined ? null : [placed.position.x, placed.position.y, placed.position.z]
-      .map((n) => Number(n.toFixed(2))),
-    seen,
+  // World, not local. A prop parented into a surface group carries an offset
+  // from that surface rather than a position in the flat, and reading `position`
+  // straight off it reports coordinates in a room the object is not in. That
+  // very nearly got a correctly placed folder reported as misplaced.
+  let at = null
+  if (placed !== undefined) {
+    const world = new (Object.getPrototypeOf(placed.position).constructor)()
+    placed.getWorldPosition(world)
+    at = [world.x, world.y, world.z].map((n) => Number(n.toFixed(2)))
   }
+
+  return { inTheFlat: dev.placed.byObject.has(id), at, seen }
 }, { id, spots })
 
 const reachable = found.seen.filter((s) => s.hits > 0).length

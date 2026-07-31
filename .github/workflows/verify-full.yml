@@ -1,6 +1,6 @@
 # The whole game, from the front door, with nothing set by hand.
 #
-# Separate from `validate` because it costs about twenty minutes, four of which
+# Separate from `validate` because it costs about eight minutes, four of which
 # are the act 2 charge being waited out at its real length. Section 4.5 says the
 # waiting is the point, and it is still the point when a machine is doing it.
 #

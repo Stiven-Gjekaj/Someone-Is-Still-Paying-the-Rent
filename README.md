@@ -205,7 +205,7 @@ npm install
 | `npm run validate` | Content validator: schema, references, hard rules, writing style |
 | `npm test` | Node's test runner over the pure logic. No dependencies |
 | `npm run verify` | Drives a real browser through the game. A few minutes |
-| `npm run verify:full` | The whole game from the front door, no shortcuts. About twenty minutes |
+| `npm run verify:full` | The whole game from the front door, no shortcuts. About eight minutes |
 
 `npm run validate` runs the validator directly through Node, with no loader and no
 dependencies. Node 24 strips TypeScript types natively, which is why every type annotation in

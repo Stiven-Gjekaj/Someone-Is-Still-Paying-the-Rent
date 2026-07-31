@@ -22,7 +22,7 @@ scripts that lived in a temporary directory and died with it. This suite is thos
 ```
 npm test              pure logic, sub-second
 npm run verify        the browser suite, a few minutes
-npm run verify:full   the whole game from the front door, about twenty minutes
+npm run verify:full   the whole game from the front door, about eight minutes
 ```
 
 `npm run verify` builds the game, serves it, and drives it. There is nothing to set up: the browser

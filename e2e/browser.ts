@@ -31,8 +31,22 @@ import { join } from 'node:path'
 
 import { chromium, type Browser, type Page } from 'playwright-core'
 
-/** The viewport every check runs at, so a failure is reproducible. */
-export const VIEWPORT = { width: 960, height: 600 }
+/**
+ * The viewport every check runs at, so a failure is reproducible.
+ *
+ * Small on purpose, and it is the single biggest thing keeping this suite inside
+ * its time budget. Software rasterisation costs per pixel, and every
+ * `page.evaluate` queues behind a frame: at 960x600 one round trip takes about
+ * 533ms, at 480x300 about 166ms, and here about 97ms. A single sort is roughly
+ * seventeen round trips, so the whole suite moves by that factor.
+ *
+ * 1.6 is the same aspect ratio as 960x600, so the camera frames exactly what it
+ * frames at any other size and nothing about aiming changes. This is only
+ * affordable because the suite makes no claims about pixels: there are no golden
+ * images, deliberately, since two software rasterisers do not agree pixel for
+ * pixel and a suite that fails on a driver update teaches people to ignore it.
+ */
+export const VIEWPORT = { width: 320, height: 200 }
 
 function isExecutable(path: string): boolean {
   try {

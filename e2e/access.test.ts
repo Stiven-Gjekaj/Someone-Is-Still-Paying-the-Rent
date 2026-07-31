@@ -371,6 +371,51 @@ describe('without a pointer', () => {
     await game.close()
   })
 
+  it('carries the text size to the advisory, which is the screen it matters most on', async () => {
+    // Set once, kept, and applied before anything is drawn. v0.8.2 put the
+    // custom property in `applySettings`, which only runs when a session starts,
+    // so the setting reached every screen except the two a player meets first.
+    // The check above passed the whole time, because by the time it measures a
+    // font size it is already inside a session.
+    const game = await open(browser, at(base(), { room: 'entry_hall' }))
+    const mouse = watchTheMouse(game.page)
+
+    const rootSize = async (): Promise<number> => game.page.evaluate(() =>
+      parseFloat(getComputedStyle(document.documentElement).fontSize))
+
+    const plain = await rootSize()
+    assert.ok(plain > 0, `the advisory is rendering, got ${plain}`)
+
+    await game.page.evaluate(() => {
+      const raw = window.localStorage.getItem('sispr.settings')
+      const stored = raw === null ? {} : JSON.parse(raw) as Record<string, unknown>
+      window.localStorage.setItem('sispr.settings', JSON.stringify({ ...stored, textScale: 2 }))
+    })
+    await game.page.reload({ waitUntil: 'networkidle' })
+
+    // The advisory, before a single key is pressed. Section 11 puts this screen
+    // first and it is the one screen somebody might genuinely need enlarged.
+    await game.until(
+      'document.body.textContent.includes("Content advisory")',
+      'the advisory to come back',
+    )
+    const advisory = await rootSize()
+    assert.ok(advisory > plain, `the advisory is scaled: was ${plain}, now ${advisory}`)
+
+    // And still there on the title, which is the other screen drawn before any
+    // session exists.
+    assert.ok(await game.press('Continue'), 'Continue is reachable by keyboard')
+    await game.until(
+      'document.body.textContent.includes("The lease ends Sunday")',
+      'the title screen',
+    )
+    assert.equal(await rootSize(), advisory, 'and the title screen has it too')
+
+    assert.equal(mouse(), 0, 'the mouse was never touched')
+    assert.deepEqual(game.errors, [])
+    await game.close()
+  })
+
   it('says which room you are in, when asked and not before', async () => {
     const game = await open(browser, at(base(), { room: 'entry_hall' }))
     const mouse = watchTheMouse(game.page)

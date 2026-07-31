@@ -39,7 +39,15 @@ export interface Orientation {
 
 export function createOrientation(mount: HTMLElement): Orientation {
   const region = document.createElement('div')
-  region.className = 'beat-announcer'
+
+  // Two classes doing two jobs. `beat-announcer` carries the visually hidden
+  // styling, which is the whole reason to reuse it. `orientation-announcer` says
+  // which of the several announcers on the page this one is: the beats each
+  // build their own, so anything selecting `.beat-announcer` gets whichever one
+  // happens to be first in the document. The volume check in
+  // `e2e/access.test.ts` once took the first slider on the page for the same
+  // reason and read a working control as broken.
+  region.className = 'beat-announcer orientation-announcer'
   region.setAttribute('aria-live', 'polite')
   mount.append(region)
 

@@ -204,6 +204,8 @@ npm install
 | `npm run typecheck` | `tsc --noEmit` in strict mode |
 | `npm run validate` | Content validator: schema, references, hard rules, writing style |
 | `npm test` | Node's test runner over the pure logic. No dependencies |
+| `npm run verify` | Drives a real browser through the game. A few minutes |
+| `npm run verify:full` | The whole game from the front door, no shortcuts. About twenty minutes |
 
 `npm run validate` runs the validator directly through Node, with no loader and no
 dependencies. Node 24 strips TypeScript types natively, which is why every type annotation in
@@ -211,6 +213,12 @@ this repository has to be erasable: union types and `const` objects instead of `
 `namespace`, no constructor parameter properties. The `erasableSyntaxOnly` compiler flag
 enforces this at typecheck time, so a change that would break the validator fails the build
 first.
+
+`npm run verify` builds the game, serves it, and plays it. See
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md) for what it checks, what it deliberately does not,
+and how to add a check. The short version of the caveat: **most of its checks jump into an act with
+a dev parameter, so a green run is not evidence that the game reaches act 2 or act 3.** Only
+`verify:full` proves that, and it runs on a schedule rather than on every push.
 
 ## Dev parameters
 
@@ -231,6 +239,11 @@ inspecting the flat should not have to sit through the front door.
 They exist so the flat can be screenshotted in a headless browser without pointer lock, and they
 are how the verification pass checks that each room reads the way `data/rooms.json` says it
 should. `?room=bedroom&yaw=180&pitch=-28` looks at the bed.
+
+Any of them also attaches `__dev` to the canvas. That started as a console convenience and is now
+what `npm run verify` drives the game through, so it is load-bearing: `e2e/opening.test.ts` asserts
+its shape, and removing a field from it fails there by name rather than as a dozen unrelated
+timeouts elsewhere.
 
 ## Saves
 

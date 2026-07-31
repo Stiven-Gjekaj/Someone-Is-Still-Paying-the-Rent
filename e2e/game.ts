@@ -163,6 +163,8 @@ export interface DevHandle {
   overlay: { close(): void, isOpen(): boolean }
   memories: { isPlaying(): boolean, skip(): void }
   interact(): void
+  /** How many frames the session has drawn. See `drawn()` below. */
+  frames(): number
   [key: string]: unknown
 }
 
@@ -390,6 +392,28 @@ export async function open(browser: Browser, url: string): Promise<Driver> {
         throw new Error(`cannot pack ${id}: the player is already carrying something`)
       }
 
+      /**
+       * Waits for one more frame than has been drawn so far.
+       *
+       * `aimAt` moves the camera and fires the ray itself, so it returns before
+       * the render loop has run, and the render loop is what writes the prompt.
+       * Reading the prompt straight after aiming reads the frame before the aim,
+       * which on a software rasteriser managing two frames a second is half a
+       * second stale. That is how this failed in CI: `pack` saw "Examine" where
+       * "Take" was due, on `library_books` one run and `blanket_sofa` another,
+       * and never once on the machine it was written on.
+       *
+       * A frame count rather than a sleep, because the whole suite waits on
+       * state and there is no reason for this to be the exception.
+       */
+      const drawn = async (): Promise<void> => {
+        const before = await driver.dev((dev) => dev.frames())
+        await driver.until(
+          `document.querySelector("canvas").__dev.frames() > ${before}`,
+          'the next frame to be drawn',
+        )
+      }
+
       // Aim before acting, and read the verb rather than assuming it. Section
       // 4.2 offers Examine before Take on anything not looked at yet, so packing
       // something new is two interactions and packing something already examined
@@ -397,12 +421,14 @@ export async function open(browser: Browser, url: string): Promise<Driver> {
       // already walked past gets picked up by the first press and put straight
       // back down by the second.
       if (!await driver.aimAt(id, room)) return false
+      await drawn()
       let ready = await driver.state()
 
       if (!ready.prompt.startsWith('Take')) {
         await driver.dev((dev) => { dev.interact() })
         await driver.settle()
         if (!await driver.aimAt(id, room)) return false
+        await drawn()
         ready = await driver.state()
       }
 

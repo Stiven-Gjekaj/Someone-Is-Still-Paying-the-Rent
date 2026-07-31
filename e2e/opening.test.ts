@@ -91,7 +91,7 @@ describe('the front door', () => {
 
     // Named one at a time rather than as a set, so a failure says which.
     for (const field of [
-      'acts', 'camera', 'carry', 'charge', 'ending', 'interact',
+      'acts', 'camera', 'carry', 'charge', 'ending', 'frames', 'interact',
       'memories', 'overlay', 'placed', 'state', 'targeting',
     ]) {
       assert.ok(

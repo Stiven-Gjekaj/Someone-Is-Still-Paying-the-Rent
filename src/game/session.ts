@@ -683,9 +683,26 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     else player.lock()
   }
 
+  /**
+   * How many frames this session has drawn. Dev only, and only for the suite.
+   *
+   * Everything else `__dev` exposes is a thing the game already had. This is
+   * not: it exists because the HUD is written by the render loop, while the
+   * suite aims the camera by hand and fires the ray itself, so `aimAt` returns
+   * before any frame has reflected it. Reading the prompt at that moment reads
+   * the previous frame, and at two frames a second on a software rasteriser the
+   * previous frame is half a second old. That is how CI failed: `pack` saw
+   * "Examine" where "Take" was due, on a different object each run.
+   *
+   * A counter is the honest signal. "One more frame than before I moved the
+   * camera" is a state the suite can wait on, rather than a duration it would
+   * have to guess.
+   */
+  let frames = 0
+
   if (config.dev === true) {
     Object.assign(engine.renderer.domElement, {
-      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, ending, endingPlayer, placed, props, weather, lighting, opening, desk, interact, revealPending, cycle },
+      __dev: { camera: engine.camera, state, targeting, carry, overlay, memories, audio, acts, charge, ending, endingPlayer, placed, props, weather, lighting, opening, desk, interact, revealPending, cycle, frames: (): number => frames },
     })
   }
 
@@ -709,6 +726,10 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
   }
 
   engine.start((delta) => {
+    // First, before the early return below, so a frame that found nothing under
+    // the crosshair still counts. It set the prompt to nothing, which is news.
+    frames += 1
+
     // Whether the flat is the player's, not whether the browser happens to be
     // holding the pointer. Gating this on the lock was the other half of the
     // game being unplayable without a mouse: somebody who never clicks to lock

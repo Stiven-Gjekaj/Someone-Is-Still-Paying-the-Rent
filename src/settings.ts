@@ -90,6 +90,23 @@ export function loadSettings(): Settings {
   }
 }
 
+/**
+ * Puts the text size on the document, which is the only place it works.
+ *
+ * Separate from the session, and called before one exists, because the advisory
+ * and the title screen are drawn before anything starts a game. v0.8.2 set this
+ * inside `applySettings` and nowhere else, so a player who had turned the type
+ * up got it everywhere except on the two screens they meet first, one of which
+ * is the content advisory. The suite did not catch it: every check that reads a
+ * font size is already inside a session by the time it looks.
+ *
+ * On the root element rather than the mount, because `rem` resolves against the
+ * root and nothing else. See the `html` rule in src/styles.css.
+ */
+export function applyTextScale(scale: number): void {
+  document.documentElement.style.setProperty('--text-scale', String(scale))
+}
+
 export function saveSettings(settings: Settings): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))

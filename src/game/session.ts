@@ -48,7 +48,7 @@ import { createCharge } from './charge.ts'
 import { createEnding } from './ending.ts'
 import { createScreens } from './screens.ts'
 import { clearCheckpoint, writeCheckpoint } from './save.ts'
-import { loadSettings, saveSettings, type Settings } from '../settings.ts'
+import { applyTextScale, loadSettings, saveSettings, type Settings } from '../settings.ts'
 import type {
   ActNumber,
   FloorPlan,
@@ -304,9 +304,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     player.setSensitivity(next.sensitivity)
     engine.setFieldOfView(next.fieldOfView)
     audio.setVolume(next.volume)
-    // On the document root rather than on the mount, because `rem` resolves
-    // against the root and nothing else. See the html rule in src/styles.css.
-    document.documentElement.style.setProperty('--text-scale', String(next.textScale))
+    applyTextScale(next.textScale)
   }
 
   applySettings(settings)

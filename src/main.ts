@@ -14,6 +14,7 @@ import { createMenu } from './ui/menu.ts'
 import { content, getAdvisory, getFloorPlan } from './content/index.ts'
 import { startSession, type Session, type SessionConfig } from './game/session.ts'
 import { clearCheckpoint, readCheckpoint } from './game/save.ts'
+import { applyTextScale, loadSettings } from './settings.ts'
 import type { ActNumber, RoomId } from './content/types.ts'
 
 /** Everything the flat currently contains, for dropping stale saved ids. */
@@ -160,5 +161,10 @@ const app = document.getElementById('app')
 if (app === null) {
   throw new Error('#app is missing from index.html')
 }
+
+// Before the first screen rather than when a session starts, because the first
+// screen is the content advisory and it is the one the setting most matters on.
+// Everything else a session sets up needs a session; this needs a document.
+applyTextScale(loadSettings().textScale)
 
 showAdvisory(app)

@@ -11,6 +11,7 @@ import { getAdvisory } from '../content/index.ts'
 import {
   FIELD_OF_VIEW_RANGE,
   SENSITIVITY_RANGE,
+  TEXT_SCALE_RANGE,
   VOLUME_RANGE,
   type Settings,
 } from '../settings.ts'
@@ -163,6 +164,15 @@ export function createMenu(mount: HTMLElement): Menu {
       nodes.push(
         slider('Field of view', current.fieldOfView, FIELD_OF_VIEW_RANGE, (v) => `${Math.round(v)}`, (v) => {
           current.fieldOfView = v
+        }),
+      )
+      // Read as a percentage rather than a multiplier, because "125" is a thing
+      // people have seen on an operating system's display settings and "1.25" is
+      // not. The menu itself grows as this moves, which is the point: the setting
+      // demonstrates itself while it is being chosen.
+      nodes.push(
+        slider('Text size', current.textScale, TEXT_SCALE_RANGE, (v) => `${Math.round(v * 100)}`, (v) => {
+          current.textScale = v
         }),
       )
 

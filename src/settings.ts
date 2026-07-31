@@ -23,12 +23,33 @@ export interface Settings {
    * control was the pause menu's mute, which is all or nothing.
    */
   volume: number
+  /**
+   * How large the words are, as a multiplier on whatever size the browser is
+   * already using.
+   *
+   * A multiplier rather than a size, so a player who has already turned their
+   * browser's default up keeps that and this compounds with it. Setting a size
+   * here would overrule a decision somebody had already made about their own
+   * eyes.
+   *
+   * Every piece of text in the game is affected, because `src/styles.css` puts
+   * this on the document root and everything else is in `rem`.
+   */
+  textScale: number
 }
 
 export const SENSITIVITY_RANGE = { min: 0.4, max: 2, step: 0.05 }
 export const FIELD_OF_VIEW_RANGE = { min: 55, max: 85, step: 1 }
 /** Down to nothing, because somebody may want the flat silent and still played. */
 export const VOLUME_RANGE = { min: 0, max: 1, step: 0.05 }
+/**
+ * Up to double, down to a little under.
+ *
+ * The top is where it is because the longest thing the game shows, the advisory,
+ * still fits a small laptop at twice the size. Below is bounded too: this is a
+ * comfort setting, and text small enough to be unreadable is not comfort.
+ */
+export const TEXT_SCALE_RANGE = { min: 0.85, max: 2, step: 0.05 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
@@ -36,7 +57,7 @@ function clamp(value: number, min: number, max: number): number {
 
 export function defaultSettings(): Settings {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  return { headBob: !reduced, sensitivity: 1, fieldOfView: 62, volume: 1 }
+  return { headBob: !reduced, sensitivity: 1, fieldOfView: 62, volume: 1, textScale: 1 }
 }
 
 export function loadSettings(): Settings {
@@ -58,6 +79,9 @@ export function loadSettings(): Settings {
       volume: typeof stored.volume === 'number' && Number.isFinite(stored.volume)
         ? clamp(stored.volume, VOLUME_RANGE.min, VOLUME_RANGE.max)
         : base.volume,
+      textScale: typeof stored.textScale === 'number' && Number.isFinite(stored.textScale)
+        ? clamp(stored.textScale, TEXT_SCALE_RANGE.min, TEXT_SCALE_RANGE.max)
+        : base.textScale,
     }
   } catch {
     // Private browsing, a full quota, or a corrupted value. Defaults are fine,

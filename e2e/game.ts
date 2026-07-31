@@ -124,6 +124,17 @@ export interface Driver {
   pack(id: string, room: string, box?: 1 | 2 | 3): Promise<boolean>
   /** Every flag the session is holding. */
   flags(): Promise<Record<string, unknown>>
+  /**
+   * Opens the pause menu, and says how many keys it took.
+   *
+   * Escape backs out one level at a time: from inside a memory or a document the
+   * first press ends that and the second pauses. So the count is the thing worth
+   * measuring rather than hiding, because Hard Rule 9's promise is that pausing
+   * is always available and the ending is built on it being two keys away at
+   * every point. A state that needed four would still "work" and would still be
+   * a broken promise.
+   */
+  pause(): Promise<number>
   /** Hard Rule 9. Opens the pause menu and reads the support panel. */
   resources(): Promise<string>
   /** Presses a labelled button by tabbing to it. Returns false if not found. */
@@ -407,15 +418,22 @@ export async function open(browser: Browser, url: string): Promise<Driver> {
       return driver.dev((dev) => JSON.parse(JSON.stringify(dev.state)) as Record<string, unknown>)
     },
 
-    async resources(): Promise<string> {
-      const before = await driver.state()
-      if (!before.menu) {
+    async pause(): Promise<number> {
+      const isOpen = async (): Promise<boolean> => (await driver.state()).menu
+
+      for (let presses = 0; presses <= 4; presses += 1) {
+        if (await isOpen()) return presses
         await page.keyboard.press('Escape')
-        await driver.until(
-          'document.querySelector(".menu")?.classList.contains("is-open") === true',
-          'the pause menu',
-        )
       }
+
+      throw new Error(
+        'the pause menu did not open after four presses of Escape. Hard Rule 9 says a '
+        + 'pause affordance is always available.',
+      )
+    },
+
+    async resources(): Promise<string> {
+      await driver.pause()
       if (!await driver.press('Support resources')) {
         throw new Error('the pause menu does not offer Support resources')
       }

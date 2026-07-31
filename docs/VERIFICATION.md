@@ -50,7 +50,7 @@ That includes layout, which is not the same claim as "the type got bigger". A su
 font size and a scroll width; it cannot see that a line has crept under the goal text or that a card
 now ends half a sentence early. `e2e/tools/read.mjs` photographs every screen with words on it at a
 given text size, and both ends of `TEXT_SCALE_RANGE` are read by eye before a text change ships. Two
-of the four bugs below were found that way and neither was expressible as an assertion until after
+of the bugs below were found that way and neither was expressible as an assertion until after
 somebody had seen it.
 
 **The suite runs at 320x200.** A software rasteriser charges by the pixel twice over, once to draw
@@ -139,7 +139,7 @@ scripts, is what makes a harness rot.
 
 ## What the suite found
 
-Four real bugs in the game, all invisible to unit tests, and seven checks of my own that did not
+Six real bugs in the game and its harness, all invisible to unit tests, and seven checks of my own that did not
 check what they said they did. The second number is the more useful one: it is what the discipline
 below actually costs and actually buys.
 
@@ -168,6 +168,46 @@ instruction saying so was below the fold for exactly the player who had turned t
 it, and there was nothing to indicate the note continued. The hint is now pinned to the bottom of the
 panel with the text fading out underneath it, so the way out is always visible and the fade says
 there is more. Also found by looking rather than by asserting.
+
+**`v0.8.23`: closing a document never put focus back.** The line that does it has never run to any
+effect. A document is opened from the flat, where nothing is focused, so the remembered element is
+`document.body`, and `body.focus()` is a defined no-op: body carries no tabindex, so it is not
+focusable. Focus left the panel anyway, because removing `is-open` puts `display: none` on it and a
+browser blurs what it hides. Real, and not synchronous: it lands with the next style recalculation.
+
+**`v0.8.24`: the harness read a prompt the renderer had not written yet.** `pack` aims, reads the
+prompt to see whether the verb is Take, and acts on it. The prompt is written by the render loop,
+and `aimAt` moves the camera and fires the ray itself, so it returns with no frame drawn and the
+prompt still describing wherever the crosshair used to be.
+
+Both of those are the same shape and both were found the same way, which is the useful part.
+
+## What only CI could find
+
+Neither of the two above reproduces on the machine they were written on. Both are races against the
+rendering pipeline, and this project's whole reason for having a browser suite is that a software
+rasteriser renders at about two frames a second, so a frame is half a second wide. Whether a given
+round trip contains a frame is a matter of load, and a GitHub runner is more loaded than a
+developer's machine.
+
+The symptoms looked like flakes and were not. In both cases the check was right and the game or the
+harness was wrong:
+
+- the focus check failed three pushes running, and passed eight times out of eight locally
+- `pack` failed naming a different object each run, `library_books` once and `blanket_sofa` the run
+  before, which is the signature of a race rather than a broken object
+
+The method that settled both was the same: stop guessing and make the browser answer. For the focus
+one, hide the overlay with `opacity` instead of `display` so the accidental blur goes away, then
+watch the check fail without the fix and pass with it. For the prompt one, move the camera and read
+the prompt inside a single synchronous block, where no frame can possibly have been drawn in
+between, and print what each of them says.
+
+**A timing bug that only appears under load is still a bug, and the fix is never a longer wait.**
+Both fixes here wait on a state instead: focus is moved deliberately rather than left to a style
+recalculation, and the harness waits for the frame counter to advance rather than for a duration it
+would have to guess. The counter is the first thing on the dev handle that the game did not already
+have, and it is there for exactly this reason.
 
 ## What is known and not fixed
 

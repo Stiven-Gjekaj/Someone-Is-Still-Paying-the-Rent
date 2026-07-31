@@ -42,8 +42,8 @@ const OBJECTS = JSON.parse(
  * are simply not there yet, which is the point of hiding them, so a lower number
  * early in the night is correct rather than a failure.
  */
-async function walkTheFlat(game: Driver, act: number): Promise<number> {
-  let looked = 0
+async function walkTheFlat(game: Driver, act: number): Promise<string[]> {
+  const missed: string[] = []
 
   for (const room of rooms) {
     const here = OBJECTS.filter((o) => o.room === room && (o.act_min ?? 1) <= act)
@@ -53,15 +53,23 @@ async function walkTheFlat(game: Driver, act: number): Promise<number> {
           || (dev['targeting'] as { candidates(): { id: string }[] }).candidates().some((c) => c.id === id),
         object.id,
       )
+      // Not there yet is not a failure: things hidden behind a discovery are
+      // supposed to be missing until it happens.
       if (!present) continue
 
-      if (!await game.lookAt(object.id, room)) continue
-      looked += 1
+      // Present and unaimable is worth knowing about, though, and silently
+      // skipping it is how a run walks the whole flat and never opens the
+      // drawer. Reported rather than thrown, because one awkward angle should
+      // not end a twenty-minute run.
+      if (!await game.lookAt(object.id, room)) {
+        missed.push(`${object.id} (${room})`)
+        continue
+      }
       await game.settle()
     }
   }
 
-  return looked
+  return missed
 }
 
 describe('the whole night', () => {
@@ -85,8 +93,8 @@ describe('the whole night', () => {
 
     // Act 1. Look at everything, then pack until the gate opens. Section 4.5
     // wants ten sorted and the phone found, and neither is written here.
-    await walkTheFlat(game, 1)
-    mark('looked at everything in act 1')
+    const missedInAct1 = await walkTheFlat(game, 1)
+    mark(`looked at act 1${missedInAct1.length === 0 ? '' : `, could not aim at ${missedInAct1.join(', ')}`}`)
 
     const sortable = OBJECTS.filter((o) => o.sortable === true && (o.act_min ?? 1) === 1)
     for (const object of sortable) {
@@ -110,8 +118,8 @@ describe('the whole night', () => {
     mark(`act 2, with ${await game.dev((dev) => dev.state['sorted_count'])} sorted`)
 
     // Act 2. The middle layer, then the charger, then the wait. Really waited.
-    await walkTheFlat(game, 2)
-    mark('walked the middle layer')
+    const missedInAct2 = await walkTheFlat(game, 2)
+    mark(`walked the middle layer${missedInAct2.length === 0 ? '' : `, could not aim at ${missedInAct2.join(', ')}`}`)
 
     assert.equal(
       await game.dev((dev) => dev.state['charger_found']),
@@ -119,12 +127,25 @@ describe('the whole night', () => {
       'the junk drawer gave up the charger during an ordinary walk of the flat',
     )
 
-    await game.lookAt('phone_dead', 'bedroom')
+    // The walk should already have plugged it in, since the kitchen comes before
+    // the bedroom and the drawer gives up the charger there. Doing it again is
+    // harmless and covers the case where the walk could not aim at it.
+    assert.ok(
+      await game.lookAt('phone_dead', 'bedroom'),
+      'the phone can be aimed at in act 2',
+    )
     await game.settle()
+
+    const clock = await game.dev((dev) => ({
+      charging: dev.state['phone_charging_started_at'],
+      charger: dev.state['charger_found'],
+      found: dev.state['phone_found'],
+      act: dev.state['act'],
+    }))
     assert.notEqual(
-      await game.dev((dev) => dev.state['phone_charging_started_at']),
+      clock.charging,
       null,
-      'the phone is charging',
+      `the phone is charging. State: ${JSON.stringify(clock)}`,
     )
     mark('phone plugged in, waiting out the four minutes')
 

@@ -243,4 +243,64 @@ describe('without a pointer', () => {
     assert.deepEqual(game.errors, [])
     await game.close()
   })
+
+  it('has a text size that reaches every word, and nothing clips at the largest', async () => {
+    const game = await open(browser, at(base(), { room: 'living_room' }))
+    const mouse = watchTheMouse(game.page)
+    await game.begin()
+
+    // Through the real control, and by label rather than by position: the volume
+    // check above once took the first slider, which is look sensitivity, and read
+    // a working control as broken.
+    await game.pause()
+    assert.ok(await game.press('Comfort'), 'Comfort is reachable by keyboard')
+    await game.until('document.querySelector(".option-slider") !== null', 'the comfort sliders')
+
+    const sizes = async (): Promise<Record<string, number>> => game.page.evaluate(() => {
+      const px = (selector: string): number => {
+        const node = document.querySelector(selector)
+        return node === null ? 0 : parseFloat(getComputedStyle(node).fontSize)
+      }
+      return { root: px('html'), body: px('body'), menu: px('.menu-panel') }
+    })
+
+    const before = await sizes()
+    assert.ok(before.root > 0 && before.body > 0, `something is rendering, got ${JSON.stringify(before)}`)
+
+    const moved = await game.page.evaluate(() => {
+      const slider = [...document.querySelectorAll('.option-slider')]
+        .find((node) => /text size/i.test(node.closest('label')?.textContent ?? '')) as HTMLInputElement | undefined
+      if (slider === undefined) return false
+      slider.value = slider.max
+      slider.dispatchEvent(new Event('input', { bubbles: true }))
+      return true
+    })
+    assert.ok(moved, 'Comfort offers a slider labelled Text size')
+
+    const after = await sizes()
+
+    // Every one of them, not just the root. The whole point of the rem sweep is
+    // that nothing is left behind at a fixed size, and `body` was exactly that
+    // until v0.8.1.
+    for (const [what, was] of Object.entries(before)) {
+      assert.ok(
+        (after[what] ?? 0) > was,
+        `${what} grew with the setting: was ${was}, now ${after[what]}`,
+      )
+    }
+
+    // The failure mode that matters for scaling. Text that grows out of its box
+    // is worse than text that never grew, because the player who needed it is
+    // the one who cannot read what is left.
+    assert.equal(
+      await game.page.evaluate(() =>
+        document.documentElement.scrollWidth > document.documentElement.clientWidth),
+      false,
+      'the page does not scroll sideways at the largest text size',
+    )
+
+    assert.equal(mouse(), 0, 'the mouse was never touched')
+    assert.deepEqual(game.errors, [])
+    await game.close()
+  })
 })

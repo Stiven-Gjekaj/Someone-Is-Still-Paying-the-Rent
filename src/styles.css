@@ -11,10 +11,26 @@
   --bulb: #d9b26f;
   --ground: #0e0f11;
   --rule: #24262a;
+
+  /* Comfort, and the only thing type size is allowed to come from. See below. */
+  --text-scale: 1;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/*
+ * Every type size in this file is in `rem`, which resolves against this and
+ * nothing else, so this rule is the whole of text scaling.
+ *
+ * A percentage rather than a pixel value on purpose. A player who has already
+ * raised their browser's default font size has made an accessibility decision,
+ * and `font-size: 20px` here would quietly overrule it. This multiplies it
+ * instead, so the two settings compose rather than fight.
+ */
+html {
+  font-size: calc(100% * var(--text-scale));
 }
 
 html,
@@ -27,7 +43,9 @@ body {
 
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-  font-size: 17px;
+  /* 17px against a 16px root, written as a ratio so it scales with the rest.
+     As a pixel value it was the one size in the file that did not. */
+  font-size: 1.0625rem;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }

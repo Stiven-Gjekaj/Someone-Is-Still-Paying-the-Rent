@@ -144,6 +144,7 @@ nothing answers.
 | Arrow keys, or the mouse | Look |
 | `Tab`, `Shift+Tab` | Step the crosshair round what is within reach |
 | `E`, or click | Examine, read, take, or sort whatever the crosshair is on |
+| `R` | Say the room, what is within reach, and which way the game is asking you to go |
 | `Escape` | Out of whatever is on screen, then the pause menu |
 
 The arrows used to be a second set of movement keys and looking was mouse only,
@@ -179,12 +180,26 @@ standing. It removes the precision from searching, not the searching.
 - A volume slider in Comfort, down to silence. The rain and the fridge run for
   the whole game and section 8.2's chime is a gate signal, so this is not a
   nicety.
+- A text size in Comfort, from 0.85 to 2. It is a multiplier on whatever the
+  browser is already set to rather than a size of its own, so a player who has
+  turned their own default up keeps it and this compounds with it. It is applied
+  before the advisory is drawn, not when a game starts, because the advisory is
+  the first thing anybody reads and the screen the setting most matters on.
 - Head bob follows `prefers-reduced-motion` and can be switched off regardless.
 
-Two things it does not do. There is no text scaling yet. And nothing helps a
-player who cannot see find their way across a room: `Tab` solves aiming, not
-navigation, and audio beacons or spoken room descriptions would be a design
-conversation rather than a setting.
+`R` says where you are: the room by name, what is within reach, and one bearing
+and distance to whatever the game is currently asking for. That last part is the
+goal line repeated in a different form rather than a new piece of information,
+and section 8.2 forbids an objective marker, so it never points at something the
+player has not been told about. While something is in your hands the answer is
+always the boxes.
+
+**It still does not make the game playable without sight.** A room is wider than
+two reaches, so `R` narrows the search to the right room and the right direction
+and then leaves you walking around it. Finding a small object inside that room is
+still a matter of sweeping `Tab` while you move. Audio beacons, which are the
+other half of what would close this, are a design conversation about how the flat
+sounds rather than a setting, and this pass deliberately did not open it.
 
 ## Requirements
 

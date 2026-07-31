@@ -430,7 +430,10 @@ main {
 .overlay.is-document .overlay-panel {
   max-height: 100%;
   overflow-y: auto;
-  padding: 2.5rem 2.25rem;
+  /* No padding at the bottom. It belongs to the hint below, which is pinned
+     there and has to be able to reach the panel's edge to cover the text
+     scrolling underneath it. */
+  padding: 2.5rem 2.25rem 0;
   background: #e9e3d5;
   color: #23201b;
   border-radius: 2px;
@@ -580,8 +583,27 @@ main {
   color: #6d6555;
 }
 
+/* The way out, kept in sight.
+   A document is the only thing in the game that can be taller than the screen,
+   and at the largest text size Lena's note is half as tall again as the panel.
+   Until v0.8.12 this line scrolled away with everything else, which meant the
+   one on-screen instruction for closing a document was below the fold for
+   precisely the player who had turned the type up to read it. Sticky rather
+   than a fixed footer because the panel itself has to stay the scroller: focus
+   lands on it so a screen reader starts at the top, and the arrow keys scroll
+   whatever is focused. */
 .document-hint {
+  position: sticky;
+  bottom: 0;
   margin: 2.25rem 0 0;
+  /* Carries the panel's bottom padding, and covers the text passing behind it. */
+  padding: 2.2rem 0 1.6rem;
+  /* Transparent at the top so the paragraph underneath fades out rather than
+     being cut off. Pinning the hint stops a player being stranded; the fade is
+     what tells them there is more note below it, which a hard edge against
+     matching paper does not. Solid well before the hint's own line, so the two
+     never read as one smudged sentence. */
+  background: linear-gradient(to bottom, rgba(233, 227, 213, 0), #e9e3d5 1.1rem);
   font-size: 0.75rem;
   letter-spacing: 0.1em;
   color: #a49b88;

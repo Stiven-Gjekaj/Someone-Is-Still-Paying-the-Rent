@@ -37,6 +37,18 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install Chromium
+        # playwright-core never downloads a browser on install, which is why it
+        # is the right dependency: it does not fight a sandbox that already has
+        # one. Here there is none, so this is where it comes from.
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify
+        # Drives the built game in a real browser. Not a full playthrough: see
+        # the verify-full workflow and docs/VERIFICATION.md for what this does
+        # not prove.
+        run: npm run verify
+
       - name: Check commit message
         # The commit-msg hook is opt-in locally, so the same checks run here in
         # case someone pushed without installing it.

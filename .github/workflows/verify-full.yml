@@ -1,0 +1,40 @@
+# The whole game, from the front door, with nothing set by hand.
+#
+# Separate from `validate` because it costs about twenty minutes, four of which
+# are the act 2 charge being waited out at its real length. Section 4.5 says the
+# waiting is the point, and it is still the point when a machine is doing it.
+#
+# This is the only check that proves the game can be finished. Everything in
+# `npm run verify` starts partway in with a dev parameter, so a green push is not
+# evidence of a playable night. See docs/VERIFICATION.md.
+name: verify the whole game
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly, early Monday. Nothing depends on the hour.
+    - cron: '17 4 * * 1'
+
+jobs:
+  playthrough:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Install Chromium
+        # playwright-core never downloads a browser, so this is where one comes
+        # from in CI. e2e/browser.ts finds it without being told where.
+        run: npx playwright install --with-deps chromium
+
+      - name: Play the whole game
+        run: npm run verify:full

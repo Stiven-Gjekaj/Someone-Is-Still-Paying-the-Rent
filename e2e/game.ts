@@ -85,8 +85,15 @@ export interface Driver {
   state(): Promise<Snapshot>
   /** Runs `fn` in the page with the dev handle as its first argument. */
   dev<T, A = undefined>(fn: (handle: DevHandle, arg: A) => T, arg?: A): Promise<T>
-  /** Waits for `fn` to hold in the page. Never waits for a duration. */
-  until(fn: string, what: string): Promise<void>
+  /**
+   * Waits for `fn` to hold in the page. Never waits for a duration.
+   *
+   * `patience` is a deadline rather than a sleep: it is how long to allow before
+   * calling something broken. The default suits anything the player triggers.
+   * Section 8.4's ending plays for about half a minute on its own schedule, so
+   * that one wait asks for more.
+   */
+  until(fn: string, what: string, patience?: number): Promise<void>
   /** Stands in the middle of a room. */
   moveTo(room: string): Promise<void>
   /**
@@ -182,11 +189,11 @@ export async function open(browser: Browser, url: string): Promise<Driver> {
     page,
     errors,
 
-    async until(fn: string, what: string): Promise<void> {
+    async until(fn: string, what: string, patience: number = PATIENCE): Promise<void> {
       try {
-        await page.waitForFunction(fn, null, { timeout: PATIENCE })
+        await page.waitForFunction(fn, null, { timeout: patience })
       } catch {
-        throw new Error(`timed out after ${PATIENCE / 1000}s waiting for ${what}`)
+        throw new Error(`timed out after ${patience / 1000}s waiting for ${what}`)
       }
     },
 

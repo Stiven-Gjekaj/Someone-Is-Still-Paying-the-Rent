@@ -73,8 +73,10 @@ to one. Any number tuned against one machine is a coin flip on another. Every wa
 `page.waitForFunction` on something the page can be asked about, and where a check needs elapsed
 *game* time it winds the clock through the dev handle instead of sleeping.
 
-There is exactly one exception, in `rule9.test.ts`, and it carries its reason: the claim is that
-nothing happens while the game is paused, and nothing happening has no event to wait on.
+There are exactly two exceptions and both carry their reason in a comment: one in `rule9.test.ts`
+and one in `access.test.ts`. Both are the same shape, and it is the shape that has no alternative:
+the claim is that *nothing* happens, and nothing happening has no event to wait on. `e2e/tools/` is
+outside this rule, because a tool that puts a frame on disk has to let the frame arrive.
 
 **Nothing touches the mouse.** `e2e/game.ts` drives the game entirely by keyboard, so every check
 exercises the keyboard path rather than only the accessibility one. `access.test.ts` instruments

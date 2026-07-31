@@ -152,6 +152,12 @@ describe('without a pointer', () => {
     // The prompt is a live region. Writing to it re-announces it, so the write
     // has to be guarded: without that, a screen reader repeats the prompt at the
     // frame rate for as long as the player looks at anything.
+    //
+    // One of the two waits in this suite that is a duration rather than a state,
+    // and it has to be: the claim is that nothing is written, and nothing being
+    // written has no event to wait on. Three seconds is six frames at the rate a
+    // software rasteriser manages, and the unguarded version produced 76 writes
+    // in that window, so the margin is not fine.
     const writes = await game.page.evaluate(async () => {
       const node = document.querySelector('.prompt')
       if (node === null) return -1

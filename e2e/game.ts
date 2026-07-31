@@ -101,6 +101,14 @@ export interface Driver {
   aimAt(id: string, room?: string): Promise<boolean>
   /** Aims, then presses the context action. Section 4.2. */
   lookAt(id: string, room?: string): Promise<boolean>
+  /**
+   * Closes whatever is on screen without waiting for anything.
+   *
+   * Separate from `settle` because the flat does not always come back. Closing
+   * the rent receipts is the last thing act 3 needs, so the night ends on that
+   * keypress and the HUD never returns: waiting for it would wait forever.
+   */
+  dismiss(): Promise<void>
   /** Closes whatever beat is on screen and waits for the flat to come back. */
   settle(): Promise<void>
   /** What is in the player's hands, by id. */
@@ -324,11 +332,15 @@ export async function open(browser: Browser, url: string): Promise<Driver> {
       return true
     },
 
-    async settle(): Promise<void> {
+    async dismiss(): Promise<void> {
       await driver.dev((dev) => {
         dev.overlay.close()
         if (dev.memories.isPlaying()) dev.memories.skip()
       })
+    },
+
+    async settle(): Promise<void> {
+      await driver.dismiss()
       // Not a duration. The flat is back when nothing is over it and the HUD has
       // returned, and every one of those is a question the page can answer.
       await driver.until(

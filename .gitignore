@@ -10,3 +10,13 @@ npm-debug.log*
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# The repository has no binary assets and is not supposed to grow any. The tools
+# in e2e/tools write frames to disk and it is easy to run one from the root by
+# mistake: six of them were committed that way in v0.6.10 and sat there for two
+# passes, under the README section saying there are none.
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp

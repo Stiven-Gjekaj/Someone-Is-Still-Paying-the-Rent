@@ -67,7 +67,7 @@ smaller than its own footer, which is a fact about the harness and not about the
 | `e2e/opening.test.ts` | 4 | The advisory, the title screen, the section 8.1 beat, and the shape of the dev handle |
 | `e2e/acts.test.ts` | 4 | Each act's gate and its discovery chain, and the section 8.3 desk scene |
 | `e2e/ending.test.ts` | 3 | The section 8.4 sequence, take-one-thing, and landing on the resources |
-| `e2e/access.test.ts` | 11 | v0.5's guarantees plus v0.8's: no pointer needed, focus, announcements, the volume and text-size controls, and the orientation key |
+| `e2e/access.test.ts` | 12 | v0.5's guarantees plus v0.8's: no pointer needed, focus, announcements, the volume and text-size controls, and the orientation key |
 | `e2e/rule9.test.ts` | 8 | **Hard Rule 9 from eight different moments**, including mid-ending |
 | `e2e/save.test.ts` | 3 | The checkpoint round trip, and what it refuses to restore |
 | `e2e/full/playthrough.test.ts` | 1 | The whole game, from the front door, with no dev parameters |

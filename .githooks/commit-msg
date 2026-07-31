@@ -42,7 +42,13 @@ if printf '%s' "$BODY" | grep -qF "$EM_DASH"; then
   fail "the message contains an em-dash. Use a comma, a colon, or a full stop."
 fi
 
-if printf '%s' "$BODY" | grep -Eiq '^[[:space:]]*(co-authored-by|signed-off-by|claude-session|session|model|generated with|assisted-by)'; then
+# A trailer is a key, a colon, and a value, so the colon is part of the pattern.
+# Without it the bare word matches any sentence that happens to start with it:
+# "model" caught a line beginning "Modelled on", and "session" would catch
+# "Sessions are". Prose is most of a commit message and a rule about trailers
+# has no business refusing it. "Generated with" is the exception, because that
+# one is a sentence rather than a key.
+if printf '%s' "$BODY" | grep -Eiq '^[[:space:]]*((co-authored-by|signed-off-by|claude-session|session|model|assisted-by):|generated with )'; then
   fail "the message carries a trailer this project does not use"
 fi
 

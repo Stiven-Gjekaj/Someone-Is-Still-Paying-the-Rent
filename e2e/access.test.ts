@@ -24,6 +24,20 @@
  *   `aria-hidden="false"` on a descendant
  * - opening a document had to move focus into it, and closing had to put focus
  *   back where it came from
+ * - the text size reached everything except the advisory and the title screen,
+ *   because it was applied when a session started and those are drawn before
+ *   one exists
+ * - at twice the size, the line telling a player how to close a document
+ *   scrolled off the bottom of the document
+ *
+ * ## Three of these can pass without checking anything
+ *
+ * The through-a-wall check, the document check and the orientation scan all
+ * depend on the game being in a particular state: something within reach through
+ * a wall, a note taller than its panel, no goal satisfied yet. Each one asserts
+ * that precondition before the thing it came here to prove, and fails saying so.
+ * A check that quietly stops applying is worse than no check, because the green
+ * tick is indistinguishable from the one that means something.
  */
 
 import assert from 'node:assert/strict'

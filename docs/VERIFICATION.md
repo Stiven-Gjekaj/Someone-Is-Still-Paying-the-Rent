@@ -84,12 +84,24 @@ exercises the keyboard path rather than only the accessibility one. `access.test
 
 **Every check has been made to fail.** A check that has never failed is a check nobody has tested.
 Each one in this suite was proved by breaking the thing it protects, watching it fail, and putting it
-back. Two were found to be worthless that way and were rewritten:
+back. Six were found to be worthless that way and were rewritten:
 
 - the act 3 chain check walked the chain in the right order but never asserted the order was
   *enforced*, and passed happily with the gate removed
 - the checkpoint check asserted a storage key was absent that had never been present, and passed with
   `clearCheckpoint()` commented out
+- the chooser-preselection check could not be broken at all, because `highlight()` is never called
+  when the chooser opens, which is *why* nothing is preselected: the break had to be built before the
+  check meant anything
+- the playthrough's phone step threw away the result of aiming, so a step that never found the phone
+  looked exactly like a step that ran
+- the playthrough's walk read `Take` as if it were `Examine` and spent the second pass collecting the
+  flat instead of looking at it, which left the phone unplugged three rooms later
+- the volume check took the first Comfort slider, which is look sensitivity, and read a working
+  volume control as broken
+
+Three of those six were only visible because a check was made to explain itself rather than merely
+pass or fail. Instrumentation is part of the method, not a debugging detour.
 
 **One place knows how to drive the game.** `e2e/game.ts`. The scripts this suite came from each
 re-invented `state()`, `press()` and `pack()` with small differences, and that duplication, not the
@@ -97,7 +109,9 @@ scripts, is what makes a harness rot.
 
 ## What the suite found
 
-Two real bugs, both in the game rather than in the tests, and both invisible to unit tests.
+Two real bugs in the game, both invisible to unit tests, and six checks of my own that did not
+check what they said they did. The second number is the more useful one: it is what the discipline
+below actually costs and actually buys.
 
 **`v0.7.5`: the act did not turn over at the chime.** The act was evaluated only after a sort or an
 examine, because those are the only two things a player does that can open a gate. The charge is the

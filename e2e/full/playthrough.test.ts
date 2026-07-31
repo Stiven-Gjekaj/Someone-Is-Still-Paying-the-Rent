@@ -48,9 +48,14 @@ async function walkTheFlat(game: Driver, act: number): Promise<string[]> {
   for (const room of rooms) {
     const here = OBJECTS.filter((o) => o.room === room && (o.act_min ?? 1) <= act)
     for (const object of here) {
+      // Anything already in a box is out of the flat and is not missing.
       const present = await game.dev(
-        (dev, id) => (dev['placed'] as { byObject: Map<string, unknown> }).byObject.has(id)
-          || (dev['targeting'] as { candidates(): { id: string }[] }).candidates().some((c) => c.id === id),
+        (dev, id) => {
+          const objects = dev.state['objects'] as Record<string, { sorted_to?: string | null }>
+          if (objects[id]?.sorted_to != null) return false
+          return (dev['placed'] as { byObject: Map<string, unknown> }).byObject.has(id)
+            || (dev['targeting'] as { candidates(): { id: string }[] }).candidates().some((c) => c.id === id)
+        },
         object.id,
       )
       // Not there yet is not a failure: things hidden behind a discovery are
@@ -61,10 +66,24 @@ async function walkTheFlat(game: Driver, act: number): Promise<string[]> {
       // skipping it is how a run walks the whole flat and never opens the
       // drawer. Reported rather than thrown, because one awkward angle should
       // not end a twenty-minute run.
-      if (!await game.lookAt(object.id, room)) {
+      if (!await game.aimAt(object.id, room)) {
         missed.push(`${object.id} (${room})`)
         continue
       }
+
+      // Read the verb before pressing anything, which is the whole difference
+      // between looking around a flat and emptying it into your arms.
+      //
+      // Section 4.2 offers Take rather than Examine on anything sortable that
+      // has already been looked at, so on the second pass through the flat this
+      // loop was picking objects up. One press, and from then on the player is
+      // carrying something, every later interact is a no-op, and the run walks
+      // the remaining rooms touching nothing. That is how a walk of the middle
+      // layer reached the bedroom and left the phone unplugged.
+      const prompt = (await game.state()).prompt
+      if (!prompt.startsWith('Examine') && !prompt.startsWith('Read')) continue
+
+      await game.dev((dev) => { dev.interact() })
       await game.settle()
     }
   }

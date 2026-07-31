@@ -416,6 +416,58 @@ describe('without a pointer', () => {
     await game.close()
   })
 
+  it('keeps the way out of a document in sight at the largest text size', async () => {
+    const game = await open(browser, at(base(), { room: 'entry_hall' }))
+    const mouse = watchTheMouse(game.page)
+
+    // The one check in this file that needs a real window. The suite runs at
+    // 320x200 because a software rasteriser charges by the pixel, and at twice
+    // the text size that is the layout equivalent of a 160x100 screen: the hint
+    // is three times taller than the panel, sticky gives up because a stuck box
+    // has to fit its scrollport, and the check would be measuring the harness.
+    // Nine hundred by six hundred is a small laptop, which is the thing the top
+    // of TEXT_SCALE_RANGE was chosen against.
+    await game.page.setViewportSize({ width: 900, height: 600 })
+
+    await game.page.evaluate(() => {
+      const raw = window.localStorage.getItem('sispr.settings')
+      const stored = raw === null ? {} : JSON.parse(raw) as Record<string, unknown>
+      window.localStorage.setItem('sispr.settings', JSON.stringify({ ...stored, textScale: 2 }))
+    })
+    await game.page.reload({ waitUntil: 'networkidle' })
+    await game.begin()
+
+    // Lena's note is the longest document in the game and the one the night
+    // starts from. At twice the size it is half again as tall as the panel.
+    assert.ok(await game.lookAt('lena_note', 'entry_hall'), "Lena's note opens")
+    await game.until(
+      'document.querySelector(".overlay")?.classList.contains("is-open") === true',
+      'the document to open',
+    )
+
+    const seen = await game.page.evaluate(() => {
+      const panel = document.querySelector('.overlay-panel')
+      const hint = document.querySelector('.document-hint')
+      if (panel === null || hint === null) return null
+      const outer = panel.getBoundingClientRect()
+      const inner = hint.getBoundingClientRect()
+      return {
+        overflows: panel.scrollHeight > panel.clientHeight + 1,
+        inside: inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1,
+      }
+    })
+
+    // The guard first. If the note fits the panel there is nothing to scroll off
+    // and this check would pass without checking anything, which is the failure
+    // mode that has cost this project six worthless checks.
+    assert.equal(seen?.overflows, true, 'the note is taller than the panel at this size')
+    assert.equal(seen?.inside, true, 'and Escape to put it down is still on screen')
+
+    assert.equal(mouse(), 0, 'the mouse was never touched')
+    assert.deepEqual(game.errors, [])
+    await game.close()
+  })
+
   it('says which room you are in, when asked and not before', async () => {
     const game = await open(browser, at(base(), { room: 'entry_hall' }))
     const mouse = watchTheMouse(game.page)

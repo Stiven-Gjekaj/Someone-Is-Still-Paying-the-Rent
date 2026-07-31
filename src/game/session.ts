@@ -11,7 +11,7 @@
  * and its GPU buffers makes that unusable after the second try.
  */
 
-import { content, getFragment, getFurniture, getPlacements, getScenes, getText } from '../content/index.ts'
+import { content, getFragment, getFurniture, getObject, getPlacements, getScenes, getText } from '../content/index.ts'
 import { createInitialState, type GameState } from '../content/flags.ts'
 import { createEngine } from '../core/engine.ts'
 import { createMaterials } from '../world/materials.ts'
@@ -24,7 +24,8 @@ import { buildWeather } from '../world/rain.ts'
 import { createPlayer } from '../player/controller.ts'
 import { createCollider } from '../player/collision.ts'
 import { createHud } from '../ui/hud.ts'
-import { createGoalLine } from '../ui/goal.ts'
+import { createGoalLine, currentGoal } from '../ui/goal.ts'
+import { createOrientation } from '../ui/orientation.ts'
 import { createOverlay } from '../ui/overlay.ts'
 import { createFragmentPlayer } from '../ui/fragment.ts'
 import { createOpening } from '../ui/opening.ts'
@@ -144,6 +145,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
 
   const hud = createHud(mount)
   const goalLine = createGoalLine(mount, getScenes().goals)
+  const orientation = createOrientation(mount)
   const overlay = createOverlay(mount)
   const memories = createFragmentPlayer(mount)
   const opening = createOpening(mount, () => void audio.playKeyInLock())
@@ -533,6 +535,73 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
    * If nothing survives, the camera goes back where it was. Being left pointed
    * at a wall by a key that did nothing is worse than the key doing nothing.
    */
+  /**
+   * Section 8.2, and the affordance closest to breaking it.
+   *
+   * Says the room, what is within reach, and one bearing. The bearing goes to
+   * whatever the game is already asking for: the boxes while something is in the
+   * player's hands, and otherwise the `place` the current goal names. Both are
+   * things the game has said out loud already, so neither reveals anything, and
+   * the choice is never this function's to make.
+   *
+   * Nothing happens while a beat has the screen. A player pressing this during
+   * the desk scene means "what did that say", not "where am I".
+   */
+  function orient(): void {
+    const camera = engine.camera
+    const from = { x: camera.position.x, y: camera.position.y, z: camera.position.z }
+
+    const standingIn = flat.roomAt(from.x, from.z)
+
+    // Reach is a radius, and a radius is a sphere that goes through walls.
+    // Standing in the entry hall, the wardrobe and the phone are both inside two
+    // and a half metres and both in the bedroom, on the other side of a wall.
+    //
+    // The raycast does not save us here: `createTargeting` is given the props and
+    // the furniture and not `flat.group`, so the ray has never been stopped by a
+    // wall. Tab has always been able to land on things through one. That is a
+    // real problem and it is v0.5's rather than this key's, and fixing it means
+    // changing what the crosshair can hit for the mouse too, so it is written up
+    // in docs/VERIFICATION.md rather than quietly rolled into an access pass.
+    //
+    // What this can do without touching any of that is refuse to say a wall is
+    // not there. The room an object is standing in, asked of the floor plan
+    // rather than read off its `room` field, because those disagree: the bible
+    // puts the invoice folder on the wardrobe shelf in the bedroom and files it
+    // under the living room, where it gets sorted.
+    const inReach = turnOrder(from, camera.rotation.y, targeting.candidates(), {
+      reach: targeting.reach(),
+      direction: 'right',
+    }).filter((item) => flat.roomAt(item.at.x, item.at.z) === standingIn)
+      .map((item) => ({
+        id: item.id,
+        name: getObject(item.id)?.name ?? item.id,
+        at: item.at,
+      }))
+
+    const held = carry.held()
+    const wanted = held === null ? currentGoal(getScenes().goals, state)?.place : 'sorting_boxes'
+
+    // Only if it is actually in the flat. A goal can name something that has not
+    // been revealed yet, and sending somebody toward a thing that is not there
+    // is worse than saying nothing.
+    const target = wanted === undefined || wanted === null
+      ? null
+      : targeting.candidates().find((item) => item.id === wanted) ?? null
+
+    const room = flat.roomAt(from.x, from.z)
+
+    orientation.announce({
+      room: content.rooms.find((r) => r.id === room)?.name ?? '',
+      from,
+      facing: camera.rotation.y,
+      inReach,
+      toward: target === null
+        ? null
+        : { id: target.id, name: getObject(target.id)?.name ?? target.id, at: target.at },
+    })
+  }
+
   function cycle(direction: Turn): void {
     const camera = engine.camera
     const from = { x: camera.position.x, y: camera.position.y, z: camera.position.z }
@@ -592,6 +661,14 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     if (event.key === 'Tab' && !busy() && !screens.isPaused()) {
       event.preventDefault()
       cycle(event.shiftKey ? 'left' : 'right')
+      return
+    }
+
+    // Where am I. Only while the flat is the player's: pressing this during a
+    // beat means "what did that say" rather than "where am I", and answering the
+    // wrong question over the top of a memory is worse than not answering.
+    if (event.code === 'KeyR' && !event.defaultPrevented && !busy() && !screens.isPaused()) {
+      orient()
       return
     }
 
@@ -685,6 +762,7 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
       highlight.dispose()
       overlay.dispose()
       menu.dispose()
+      orientation.dispose()
       hud.dispose()
       goalLine.dispose()
 

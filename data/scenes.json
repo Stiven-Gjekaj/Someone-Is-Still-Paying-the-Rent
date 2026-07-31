@@ -164,32 +164,38 @@
     {
       "id": "pack_the_flat",
       "when": "examined:lena_note",
-      "text": "Pack what you can. The lease ends Sunday."
+      "text": "Pack what you can. The lease ends Sunday.",
+      "place": "sorting_boxes"
     },
     {
       "id": "find_the_charger",
       "when": "phone_found",
-      "text": "His phone. Dead. The charger wasn't with it."
+      "text": "His phone. Dead. The charger wasn't with it.",
+      "place": "junk_drawer"
     },
     {
       "id": "wait_for_the_charge",
       "when": "charger_found",
-      "text": "It is charging. Keep going."
+      "text": "It is charging. Keep going.",
+      "place": "sorting_boxes"
     },
     {
       "id": "the_phone_is_on",
       "when": "phone_on",
-      "text": "It is on."
+      "text": "It is on.",
+      "place": "phone_dead"
     },
     {
       "id": "the_desk",
       "when": "thread_read",
-      "text": "The desk. You have been leaving it until later all night."
+      "text": "The desk. You have been leaving it until later all night.",
+      "place": "desk"
     },
     {
       "id": "nothing_left_to_find",
       "when": "desk_done",
-      "text": "There is nothing else to look for. Finish up."
+      "text": "There is nothing else to look for. Finish up.",
+      "place": "pc_bag"
     }
   ]
 }

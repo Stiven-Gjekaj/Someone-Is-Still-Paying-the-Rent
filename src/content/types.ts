@@ -228,6 +228,18 @@ export interface Goal {
   /** A flag reference, in the same namespace second looks use. */
   when: string
   text: string
+  /**
+   * The object a player has to get to for this goal, when there is one.
+   *
+   * Read only by the orientation key, which turns it into a bearing for a player
+   * who cannot see the room. It is the goal's own answer rather than a guess:
+   * the goal line has already said the thing out loud, so pointing at it reveals
+   * nothing, which is what keeps this the right side of section 8.2.
+   *
+   * Absent where a goal is not about a place. "It is charging. Keep going." is
+   * an instruction to carry on, not somewhere to walk.
+   */
+  place?: string
 }
 
 export interface SceneData {

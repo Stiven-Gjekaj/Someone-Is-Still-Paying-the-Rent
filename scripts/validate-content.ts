@@ -706,6 +706,17 @@ if (!Array.isArray(goals) || goals.length === 0) {
 
     if (!nonEmptyString(goal['text'])) fail('scenes', where, 'text is missing or empty')
 
+    // Optional, and the orientation key is the only thing that reads it: where
+    // the player has to get to for this goal. Not every goal is about a place,
+    // and one that names an object which does not exist would send somebody who
+    // cannot see the room walking toward nothing.
+    const place = goal['place']
+    if (place !== undefined) {
+      if (typeof place !== 'string' || !objectIds.has(place)) {
+        fail('scenes', where, `"place" names no known object: ${JSON.stringify(place)}`)
+      }
+    }
+
     const when = goal['when']
     if (typeof when !== 'string') {
       fail('scenes', where, '"when" must be a string')

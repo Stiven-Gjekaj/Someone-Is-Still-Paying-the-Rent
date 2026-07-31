@@ -325,6 +325,15 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     settings: () => settings,
     applySettings,
     isBusy: busy,
+    // Hard Rule 9. All four, unconditionally: each one ignores the call unless
+    // it is actually playing, and asking "which beat is on screen" here would be
+    // a second copy of a question every one of them already answers.
+    holdBeats: (held: boolean): void => {
+      for (const beat of [opening, memories, desk, endingPlayer]) {
+        if (held) beat.pause()
+        else beat.resume()
+      }
+    },
   })
 
   overlay.onClose(() => {

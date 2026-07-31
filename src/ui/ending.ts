@@ -58,6 +58,12 @@ export interface EndingPlayer {
   play(voicemail: Scene, card: Scene): void
   isPlaying(): boolean
   skip(): void
+  /**
+   * Hard Rule 9. Holds every pending step so the pause menu actually pauses.
+   * See `pause` in `src/ui/sequence.ts` for why the beats need this at all.
+   */
+  pause(): void
+  resume(): void
   dispose(): void
 }
 
@@ -280,6 +286,8 @@ export function createEndingPlayer(mount: HTMLElement, config: EndingConfig): En
     },
 
     skip: finish,
+    pause: sequence.pause,
+    resume: sequence.resume,
 
     dispose(): void {
       clearView()

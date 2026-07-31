@@ -24,6 +24,12 @@ export interface FragmentPlayer {
   isPlaying(): boolean
   /** Ends it early. Escape does this, and so does disposal. */
   skip(): void
+  /**
+   * Hard Rule 9. Holds every pending step so the pause menu actually pauses.
+   * See `pause` in `src/ui/sequence.ts` for why the beats need this at all.
+   */
+  pause(): void
+  resume(): void
   dispose(): void
 }
 
@@ -81,6 +87,8 @@ export function createFragmentPlayer(mount: HTMLElement): FragmentPlayer {
 
     isPlaying: sequence.isPlaying,
     skip: sequence.end,
+    pause: sequence.pause,
+    resume: sequence.resume,
     dispose: sequence.dispose,
   }
 }

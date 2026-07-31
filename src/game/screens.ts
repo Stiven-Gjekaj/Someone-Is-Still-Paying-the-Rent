@@ -35,6 +35,17 @@ export interface ScreensConfig {
    * document would pause the game.
    */
   isBusy(): boolean
+  /**
+   * Hard Rule 9, and the advisory's promise that the flat will wait.
+   *
+   * Called with true when the pause menu opens and false when it closes, so
+   * whatever beat is on screen can hold where it is. Pausing used to leave the
+   * beats running: the ending took about six seconds to get from the voicemail
+   * to the support resources underneath the menu, and then replaced the menu
+   * with them. A player who paused during the hardest part of the game had it
+   * played at them anyway.
+   */
+  holdBeats(held: boolean): void
 }
 
 export interface Screens {
@@ -60,6 +71,9 @@ export function createScreens(config: ScreensConfig): Screens {
         label: 'Resume',
         onSelect: (): void => {
           menu.close()
+          // Before the pointer, so a beat picks up exactly where it stopped
+          // rather than a frame into the flat coming back.
+          config.holdBeats(false)
           player.lock()
         },
       },
@@ -88,6 +102,9 @@ export function createScreens(config: ScreensConfig): Screens {
    */
   function pause(): void {
     if (menu.isOpen()) return
+    // Hard Rule 9. Whatever is on screen stops where it is, so the menu is not
+    // a thing the game plays on past.
+    config.holdBeats(true)
     showPauseMenu()
   }
 

@@ -45,6 +45,20 @@ export interface Sequence {
   /** Runs when the sequence ends, before the fade. For clearing what was shown. */
   onEnd(listener: () => void): void
   end(): void
+  /**
+   * Hard Rule 9, and the advisory's promise that the flat will wait.
+   *
+   * Holds every pending step where it is. Without this a beat carries on under
+   * the pause menu: the ending gets about six seconds from the voicemail to the
+   * support resources, so a player who paused during the hardest part of the
+   * game had it played at them anyway and lost the menu when the sequence
+   * replaced the screen.
+   *
+   * Safe to call twice, and safe to call when nothing is playing.
+   */
+  pause(): void
+  /** Puts back exactly as much time as was left. */
+  resume(): void
   isPlaying(): boolean
   dispose(): void
 }
@@ -80,19 +94,61 @@ export function createSequence(mount: HTMLElement, config: SequenceConfig): Sequ
   announcer.setAttribute('aria-live', 'polite')
   mount.append(announcer)
 
-  const timers: number[] = []
+  /**
+   * A step that has not run yet, and when it is due.
+   *
+   * `dueAt` rather than a bare handle, because pausing has to know how much of
+   * each wait is left. A cleared timeout cannot be asked.
+   */
+  interface Step {
+    run: () => void
+    dueAt: number
+    handle: number
+  }
+
+  const steps: Step[] = []
   const listeners: (() => void)[] = []
 
   let playing = false
   let finish: (() => void) | null = null
+  /** When the pause started, or null while running. */
+  let held: number | null = null
 
   function clearTimers(): void {
-    for (const timer of timers) window.clearTimeout(timer)
-    timers.length = 0
+    for (const step of steps) window.clearTimeout(step.handle)
+    steps.length = 0
+  }
+
+  function fire(step: Step): void {
+    const at = steps.indexOf(step)
+    if (at >= 0) steps.splice(at, 1)
+    step.run()
   }
 
   function after(ms: number, run: () => void): void {
-    timers.push(window.setTimeout(run, ms))
+    const step: Step = { run, dueAt: Date.now() + ms, handle: 0 }
+    steps.push(step)
+    // Scheduled now unless the beat is already held, in which case `resume` will
+    // schedule it along with everything else that is waiting.
+    if (held === null) step.handle = window.setTimeout(() => fire(step), ms)
+  }
+
+  function pause(): void {
+    if (held !== null) return
+    held = Date.now()
+    for (const step of steps) window.clearTimeout(step.handle)
+  }
+
+  function resume(): void {
+    if (held === null) return
+
+    const waited = Date.now() - held
+    held = null
+
+    for (const step of steps) {
+      step.dueAt += waited
+      step.handle = window.setTimeout(() => fire(step), Math.max(0, step.dueAt - Date.now()))
+    }
   }
 
   function end(): void {
@@ -140,6 +196,9 @@ export function createSequence(mount: HTMLElement, config: SequenceConfig): Sequ
       playing = true
       finish = onDone
       clearTimers()
+      // A beat that begins while the previous one was held would inherit the
+      // hold and never run a step.
+      held = null
       announcer.replaceChildren()
       element.classList.add('is-open')
     },
@@ -157,6 +216,8 @@ export function createSequence(mount: HTMLElement, config: SequenceConfig): Sequ
     },
 
     end,
+    pause,
+    resume,
 
     isPlaying(): boolean {
       return playing
@@ -165,6 +226,7 @@ export function createSequence(mount: HTMLElement, config: SequenceConfig): Sequ
     dispose(): void {
       clearTimers()
       playing = false
+      held = null
       finish = null
       listeners.length = 0
       window.removeEventListener('keydown', onKeyDown)

@@ -24,6 +24,12 @@ export interface DeskScene {
   play(scene: Scene, onDone: () => void): void
   isPlaying(): boolean
   skip(): void
+  /**
+   * Hard Rule 9. Holds every pending step so the pause menu actually pauses.
+   * See `pause` in `src/ui/sequence.ts` for why the beats need this at all.
+   */
+  pause(): void
+  resume(): void
   dispose(): void
 }
 
@@ -109,6 +115,8 @@ export function createDeskScene(mount: HTMLElement, onDrawer: () => void): DeskS
 
     isPlaying: sequence.isPlaying,
     skip: sequence.end,
+    pause: sequence.pause,
+    resume: sequence.resume,
     dispose: sequence.dispose,
   }
 }

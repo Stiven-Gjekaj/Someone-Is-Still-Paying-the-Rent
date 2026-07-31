@@ -222,9 +222,28 @@ export function startSession(mount: HTMLElement, config: SessionConfig): Session
     onDone: (): void => {
       state.phone_on = true
       audio.playChime('bedroom')
-      goalLine.refresh(state)
-      writeCheckpoint(state)
       console.info('the chime')
+
+      // Section 4.6, and the reason this line exists. The act is otherwise only
+      // ever checked when the player sorts or examines something, because those
+      // are the only two things a player does that can open a gate. The charge
+      // is the exception: it is the one gate in the game that fills while
+      // nobody is doing anything, so without this the chime rings into a flat
+      // that is still act 2. The lighting and the rain stay where they were,
+      // your bag is not by the door, and the checkpoint says act 2, until the
+      // player happens to touch something. Time is supposed to pass at the
+      // boundary, and the chime is the boundary.
+      const was = state.act
+      acts.check()
+
+      // Only if the act did not turn over. `onEnter` does both of these, and
+      // doing them twice would write a checkpoint saying act 2 immediately
+      // after one saying act 3. It can fail to turn over legitimately: a
+      // `stop_after` build stops at its act with the gate wide open.
+      if (state.act === was) {
+        goalLine.refresh(state)
+        writeCheckpoint(state)
+      }
     },
   })
 

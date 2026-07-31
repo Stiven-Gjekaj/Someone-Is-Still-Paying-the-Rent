@@ -83,8 +83,24 @@ export function createOverlay(mount: HTMLElement): Overlay {
     // Back where it came from, if that is still somewhere. Leaving focus on a
     // panel that has just been emptied strands a keyboard at the top of the
     // document, and the flat is the thing the player is going back to.
+    //
+    // The blur is not a fallback nobody reaches, it is the normal path. A
+    // document is opened from the flat, where nothing is focused, so `camefrom`
+    // is almost always `document.body`, and `body.focus()` does nothing: body
+    // carries no tabindex, so it is not focusable, and focusing an unfocusable
+    // element is defined as a no-op.
+    //
+    // Until v0.8.23 focus left the panel anyway, because removing `is-open`
+    // puts `display: none` on it and a browser blurs what it hides. That is
+    // real, and it is not synchronous: it lands with the next style
+    // recalculation, which is tied to the rendering pipeline and is up to half a
+    // second away on a software rasteriser managing two frames a second. The
+    // check in e2e/access.test.ts reads `activeElement` as soon as the class is
+    // gone and beat the recalculation on a CI runner, having never once beaten
+    // it here.
     const returning = camefrom
     camefrom = null
+    panel.blur()
     if (returning !== null && returning.isConnected) returning.focus()
 
     for (const listener of listeners) listener()

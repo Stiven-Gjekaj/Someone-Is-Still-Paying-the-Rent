@@ -57,8 +57,20 @@ const PLAN = JSON.parse(readFileSync(new URL('../data/floorplan.json', import.me
   rooms: Rect[]
 }
 
-/** How long any single wait may take before it is called a failure. */
-const PATIENCE = 30_000
+/**
+ * How long any single wait may take before it is called a failure.
+ *
+ * Generous on purpose. This is a deadline for deciding something is broken, not
+ * an expectation of how long anything takes, and the cost of setting it too low
+ * is a suite that fails for reasons that have nothing to do with the game.
+ *
+ * Thirty seconds was the first value and it was tuned on an idle machine, which
+ * is precisely the mistake the header of this file warns about. Test files run
+ * concurrently, each with its own browser, and several software rasterisers
+ * sharing four cores are several times slower than one with them to itself: at
+ * thirty seconds the act 1 gate check passed alone and failed in a full run.
+ */
+const PATIENCE = 90_000
 
 /** What the screen says, as one round trip rather than eight. */
 export interface Snapshot {
@@ -374,18 +386,29 @@ export async function open(browser: Browser, url: string): Promise<Driver> {
     },
 
     async pack(id: string, room: string, box: 1 | 2 | 3 = 1): Promise<boolean> {
-      // Twice, because the verb table offers Examine before Take on anything
-      // that has not been looked at yet. Section 4.2, and it is the rule rather
-      // than an inconvenience.
-      if (!await driver.lookAt(id, room)) return false
-      await driver.settle()
+      if (await driver.held() !== null) {
+        throw new Error(`cannot pack ${id}: the player is already carrying something`)
+      }
 
-      // Aim without acting first, so an object that can never be taken says so
-      // now instead of thirty seconds from now. The first version of this waited
-      // for a hand that was never going to fill and then reported a timeout,
-      // which named the symptom and hid the cause: the object was not sortable.
+      // Aim before acting, and read the verb rather than assuming it. Section
+      // 4.2 offers Examine before Take on anything not looked at yet, so packing
+      // something new is two interactions and packing something already examined
+      // is one. Doing it unconditionally twice means an object the run has
+      // already walked past gets picked up by the first press and put straight
+      // back down by the second.
       if (!await driver.aimAt(id, room)) return false
-      const ready = await driver.state()
+      let ready = await driver.state()
+
+      if (!ready.prompt.startsWith('Take')) {
+        await driver.dev((dev) => { dev.interact() })
+        await driver.settle()
+        if (!await driver.aimAt(id, room)) return false
+        ready = await driver.state()
+      }
+
+      // An object that can never be taken says so now rather than thirty seconds
+      // from now. The first version waited for a hand that was never going to
+      // fill and reported a timeout, naming the symptom and hiding the cause.
       if (!ready.prompt.startsWith('Take')) {
         throw new Error(
           `${id} cannot be packed: with it under the crosshair the prompt reads `

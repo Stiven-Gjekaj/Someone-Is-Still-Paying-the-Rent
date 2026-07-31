@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "validate": "node scripts/validate-content.ts",
     "test": "node --test \"tests/**/*.test.ts\"",
-    "verify": "node --test --test-global-setup=./e2e/setup.ts \"e2e/*.test.ts\"",
+    "verify": "node --test --test-concurrency=2 --test-global-setup=./e2e/setup.ts \"e2e/*.test.ts\"",
     "verify:full": "node --test --test-global-setup=./e2e/setup.ts --test-timeout=2400000 \"e2e/full/*.test.ts\""
   },
   "dependencies": {

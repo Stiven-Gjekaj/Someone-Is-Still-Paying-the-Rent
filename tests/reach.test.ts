@@ -16,6 +16,7 @@ import { describe, it } from 'node:test'
 
 import {
   aimAt,
+  bearingFrom,
   distanceTo,
   turnFrom,
   turnOrder,
@@ -166,5 +167,60 @@ describe('what it refuses to offer', () => {
       first.map((i) => (i.at.x < 0 ? 'left' : 'right')),
       second.map((i) => (i.at.x < 0 ? 'left' : 'right')),
     )
+  })
+})
+
+describe('bearingFrom', () => {
+  const degrees = (value: number): number => (value * Math.PI) / 180
+
+  it('calls straight ahead ahead, from either side of zero', () => {
+    // Sectors are centred rather than cornered, so the thing you are looking at
+    // is `ahead` instead of sitting on a boundary and flickering between two
+    // answers as the camera drifts.
+    assert.equal(bearingFrom(0, 0), 'ahead')
+    assert.equal(bearingFrom(0, degrees(20)), 'ahead')
+    assert.equal(bearingFrom(0, degrees(-20)), 'ahead')
+  })
+
+  it('reads increasing yaw as leftward, the way the camera does', () => {
+    // Yaw is the camera's own: zero looks down negative Z and it increases
+    // anticlockwise. Getting this backwards would send every player the wrong
+    // way and still pass a test that only checked the labels were used.
+    assert.equal(bearingFrom(0, degrees(90)), 'left')
+    assert.equal(bearingFrom(0, degrees(-90)), 'right')
+    assert.equal(bearingFrom(0, degrees(180)), 'behind')
+  })
+
+  it('gives eight answers rather than four', () => {
+    assert.equal(bearingFrom(0, degrees(45)), 'ahead_left')
+    assert.equal(bearingFrom(0, degrees(135)), 'behind_left')
+    assert.equal(bearingFrom(0, degrees(-45)), 'ahead_right')
+    assert.equal(bearingFrom(0, degrees(-135)), 'behind_right')
+  })
+
+  it('is relative to where the player is looking, not to the flat', () => {
+    // The same point, from the same spot, with the player turned around.
+    const toward = degrees(90)
+    assert.equal(bearingFrom(0, toward), 'left')
+    assert.equal(bearingFrom(degrees(90), toward), 'ahead')
+    assert.equal(bearingFrom(degrees(180), toward), 'right')
+  })
+
+  it('survives yaws that have wound past a full turn', () => {
+    // Nothing normalises the camera's yaw, so it accumulates as the player
+    // spins. A bearing that only worked inside one turn would come apart after
+    // a few minutes of looking around.
+    assert.equal(bearingFrom(degrees(720), degrees(720 + 90)), 'left')
+    assert.equal(bearingFrom(degrees(-720), degrees(-720 - 90)), 'right')
+  })
+
+  it('agrees with aimAt about where a point actually is', () => {
+    // The two are used together, so the thing worth pinning is that they share
+    // a convention rather than each being self-consistent.
+    const here: Point3 = { x: 0, y: 1.62, z: 0 }
+    assert.equal(bearingFrom(0, aimAt(here, { x: 0, y: 1.62, z: -2 }).yaw), 'ahead')
+    assert.equal(bearingFrom(0, aimAt(here, { x: 0, y: 1.62, z: 2 }).yaw), 'behind')
+    assert.equal(bearingFrom(0, aimAt(here, { x: -2, y: 1.62, z: 0 }).yaw), 'left')
+    assert.equal(bearingFrom(0, aimAt(here, { x: 2, y: 1.62, z: 0 }).yaw), 'right')
   })
 })

@@ -80,6 +80,52 @@ export function turnFrom(facing: number, toward: number, direction: Turn): numbe
   return wrapped === 0 ? TAU : wrapped
 }
 
+/**
+ * Which way something is, in eight sectors, as a key rather than as words.
+ *
+ * A key because the words are player-facing and player-facing words live in
+ * `data/`, not here. See `data/orientation.json` and the note in the README
+ * about narrative living in data: it is what lets the validator and the v0.6
+ * content review see every string the game can say.
+ */
+export type Bearing =
+  | 'ahead'
+  | 'ahead_left'
+  | 'left'
+  | 'behind_left'
+  | 'behind'
+  | 'behind_right'
+  | 'right'
+  | 'ahead_right'
+
+/** Clockwise from straight ahead, matching the sectors below. */
+const BEARINGS: Bearing[] = [
+  'ahead', 'ahead_right', 'right', 'behind_right',
+  'behind', 'behind_left', 'left', 'ahead_left',
+]
+
+/**
+ * Which of eight sectors a heading falls in, relative to where you are looking.
+ *
+ * Eight rather than four because "ahead and to your left" is a thing somebody
+ * can act on and "left" covers a hundred and eighty degrees of the room. Sectors
+ * are centred rather than cornered, so straight ahead is `ahead` rather than
+ * sitting on the boundary between two answers.
+ *
+ * Yaw here is the camera's own: zero looks down negative Z and it increases
+ * anticlockwise, which is why the sector index counts the other way.
+ */
+export function bearingFrom(facing: number, toward: number): Bearing {
+  const SECTOR = TAU / BEARINGS.length
+
+  // Anticlockwise yaw into a clockwise sector index, offset by half a sector so
+  // each label owns the angles around it rather than the angles after it.
+  const raw = facing - toward + SECTOR / 2
+  const wrapped = raw - Math.floor(raw / TAU) * TAU
+
+  return BEARINGS[Math.floor(wrapped / SECTOR)] ?? 'ahead'
+}
+
 export interface TurnOrderOptions {
   /** The raycast's reach. Not a number of this module's own choosing. */
   reach: number

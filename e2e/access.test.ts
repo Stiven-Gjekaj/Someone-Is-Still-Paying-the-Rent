@@ -27,13 +27,80 @@
  */
 
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { after, before, describe, it } from 'node:test'
 
 import type { Browser, Page } from 'playwright-core'
 
 import { launch } from './browser.ts'
-import { at, open } from './game.ts'
+import { at, open, type Driver } from './game.ts'
 import { base } from './setup.ts'
+
+/**
+ * The floor plan, read here rather than asked of the game.
+ *
+ * The orientation key's claim is that it never names something through a wall,
+ * and it makes that claim by asking `flat.roomAt`. A check that asked the same
+ * function would agree with itself. So this file works the room out from the
+ * data, which is what the walls are built from.
+ */
+const PLAN = JSON.parse(
+  readFileSync(new URL('../data/floorplan.json', import.meta.url), 'utf8'),
+) as {
+  eye_height: number
+  rooms: { id: string, min: [number, number], max: [number, number] }[]
+}
+
+function roomAt(x: number, z: number): string | null {
+  const found = PLAN.rooms.find((r) => x >= r.min[0] && x <= r.max[0] && z >= r.min[1] && z <= r.max[1])
+  return found?.id ?? null
+}
+
+/** The same nine positions the driver aims from, inset from the walls. */
+function standingSpots(room: string): [number, number, number][] {
+  const rect = PLAN.rooms.find((r) => r.id === room)
+  if (rect === undefined) throw new Error(`no room ${room} in the floor plan`)
+
+  const spots: [number, number, number][] = []
+  for (const fx of [0.28, 0.5, 0.72]) {
+    for (const fz of [0.28, 0.5, 0.72]) {
+      spots.push([
+        rect.min[0] + (rect.max[0] - rect.min[0]) * fx,
+        PLAN.eye_height,
+        rect.min[1] + (rect.max[1] - rect.min[1]) * fz,
+      ])
+    }
+  }
+  return spots
+}
+
+/**
+ * Presses the orientation key and returns what it said.
+ *
+ * The region is emptied first so that "it has words in it" is a real signal and
+ * the wait is on a state rather than on a duration. Emptying it is a harness
+ * action on a region the harness reads: nothing in the game clears it, and the
+ * game's own writes replace rather than append.
+ */
+async function orient(game: Driver): Promise<string> {
+  await game.page.evaluate(() =>
+    { document.querySelector('.orientation-announcer')?.replaceChildren() })
+  await game.page.keyboard.press('KeyR')
+  await game.until(
+    '(document.querySelector(".orientation-announcer")?.textContent ?? "") !== ""',
+    'the orientation key to say something',
+  )
+  return game.page.evaluate(() =>
+    document.querySelector('.orientation-announcer')?.textContent ?? '')
+}
+
+/** Every bearing the line can end on, from `data/orientation.json`. */
+const BEARINGS = ['ahead of you', 'to your left', 'to your right', 'behind you']
+
+/** Object names, read from the data for the same reason the plan is. */
+const NAMES = new Map((JSON.parse(
+  readFileSync(new URL('../data/objects.json', import.meta.url), 'utf8'),
+) as { id: string, name: string }[]).map((object) => [object.id, object.name]))
 
 /** Counts any use of the pointer. Anything above zero fails the file. */
 function watchTheMouse(page: Page): () => number {
@@ -298,6 +365,171 @@ describe('without a pointer', () => {
       false,
       'the page does not scroll sideways at the largest text size',
     )
+
+    assert.equal(mouse(), 0, 'the mouse was never touched')
+    assert.deepEqual(game.errors, [])
+    await game.close()
+  })
+
+  it('says which room you are in, when asked and not before', async () => {
+    const game = await open(browser, at(base(), { room: 'entry_hall' }))
+    const mouse = watchTheMouse(game.page)
+    await game.begin()
+
+    // Announce-only, and only on the key. A region that spoke on its own would
+    // be a second narrator over a game that has one.
+    assert.equal(
+      await game.page.evaluate(() =>
+        document.querySelector('.orientation-announcer')?.textContent ?? null),
+      '',
+      'nothing is said until the key is pressed',
+    )
+
+    assert.match(await orient(game), /^Entry hall\./, 'the key names the room')
+
+    // The same key in a different room, because "Entry hall." is also what a
+    // hard-coded string says. Walking there rather than teleporting: this is a
+    // navigation aid and it has to survive being used while navigating.
+    await game.moveTo('kitchen')
+    assert.match(await orient(game), /^Kitchen\./, 'and it follows the player')
+
+    // v0.5 already made this mistake once: `aria-hidden="true"` on an ancestor is
+    // not undone by anything on a descendant, so an announcer buried inside a
+    // hidden beat is a region no screen reader will ever read.
+    const reach = await game.page.evaluate(() => {
+      const node = document.querySelector('.orientation-announcer')
+      if (node === null) return null
+      const box = node.getBoundingClientRect()
+      return {
+        live: node.getAttribute('aria-live'),
+        buried: node.closest('[aria-hidden="true"]') !== null,
+        // The measured box rather than the rule that produces it, because the
+        // claim is that nothing is drawn and there are several ways to spell
+        // that. `hidden` and `display: none` are not among them: a region
+        // nothing can see is also a region nothing reads.
+        drawn: box.width > 1 || box.height > 1,
+      }
+    })
+    assert.deepEqual(
+      reach,
+      { live: 'polite', buried: false, drawn: false },
+      'the region is polite, outside any hidden subtree, and not drawn',
+    )
+
+    assert.equal(mouse(), 0, 'the mouse was never touched')
+    assert.deepEqual(game.errors, [])
+    await game.close()
+  })
+
+  it('points at whatever the game is asking for, and at the boxes once your hands are full', async () => {
+    const game = await open(browser, at(base(), { act: 3, room: 'bedroom' }))
+    const mouse = watchTheMouse(game.page)
+    await game.begin()
+
+    // Reading the thread is what makes the desk the thing the game wants. The
+    // key does not invent an objective, it repeats the goal line, so the goal
+    // line has to have moved on first.
+    assert.ok(await game.lookAt('phone_dead', 'bedroom'), 'the thread opens')
+    await game.settle()
+    assert.equal((await game.flags())['thread_read'], true, 'and the game now wants the desk')
+
+    await game.moveTo('bedroom')
+    const empty = await orient(game)
+    assert.match(empty, /The desk, (ahead|behind|to your)[^.]*\.$/, `the line points at the desk, got ${empty}`)
+    assert.doesNotMatch(empty, /The three boxes/, 'and not at the boxes, which is not what is being asked for')
+
+    // Section 4.1. Something in your hands has one place to go, whatever the
+    // goal line happens to say, so the key follows the hands.
+    assert.ok(await game.aimAt('alarm_clock', 'bedroom'), 'the alarm clock is reachable')
+    await game.dev((dev) => { dev.interact() })
+    await game.settle()
+    assert.ok(await game.aimAt('alarm_clock', 'bedroom'), 'and still reachable once examined')
+    await game.dev((dev) => { dev.interact() })
+    await game.until(
+      'document.querySelector("canvas").__dev.carry.held() !== null',
+      'the alarm clock to be in hand',
+    )
+
+    const carrying = await orient(game)
+    assert.match(
+      carrying,
+      /The three boxes, (ahead|behind|to your)[^.]*\.$/,
+      `with something in hand the line points at the boxes, got ${carrying}`,
+    )
+    assert.doesNotMatch(carrying, /The desk,/, 'and stops pointing at the desk until the hands are empty')
+
+    assert.equal(mouse(), 0, 'the mouse was never touched')
+    assert.deepEqual(game.errors, [])
+    await game.close()
+  })
+
+  it('never names something on the other side of a wall', async () => {
+    const game = await open(browser, at(base(), { act: 3, room: 'entry_hall' }))
+    const mouse = watchTheMouse(game.page)
+    await game.begin()
+
+    // Reach is a radius and a radius is a sphere, so it goes through walls, and
+    // the raycast does not save us: `createTargeting` is handed the props and the
+    // furniture and never the flat, so a ray has never been stopped by a wall.
+    // That is written up in docs/VERIFICATION.md. What the orientation key can do
+    // without touching it is refuse to say a wall is not there, and this is the
+    // check that it does.
+    //
+    // Nine positions rather than the middle of the room, because a check that
+    // measures from one place measures its own choice of place. The junk drawer
+    // was once reported unreachable for exactly that reason.
+    let hidden = 0
+
+    for (const spot of standingSpots('entry_hall')) {
+      await game.dev((dev, at) => {
+        dev.camera.position.set(at[0], at[1], at[2])
+        dev.camera.updateMatrixWorld(true)
+      }, spot)
+
+      const near = await game.dev((dev, at) => {
+        const reach = dev.targeting.reach()
+        return dev.targeting.candidates()
+          .map((c) => {
+            const item = c as { id: string, at: { x: number, y: number, z: number } }
+            return {
+              id: item.id,
+              at: item.at,
+              distance: Math.hypot(item.at.x - at[0], item.at.y - at[1], item.at.z - at[2]),
+            }
+          })
+          .filter((c) => c.distance <= reach)
+      }, spot)
+
+      const line = await orient(game)
+
+      // The parsing below only holds while the line is one clause, so this is a
+      // precondition rather than decoration: a fresh act 3 has no goal satisfied
+      // yet, so there is nothing to point at and nothing after the reach list.
+      for (const bearing of BEARINGS) {
+        assert.ok(!line.includes(bearing), `nothing is being pointed at yet, got ${line}`)
+      }
+
+      const standingIn = roomAt(spot[0], spot[2])
+      assert.equal(standingIn, 'entry_hall', `the spot ${spot.join(', ')} is in the entry hall`)
+
+      for (const item of near) {
+        const name = NAMES.get(item.id)
+        if (name === undefined) continue
+
+        if (roomAt(item.at.x, item.at.z) === standingIn) {
+          assert.ok(line.includes(name), `${name} is in this room and within reach, so it is named: ${line}`)
+        } else {
+          assert.ok(!line.includes(name), `${name} is through a wall and is not named: ${line}`)
+          hidden += 1
+        }
+      }
+    }
+
+    // If this is zero the check passed without checking anything, which is the
+    // failure this project has been caught by six times. It means the entry hall
+    // no longer has a neighbour within two and a half metres through a wall, and
+    // the check needs a different room rather than a green tick.
+    assert.ok(hidden > 0, 'at least one thing was within reach through a wall and was left unsaid')
 
     assert.equal(mouse(), 0, 'the mouse was never touched')
     assert.deepEqual(game.errors, [])
